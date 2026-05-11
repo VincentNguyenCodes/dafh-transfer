@@ -61,6 +61,6 @@ def normalize_course_code(course_code: str) -> str:
     parts = course_code.split()
     if len(parts) >= 2:
         last = parts[-1]
-        stripped = re.sub(r'^[DF]0*', '', last)
+        stripped = re.sub(r'^[DF]0*', '', last).rstrip('.')
         return ' '.join(parts[:-1] + [stripped])
     return course_code

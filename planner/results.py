@@ -52,11 +52,39 @@ def _school_label(sending_id: int) -> str:
     return 'deanza' if sending_id == DEANZA_ID else 'foothill'
 
 
+def _extract_codes_from_html(html: str, valid_ucsd_codes: set) -> tuple:
+    required = set()
+    choose_one_groups = []
+    # Only process top-level list items, skip deeply indented notes (ql-indent-2+)
+    items = _re.findall(r'<li(?![^>]*ql-indent-[2-9])[^>]*>(.*?)</li>', html, _re.DOTALL | _re.I)
+    for item in items:
+        text = _re.sub(r'<[^>]+>', '', item).strip().upper()
+        text = _re.sub(r'\bMATH\.\s*', 'MATH ', text)
+        found = set()
+        for match in _re.finditer(r'\b([A-Z]{2,})\s*\.?\s*(\d+[A-Z]*)\b', text):
+            code = match.group(1) + match.group(2)
+            if code in valid_ucsd_codes:
+                found.add(code)
+        if not found:
+            continue
+        if _re.search(r'ONE\s+COURSE\s+CHOSEN|CHOOSE\s+ONE|ONE\s+OF\s+THE\s+FOLLOWING', text):
+            choose_one_groups.append(found)
+        elif ' OR ' in text and len(found) > 1:
+            choose_one_groups.append(found)
+        else:
+            required.update(found)
+    return required, choose_one_groups
+
+
+def _extract_codes_from_items(items: list, valid_ucsd_codes: set) -> tuple:
+    return _extract_codes_from_html(''.join(f'<li>{i}</li>' for i in items), valid_ucsd_codes)
+
+
 def _parse_advisory(template: list, valid_ucsd_codes: set):
     """
-    Parse the GeneralText advisory in the template to find which UCSD courses are
-    required and which are part of a 'pick one' group.
-    Returns (required: set, choose_one_groups: list[set]) or None if no advisory found.
+    Parse the GeneralText advisory.
+    Returns (required: set, advisory_recommended: set, choose_one_groups: list[set])
+    or None if no advisory found.
     """
     for group in template:
         if group.get('type') != 'GeneralText':
@@ -64,34 +92,38 @@ def _parse_advisory(template: list, valid_ucsd_codes: set):
         content = group.get('content', '')
         if '<li>' not in content:
             continue
-        if not any(k in content.lower() for k in ['required', 'calculus', 'complete', 'advised']):
+        if not any(k in content.lower() for k in ['required', 'recommended', 'admission', 'calculus', 'advised']):
+            continue
+
+        req_match = _re.search(r'required\s+courses?\s+for\s+admission', content, _re.I)
+        rec_match = _re.search(r'(highly\s+)?recommended\s+courses?[\s\S]{0,10}for\s+admission', content, _re.I)
+
+        if req_match:
+            if rec_match:
+                tag_start = content.rfind('<p>', 0, rec_match.start())
+                if tag_start < 0:
+                    tag_start = content.rfind('<', 0, rec_match.start())
+                req_section = content[:tag_start] if tag_start > 0 else content[:rec_match.start()]
+                rec_section = content[tag_start:]
+            else:
+                req_section = content
+                rec_section = ''
+
+            required, choose_one = _extract_codes_from_html(req_section, valid_ucsd_codes)
+            advisory_rec = set()
+            if rec_section:
+                advisory_rec, _ = _extract_codes_from_html(rec_section, valid_ucsd_codes)
+
+            if required or choose_one or advisory_rec:
+                return required, advisory_rec, choose_one
             continue
 
         items = _re.findall(r'<li[^>]*>(.*?)</li>', content, _re.DOTALL | _re.I)
         if len(items) < 3:
             continue
-
-        required = set()
-        choose_one_groups = []
-
-        for item in items:
-            text = _re.sub(r'<[^>]+>', '', item).strip().upper()
-            text = _re.sub(r'\bMATH\.\s*', 'MATH ', text)
-
-            found = set()
-            for match in _re.finditer(r'\b([A-Z]{2,})\s*\.?\s*(\d+[A-Z]*)\b', text):
-                code = match.group(1) + match.group(2)
-                if code in valid_ucsd_codes:
-                    found.add(code)
-
-            if _re.search(r'ONE\s+COURSE\s+CHOSEN|CHOOSE\s+ONE|ONE\s+OF\s+THE\s+FOLLOWING', text):
-                if found:
-                    choose_one_groups.append(found)
-            else:
-                required.update(found)
-
-        if required or choose_one_groups:
-            return required, choose_one_groups
+        required, choose_one = _extract_codes_from_items(items, valid_ucsd_codes)
+        if required or choose_one:
+            return required, set(), choose_one
 
     return None
 
@@ -140,8 +172,31 @@ def _parse_requirements(articulation_json: dict, completed_codes: set, in_progre
         cell_to_art = {a['templateCellId']: a for a in articulations}
 
         if advisory:
-            required_codes, choose_one_groups = advisory
+            required_codes, advisory_rec_codes, choose_one_groups = advisory
             all_choose_one = set().union(*choose_one_groups) if choose_one_groups else set()
+
+            for rec_code in sorted(advisory_rec_codes):
+                art_row = next((cell_to_art[cid] for cid, info in template_cells.items()
+                                if info['code'] == rec_code and cid in cell_to_art), None)
+                if not art_row:
+                    continue
+                sending = art_row.get('articulation', {}).get('sendingArticulation', {})
+                if sending.get('noArticulationReason'):
+                    continue
+                recv_name = next((info['name'] for info in template_cells.values() if info['code'] == rec_code), '')
+                options = _build_options(sending, completed_codes, in_progress_codes, school)
+                if not options:
+                    continue
+                satisfied = any(opt['satisfied'] for opt in options)
+                recommended.append({
+                    'receiving_code': rec_code,
+                    'receiving_name': recv_name,
+                    'no_articulation': False,
+                    'satisfied': satisfied,
+                    'options': options,
+                    'school': school,
+                    'is_choose_one': False,
+                })
 
             for req_code in sorted(required_codes):
                 art_row = next((cell_to_art[cid] for cid, info in template_cells.items()
@@ -168,10 +223,12 @@ def _parse_requirements(articulation_json: dict, completed_codes: set, in_progre
 
                 all_options = [opt for sr in sub_reqs for opt in sr['options']]
                 satisfied = any(opt['satisfied'] for opt in all_options)
+                ucsd_codes = sorted(sr['ucsd_code'] for sr in sub_reqs)
+                group_code = '/'.join(ucsd_codes[:3]) + ('+' if len(ucsd_codes) > 3 else '')
                 ucsd_names = ', '.join(sr['ucsd_code'] for sr in sub_reqs)
                 requirements.append({
-                    'receiving_code': 'SCIENCE REQ',
-                    'receiving_name': f"One course from: {ucsd_names}",
+                    'receiving_code': group_code,
+                    'receiving_name': f"One of: {ucsd_names}",
                     'no_articulation': False,
                     'satisfied': satisfied,
                     'options': all_options,
@@ -180,7 +237,7 @@ def _parse_requirements(articulation_json: dict, completed_codes: set, in_progre
                 })
 
             # Collect recommended: has articulation but not in the advisory required list
-            advisory_codes = required_codes | all_choose_one
+            advisory_codes = required_codes | all_choose_one | advisory_rec_codes
             for art_row in articulations:
                 cell_id = art_row.get('templateCellId')
                 recv_info = template_cells.get(cell_id, {})

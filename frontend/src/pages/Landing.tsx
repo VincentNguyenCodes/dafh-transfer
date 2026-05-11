@@ -33,62 +33,124 @@ export default function Landing() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="bg-white rounded-2xl shadow-md p-8 w-full max-w-md">
-        <h1 className="text-2xl font-bold text-center mb-1">DAFH Transfer</h1>
-        <p className="text-sm text-gray-500 text-center mb-6">
-          Plan your transfer from De Anza or Foothill to any UC/CSU
-        </p>
-
-        <div className="flex rounded-lg overflow-hidden border border-gray-200 mb-6">
-          <button
-            className={`flex-1 py-2 text-sm font-medium transition-colors ${mode === 'login' ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
-            onClick={() => setMode('login')}
-          >
-            Log In
-          </button>
-          <button
-            className={`flex-1 py-2 text-sm font-medium transition-colors ${mode === 'register' ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
-            onClick={() => setMode('register')}
-          >
-            Register
-          </button>
+    <div className="min-h-screen flex">
+      <div className="hidden lg:flex lg:w-1/2 bg-indigo-600 flex-col justify-between p-12">
+        <div>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
+              <span className="text-indigo-600 font-bold text-sm">D</span>
+            </div>
+            <span className="text-white font-semibold text-lg">DAFH Transfer</span>
+          </div>
         </div>
+        <div>
+          <h1 className="text-4xl font-bold text-white leading-tight mb-4">
+            Plan your transfer.<br />Reach your goals.
+          </h1>
+          <p className="text-indigo-200 text-lg leading-relaxed">
+            See exactly which De Anza and Foothill classes you still need to transfer to your target schools and majors.
+          </p>
+        </div>
+        <div className="flex gap-6">
+          {['UCSD', 'UCLA', 'USC', 'UCSB', 'UCI'].map((school) => (
+            <span key={school} className="text-indigo-300 text-sm font-medium">{school}</span>
+          ))}
+        </div>
+      </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
-            placeholder="Username"
-            value={form.username}
-            onChange={(e) => setForm({ ...form, username: e.target.value })}
-            required
-          />
-          {mode === 'register' && (
-            <input
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
-              placeholder="Email"
-              type="email"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-            />
-          )}
-          <input
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
-            placeholder="Password"
-            type="password"
-            value={form.password}
-            onChange={(e) => setForm({ ...form, password: e.target.value })}
-            required
-          />
-          {error && <p className="text-red-500 text-sm">{error}</p>}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-indigo-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
-          >
-            {loading ? 'Please wait...' : mode === 'login' ? 'Log In' : 'Create Account'}
-          </button>
-        </form>
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
+        <div className="w-full max-w-md">
+          <div className="mb-8 lg:hidden">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-sm">D</span>
+              </div>
+              <span className="text-gray-900 font-semibold text-lg">DAFH Transfer</span>
+            </div>
+          </div>
+
+          <h2 className="text-2xl font-bold text-gray-900 mb-1">
+            {mode === 'login' ? 'Welcome back' : 'Create your account'}
+          </h2>
+          <p className="text-gray-500 text-sm mb-8">
+            {mode === 'login'
+              ? 'Log in to continue your transfer plan.'
+              : 'Start planning your transfer today.'}
+          </p>
+
+          <div className="flex gap-2 mb-6 bg-gray-100 p-1 rounded-xl">
+            <button
+              onClick={() => setMode('login')}
+              className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${
+                mode === 'login'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Log In
+            </button>
+            <button
+              onClick={() => setMode('register')}
+              className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${
+                mode === 'register'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Register
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+              <input
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                placeholder="your_username"
+                value={form.username}
+                onChange={(e) => setForm({ ...form, username: e.target.value })}
+                required
+              />
+            </div>
+            {mode === 'register' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  placeholder="you@example.com"
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                />
+              </div>
+            )}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+              <input
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                placeholder="••••••••"
+                type="password"
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                required
+              />
+            </div>
+
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                <p className="text-red-600 text-sm">{error}</p>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-indigo-600 text-white rounded-xl py-3 text-sm font-semibold hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-50 transition-colors shadow-md"
+            >
+              {loading ? 'Please wait...' : mode === 'login' ? 'Log In' : 'Create Account'}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   )

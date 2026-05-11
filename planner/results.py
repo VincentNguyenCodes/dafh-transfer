@@ -80,12 +80,27 @@ def _extract_codes_from_items(items: list, valid_ucsd_codes: set) -> tuple:
     return _extract_codes_from_html(''.join(f'<li>{i}</li>' for i in items), valid_ucsd_codes)
 
 
-def _parse_advisory(template: list, valid_ucsd_codes: set):
+def _parse_advisory(template: list, valid_ucsd_codes: set, agreement_key: str = ''):
     """
     Parse the GeneralText advisory.
     Returns (required: set, advisory_recommended: set, choose_one_groups: list[set])
     or None if no advisory found.
+    Tries Claude API first (cached 365 days), falls back to regex.
     """
+    if agreement_key:
+        advisory_html = '\n'.join(
+            g.get('content', '') for g in template
+            if g.get('type') == 'GeneralText' and g.get('content', '').strip()
+        )
+        if advisory_html:
+            try:
+                from assist.advisory_parser import get_cached_advisory_parse
+                result = get_cached_advisory_parse(agreement_key, advisory_html, valid_ucsd_codes)
+                if result:
+                    return result
+            except Exception:
+                pass
+
     for group in template:
         if group.get('type') != 'GeneralText':
             continue
@@ -142,7 +157,7 @@ def _ccc_course(ci: dict, completed_codes: set, in_progress_codes: set, school: 
     }
 
 
-def _parse_requirements(articulation_json: dict, completed_codes: set, in_progress_codes: set, school: str) -> tuple:
+def _parse_requirements(articulation_json: dict, completed_codes: set, in_progress_codes: set, school: str, agreement_key: str = '') -> tuple:
     requirements = []
     recommended = []
     try:
@@ -167,7 +182,7 @@ def _parse_requirements(articulation_json: dict, completed_codes: set, in_progre
                             }
 
         valid_ucsd_codes = {v['code'] for v in template_cells.values()}
-        advisory = _parse_advisory(template, valid_ucsd_codes)
+        advisory = _parse_advisory(template, valid_ucsd_codes, agreement_key)
 
         cell_to_art = {a['templateCellId']: a for a in articulations}
 
@@ -221,6 +236,23 @@ def _parse_requirements(articulation_json: dict, completed_codes: set, in_progre
                 if not sub_reqs:
                     continue
 
+                advisory_key = '/'.join(sorted(group_codes))
+
+                if len(sub_reqs) == 1:
+                    sr = sub_reqs[0]
+                    satisfied = any(opt['satisfied'] for opt in sr['options'])
+                    requirements.append({
+                        'receiving_code': sr['ucsd_code'],
+                        'receiving_name': sr['ucsd_name'],
+                        'no_articulation': False,
+                        'satisfied': satisfied,
+                        'options': sr['options'],
+                        'school': school,
+                        'is_choose_one': False,
+                        'dedup_key': advisory_key,
+                    })
+                    continue
+
                 all_options = [opt for sr in sub_reqs for opt in sr['options']]
                 satisfied = any(opt['satisfied'] for opt in all_options)
                 ucsd_codes = sorted(sr['ucsd_code'] for sr in sub_reqs)
@@ -234,6 +266,7 @@ def _parse_requirements(articulation_json: dict, completed_codes: set, in_progre
                     'options': all_options,
                     'school': school,
                     'is_choose_one': True,
+                    'dedup_key': advisory_key,
                 })
 
             # Collect recommended: has articulation but not in the advisory required list
@@ -364,9 +397,9 @@ def compute_remaining(user) -> list:
                     art = fetch_or_cache_articulation(key)
                 except Exception:
                     continue
-                reqs, recs = _parse_requirements(art, completed_codes, in_progress_codes, school)
+                reqs, recs = _parse_requirements(art, completed_codes, in_progress_codes, school, agreement_key=key)
                 for req in reqs:
-                    rkey = req['receiving_code']
+                    rkey = req.get('dedup_key', req['receiving_code'])
                     if rkey not in seen_recv:
                         seen_recv.add(rkey)
                         all_requirements.append(req)

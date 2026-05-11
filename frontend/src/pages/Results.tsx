@@ -2,91 +2,187 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../api/client'
 
-type Course = {
-  course_code: string
-  course_name: string
+type CourseItem = {
+  code: string
+  name: string
   units: number | null
-  school: 'deanza' | 'foothill'
-  satisfies: string[]
+  school: string
+  completed: boolean
   in_progress: boolean
 }
 
-type Results = {
-  deanza: Course[]
-  foothill: Course[]
+type Option = {
+  courses: CourseItem[]
+  satisfied: boolean
 }
 
-function CourseCard({ course }: { course: Course }) {
+type Requirement = {
+  receiving_code: string
+  receiving_name: string
+  no_articulation: boolean
+  satisfied: boolean
+  options: Option[]
+  school: string
+}
+
+type TargetResult = {
+  target: string
+  school_name: string
+  major_name: string
+  requirements: Requirement[]
+  total: number
+  satisfied: number
+}
+
+function RequirementRow({ req }: { req: Requirement }) {
+  const remaining = req.options.filter((o) => !o.satisfied)
+  const hasAny = req.options.length > 0
+
   return (
-    <div className="flex items-start gap-4 bg-white border border-gray-100 rounded-2xl px-5 py-4 shadow-sm">
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap mb-0.5">
-          <span className="font-mono font-bold text-sm text-indigo-700">{course.course_code}</span>
-          {course.in_progress && (
-            <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full font-medium">
-              In Progress
-            </span>
+    <div className={`rounded-2xl border px-5 py-4 ${req.satisfied ? 'bg-green-50 border-green-100' : 'bg-white border-gray-100 shadow-sm'}`}>
+      <div className="flex items-start gap-3">
+        <div className={`mt-0.5 w-5 h-5 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${req.satisfied ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-400'}`}>
+          {req.satisfied ? '✓' : ''}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap mb-1">
+            <span className="font-mono font-bold text-sm text-gray-800">{req.receiving_code}</span>
+            <span className="text-xs text-gray-400 truncate">{req.receiving_name}</span>
+          </div>
+
+          {req.no_articulation && (
+            <p className="text-xs text-gray-400 italic">No De Anza articulation available</p>
+          )}
+
+          {!req.no_articulation && !req.satisfied && hasAny && (
+            <div className="mt-2 space-y-2">
+              {remaining.length > 1 && (
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Pick one option:</p>
+              )}
+              {remaining.map((opt, oi) => (
+                <div key={oi} className={`rounded-xl px-3 py-2 ${remaining.length > 1 ? 'bg-gray-50 border border-gray-100' : ''}`}>
+                  {remaining.length > 1 && (
+                    <p className="text-xs font-semibold text-indigo-500 mb-1">Option {oi + 1}</p>
+                  )}
+                  <div className="space-y-1">
+                    {opt.courses.map((c, ci) => (
+                      <div key={ci} className="flex items-center gap-2">
+                        {opt.courses.length > 1 && ci > 0 && (
+                          <span className="text-xs text-gray-300 w-6 text-center">+</span>
+                        )}
+                        {opt.courses.length === 1 && <span className="w-6" />}
+                        <span className={`font-mono text-sm font-semibold ${c.completed ? 'text-green-600 line-through' : 'text-indigo-700'}`}>
+                          {c.code}
+                        </span>
+                        <span className="text-xs text-gray-500 truncate">{c.name}</span>
+                        {c.in_progress && (
+                          <span className="text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full shrink-0">In Progress</span>
+                        )}
+                        {c.units && (
+                          <span className="text-xs text-gray-300 shrink-0 ml-auto">{c.units}u</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              {remaining.length > 1 && <p className="text-xs text-gray-300 pl-1">Options are equivalent — choose whichever fits your schedule.</p>}
+            </div>
+          )}
+
+          {!req.no_articulation && req.satisfied && (
+            <p className="text-xs text-green-600 mt-0.5">Already satisfied</p>
           )}
         </div>
-        <p className="text-sm text-gray-800 font-medium">{course.course_name}</p>
-        <p className="text-xs text-gray-400 mt-1 leading-relaxed">
-          Satisfies: {course.satisfies.join(' · ')}
-        </p>
       </div>
-      {course.units != null && (
-        <div className="shrink-0 text-right">
-          <span className="text-xs font-semibold text-gray-400">{course.units}</span>
-          <p className="text-xs text-gray-300">units</p>
+    </div>
+  )
+}
+
+function TargetSection({ result }: { result: TargetResult }) {
+  const remaining = result.requirements.filter((r) => !r.satisfied)
+  const [showSatisfied, setShowSatisfied] = useState(false)
+  const satisfied = result.requirements.filter((r) => r.satisfied)
+
+  return (
+    <div className="mb-10">
+      <div className="flex items-center justify-between mb-2">
+        <div>
+          <h2 className="text-lg font-bold text-gray-900">{result.school_name}</h2>
+          <p className="text-sm text-gray-500">{result.major_name}</p>
+        </div>
+        <div className="text-right">
+          <p className="text-2xl font-bold text-indigo-600">{result.satisfied}<span className="text-gray-300">/{result.total}</span></p>
+          <p className="text-xs text-gray-400">requirements met</p>
+        </div>
+      </div>
+
+      <div className="w-full bg-gray-100 rounded-full h-1.5 mb-5">
+        <div
+          className="bg-indigo-600 h-1.5 rounded-full transition-all"
+          style={{ width: `${result.total ? (result.satisfied / result.total) * 100 : 0}%` }}
+        />
+      </div>
+
+      {remaining.length === 0 ? (
+        <div className="bg-green-50 border border-green-100 rounded-2xl p-5 text-center">
+          <p className="text-green-700 font-semibold">All requirements satisfied!</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Still needed ({remaining.length})</p>
+          {remaining.map((req, i) => (
+            <RequirementRow key={i} req={req} />
+          ))}
+        </div>
+      )}
+
+      {satisfied.length > 0 && (
+        <div className="mt-4">
+          <button
+            onClick={() => setShowSatisfied((s) => !s)}
+            className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            {showSatisfied ? 'Hide' : 'Show'} {satisfied.length} completed requirements
+          </button>
+          {showSatisfied && (
+            <div className="space-y-2 mt-2">
+              {satisfied.map((req, i) => (
+                <RequirementRow key={i} req={req} />
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
   )
 }
 
-function SchoolSection({ title, color, courses }: { title: string; color: string; courses: Course[] }) {
-  if (courses.length === 0) return null
-  return (
-    <div className="mb-8">
-      <div className="flex items-center gap-3 mb-4">
-        <div className={`w-2 h-6 rounded-full ${color}`}></div>
-        <h2 className="text-base font-bold text-gray-800">{title}</h2>
-        <span className="text-xs bg-gray-100 text-gray-500 px-2 py-1 rounded-full font-medium">
-          {courses.length} courses
-        </span>
-      </div>
-      <div className="space-y-2">
-        {courses.map((c) => (
-          <CourseCard key={`${c.school}-${c.course_code}`} course={c} />
-        ))}
-      </div>
-    </div>
-  )
-}
-
 export default function Results() {
   const navigate = useNavigate()
-  const [results, setResults] = useState<Results | null>(null)
+  const [results, setResults] = useState<TargetResult[] | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  useEffect(() => {
+  const load = () => {
+    setLoading(true)
+    setError('')
     api.get('/results/')
       .then(({ data }) => setResults(data))
       .catch(() => setError('Failed to load results. Make sure you have saved schools and a transcript.'))
       .finally(() => setLoading(false))
-  }, [])
+  }
 
-  const total = (results?.deanza.length ?? 0) + (results?.foothill.length ?? 0)
-  const inProgress = [...(results?.deanza ?? []), ...(results?.foothill ?? [])].filter((c) => c.in_progress).length
+  useEffect(() => { load() }, [])
+
+  const totalRemaining = results?.reduce((sum, r) => sum + (r.total - r.satisfied), 0) ?? 0
 
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="bg-white border-b border-gray-100 px-6 py-4">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button onClick={() => navigate('/dashboard')} className="text-gray-400 hover:text-gray-600 transition-colors">
-              ←
-            </button>
+            <button onClick={() => navigate('/dashboard')} className="text-gray-400 hover:text-gray-600 transition-colors">←</button>
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 bg-indigo-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-xs">D</span>
@@ -94,20 +190,22 @@ export default function Results() {
               <span className="font-semibold text-gray-900">DAFH Transfer</span>
             </div>
           </div>
-          <span className="text-sm text-gray-400">Results</span>
+          <button onClick={load} className="text-sm text-indigo-600 hover:text-indigo-800 transition-colors font-medium">
+            Refresh
+          </button>
         </div>
       </header>
 
       <main className="max-w-3xl mx-auto px-6 py-10">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">Classes You Still Need</h1>
-          <p className="text-gray-500 text-sm">Based on your transcript and transfer targets.</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-1">Transfer Requirements</h1>
+          <p className="text-gray-500 text-sm">Based on your transcript and selected schools.</p>
         </div>
 
         {loading && (
           <div className="text-center py-16">
             <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-            <p className="text-gray-500 text-sm">Fetching your requirements from ASSIST.org...</p>
+            <p className="text-gray-500 text-sm">Fetching requirements from ASSIST.org...</p>
             <p className="text-gray-400 text-xs mt-1">This may take a few seconds.</p>
           </div>
         )}
@@ -121,56 +219,40 @@ export default function Results() {
 
         {results && !loading && (
           <>
-            {total === 0 ? (
-              <div className="bg-green-50 border border-green-200 rounded-2xl p-8 text-center">
-                <div className="text-4xl mb-3">🎉</div>
-                <p className="text-green-700 font-bold text-lg">You're all set!</p>
-                <p className="text-green-600 text-sm mt-1">No remaining classes found for your selected schools and majors.</p>
+            {results.length === 0 ? (
+              <div className="bg-gray-50 border border-gray-200 rounded-2xl p-8 text-center">
+                <p className="text-gray-600 font-semibold mb-1">No transfer targets set</p>
+                <p className="text-gray-400 text-sm mb-4">Add schools and majors first.</p>
+                <button onClick={() => navigate('/schools')} className="bg-indigo-600 text-white rounded-xl px-4 py-2 text-sm font-medium hover:bg-indigo-700 transition-colors">
+                  Add Schools
+                </button>
               </div>
             ) : (
               <>
-                <div className="flex gap-3 mb-8 flex-wrap">
-                  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 px-5 py-4">
-                    <p className="text-3xl font-bold text-indigo-600">{total}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">courses remaining</p>
+                {totalRemaining > 0 && (
+                  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 px-5 py-4 mb-8 flex items-center gap-4">
+                    <div>
+                      <p className="text-3xl font-bold text-indigo-600">{totalRemaining}</p>
+                      <p className="text-xs text-gray-400">requirements still needed</p>
+                    </div>
+                    <div className="h-10 w-px bg-gray-100"></div>
+                    <p className="text-xs text-gray-500 leading-relaxed">
+                      Each item shows what De Anza or Foothill class satisfies it. If multiple options appear, you only need to take one.
+                    </p>
                   </div>
-                  {inProgress > 0 && (
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 px-5 py-4">
-                      <p className="text-3xl font-bold text-yellow-500">{inProgress}</p>
-                      <p className="text-xs text-gray-500 mt-0.5">in progress</p>
-                    </div>
-                  )}
-                  {total - inProgress > 0 && (
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 px-5 py-4">
-                      <p className="text-3xl font-bold text-red-400">{total - inProgress}</p>
-                      <p className="text-xs text-gray-500 mt-0.5">still needed</p>
-                    </div>
-                  )}
-                </div>
-
-                <SchoolSection title="De Anza College" color="bg-green-400" courses={results.deanza} />
-                <SchoolSection title="Foothill College" color="bg-blue-400" courses={results.foothill} />
+                )}
+                {results.map((r, i) => (
+                  <TargetSection key={i} result={r} />
+                ))}
               </>
             )}
 
             <div className="flex gap-3 mt-8">
-              <button
-                onClick={() => navigate('/transcript')}
-                className="flex-1 border border-gray-200 text-gray-600 rounded-2xl py-3 text-sm font-medium hover:bg-gray-50 transition-colors"
-              >
+              <button onClick={() => navigate('/transcript')} className="flex-1 border border-gray-200 text-gray-600 rounded-2xl py-3 text-sm font-medium hover:bg-gray-50 transition-colors">
                 Edit Transcript
               </button>
-              <button
-                onClick={() => navigate('/schools')}
-                className="flex-1 border border-gray-200 text-gray-600 rounded-2xl py-3 text-sm font-medium hover:bg-gray-50 transition-colors"
-              >
+              <button onClick={() => navigate('/schools')} className="flex-1 border border-gray-200 text-gray-600 rounded-2xl py-3 text-sm font-medium hover:bg-gray-50 transition-colors">
                 Edit Schools
-              </button>
-              <button
-                onClick={() => { setLoading(true); setResults(null); api.get('/results/').then(({ data }) => setResults(data)).finally(() => setLoading(false)) }}
-                className="flex-1 bg-indigo-600 text-white rounded-2xl py-3 text-sm font-medium hover:bg-indigo-700 transition-colors"
-              >
-                Refresh
               </button>
             </div>
           </>

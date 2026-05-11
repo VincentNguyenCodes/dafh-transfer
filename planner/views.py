@@ -46,7 +46,5 @@ class TransferTargetDetailView(APIView):
 
 class ResultsView(APIView):
     def get(self, request):
-        remaining = compute_remaining(request.user)
-        deanza = [c for c in remaining if c['school'] == 'deanza']
-        foothill = [c for c in remaining if c['school'] == 'foothill']
-        return Response({'deanza': deanza, 'foothill': foothill})
+        results = compute_remaining(request.user)
+        return Response(results)

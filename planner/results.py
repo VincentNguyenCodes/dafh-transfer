@@ -4,6 +4,7 @@ from django.utils import timezone
 
 from assist.client import get_agreements
 from assist.models import AssistCache
+from transcripts.parser import normalize_course_code
 
 DEANZA_ID = 113
 FOOTHILL_ID = 112
@@ -43,8 +44,12 @@ def parse_ccc_courses(agreement_json):
                 for cell in row.get('cells', []):
                     if cell.get('position') == 'Sending':
                         for course in cell.get('courses', []):
+                            code = (
+                                course.get('courseIdentifierParenthetical')
+                                or f"{course.get('prefix', '')} {course.get('courseNumber', '')}".strip()
+                            )
                             courses.append({
-                                'course_code': course.get('courseIdentifierParenthetical') or course.get('prefix', '') + ' ' + course.get('courseNumber', ''),
+                                'course_code': code,
                                 'course_name': course.get('courseName', ''),
                                 'units': course.get('maxUnits') or course.get('minUnits'),
                             })
@@ -57,14 +62,19 @@ def compute_remaining(user):
     from transcripts.models import TranscriptEntry
     from .models import TransferTarget
 
-    completed_codes = set(
+    def normalized_set(qs):
+        return {normalize_course_code(c) for c in qs}
+
+    completed_raw = set(
         TranscriptEntry.objects.filter(user=user, status='completed').values_list('course_code', flat=True)
     )
-    in_progress_codes = set(
+    in_progress_raw = set(
         TranscriptEntry.objects.filter(user=user, status='in_progress').values_list('course_code', flat=True)
     )
-    targets = TransferTarget.objects.filter(user=user)
+    completed_codes = completed_raw | normalized_set(completed_raw)
+    in_progress_codes = in_progress_raw | normalized_set(in_progress_raw)
 
+    targets = TransferTarget.objects.filter(user=user)
     required_map = {}
 
     for target in targets:

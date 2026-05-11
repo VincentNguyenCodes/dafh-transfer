@@ -1,4 +1,5 @@
 import json as _json
+import re as _re
 from datetime import timedelta
 
 from django.utils import timezone
@@ -51,7 +52,65 @@ def _school_label(sending_id: int) -> str:
     return 'deanza' if sending_id == DEANZA_ID else 'foothill'
 
 
-def _parse_requirements(articulation_json: dict, completed_codes: set, school: str) -> list:
+def _parse_advisory(template: list, valid_ucsd_codes: set):
+    """
+    Parse the GeneralText advisory in the template to find which UCSD courses are
+    required and which are part of a 'pick one' group.
+    Returns (required: set, choose_one_groups: list[set]) or None if no advisory found.
+    """
+    for group in template:
+        if group.get('type') != 'GeneralText':
+            continue
+        content = group.get('content', '')
+        if '<li>' not in content:
+            continue
+        if not any(k in content.lower() for k in ['required', 'calculus', 'complete', 'advised']):
+            continue
+
+        items = _re.findall(r'<li[^>]*>(.*?)</li>', content, _re.DOTALL | _re.I)
+        if len(items) < 3:
+            continue
+
+        required = set()
+        choose_one_groups = []
+
+        for item in items:
+            text = _re.sub(r'<[^>]+>', '', item).strip().upper()
+            text = _re.sub(r'\bMATH\.\s*', 'MATH ', text)
+
+            found = set()
+            for match in _re.finditer(r'\b([A-Z]{2,})\s*\.?\s*(\d+[A-Z]*)\b', text):
+                code = match.group(1) + match.group(2)
+                if code in valid_ucsd_codes:
+                    found.add(code)
+
+            if _re.search(r'ONE\s+COURSE\s+CHOSEN|CHOOSE\s+ONE|ONE\s+OF\s+THE\s+FOLLOWING', text):
+                if found:
+                    choose_one_groups.append(found)
+            else:
+                required.update(found)
+
+        if required or choose_one_groups:
+            return required, choose_one_groups
+
+    return None
+
+
+def _ccc_course(ci: dict, completed_codes: set, in_progress_codes: set, school: str) -> dict:
+    code = f"{ci.get('prefix', '')} {ci.get('courseNumber', '')}".strip()
+    completed = code in completed_codes or normalize_course_code(code) in completed_codes
+    in_prog = (not completed) and (code in in_progress_codes or normalize_course_code(code) in in_progress_codes)
+    return {
+        'code': code,
+        'name': ci.get('courseTitle', ''),
+        'units': ci.get('maxUnits') or ci.get('minUnits'),
+        'completed': completed,
+        'in_progress': in_prog,
+        'school': school,
+    }
+
+
+def _parse_requirements(articulation_json: dict, completed_codes: set, in_progress_codes: set, school: str) -> list:
     requirements = []
     try:
         result = articulation_json.get('result', {})
@@ -65,75 +124,128 @@ def _parse_requirements(articulation_json: dict, completed_codes: set, school: s
             for section in group.get('sections', []):
                 for row in section.get('rows', []):
                     for cell in row.get('cells', []):
-                        cell_id = cell.get('id')
+                        cid = cell.get('id')
                         course = cell.get('course', {})
-                        if cell_id and course:
-                            template_cells[cell_id] = {
-                                'code': f"{course.get('prefix', '')}{course.get('courseNumber', '')}",
+                        if cid and course:
+                            ucsd_code = f"{course.get('prefix', '')}{course.get('courseNumber', '')}"
+                            template_cells[cid] = {
+                                'code': ucsd_code,
                                 'name': course.get('courseTitle', ''),
                             }
 
-        for art_row in articulations:
-            cell_id = art_row.get('templateCellId')
-            recv_info = template_cells.get(cell_id, {})
-            recv_course = art_row.get('articulation', {}).get('course', {})
-            recv_code = recv_info.get('code') or f"{recv_course.get('prefix', '')}{recv_course.get('courseNumber', '')}"
-            recv_name = recv_info.get('name') or recv_course.get('courseTitle', '')
+        valid_ucsd_codes = {v['code'] for v in template_cells.values()}
+        advisory = _parse_advisory(template, valid_ucsd_codes)
 
-            sending = art_row.get('articulation', {}).get('sendingArticulation', {})
-            no_art = sending.get('noArticulationReason')
+        cell_to_art = {a['templateCellId']: a for a in articulations}
 
-            if no_art:
-                requirements.append({
-                    'receiving_code': recv_code,
-                    'receiving_name': recv_name,
-                    'no_articulation': True,
-                    'satisfied': False,
-                    'options': [],
-                    'school': school,
-                })
-                continue
+        if advisory:
+            required_codes, choose_one_groups = advisory
+            all_choose_one = set().union(*choose_one_groups) if choose_one_groups else set()
 
-            options = []
-            for item_group in sending.get('items', []):
-                courses_in_group = [
-                    ci for ci in item_group.get('items', [])
-                    if ci.get('type') == 'Course'
-                ]
-                if not courses_in_group:
+            for req_code in sorted(required_codes):
+                art_row = next((cell_to_art[cid] for cid, info in template_cells.items()
+                                if info['code'] == req_code and cid in cell_to_art), None)
+                recv_name = next((info['name'] for info in template_cells.values() if info['code'] == req_code), '')
+                _append_requirement(requirements, req_code, recv_name, art_row, completed_codes, in_progress_codes, school)
+
+            for group_codes in choose_one_groups:
+                sub_reqs = []
+                for ucsd_code in sorted(group_codes):
+                    art_row = next((cell_to_art[cid] for cid, info in template_cells.items()
+                                    if info['code'] == ucsd_code and cid in cell_to_art), None)
+                    if not art_row:
+                        continue
+                    sending = art_row.get('articulation', {}).get('sendingArticulation', {})
+                    if sending.get('noArticulationReason'):
+                        continue
+                    recv_name = next((info['name'] for info in template_cells.values() if info['code'] == ucsd_code), '')
+                    options = _build_options(sending, completed_codes, in_progress_codes, school)
+                    sub_reqs.append({'ucsd_code': ucsd_code, 'ucsd_name': recv_name, 'options': options})
+
+                if not sub_reqs:
                     continue
 
-                group_courses = []
-                for ci in courses_in_group:
-                    code = f"{ci.get('prefix', '')} {ci.get('courseNumber', '')}".strip()
-                    group_courses.append({
-                        'code': code,
-                        'name': ci.get('courseTitle', ''),
-                        'units': ci.get('maxUnits') or ci.get('minUnits'),
-                        'completed': code in completed_codes or normalize_course_code(code) in completed_codes,
-                        'school': school,
-                    })
-
-                option_satisfied = all(c['completed'] for c in group_courses)
-                options.append({
-                    'courses': group_courses,
-                    'satisfied': option_satisfied,
+                all_options = [opt for sr in sub_reqs for opt in sr['options']]
+                satisfied = any(opt['satisfied'] for opt in all_options)
+                ucsd_names = ', '.join(sr['ucsd_code'] for sr in sub_reqs)
+                requirements.append({
+                    'receiving_code': 'SCIENCE REQ',
+                    'receiving_name': f"One course from: {ucsd_names}",
+                    'no_articulation': False,
+                    'satisfied': satisfied,
+                    'options': all_options,
+                    'school': school,
+                    'is_choose_one': True,
                 })
 
-            satisfied = any(opt['satisfied'] for opt in options)
-            requirements.append({
-                'receiving_code': recv_code,
-                'receiving_name': recv_name,
-                'no_articulation': False,
-                'satisfied': satisfied,
-                'options': options,
-                'school': school,
-            })
+        else:
+            for art_row in articulations:
+                cell_id = art_row.get('templateCellId')
+                recv_info = template_cells.get(cell_id, {})
+                recv_code = recv_info.get('code', '')
+                recv_name = recv_info.get('name', '')
+                _append_requirement(requirements, recv_code, recv_name, art_row, completed_codes, in_progress_codes, school)
 
     except (AttributeError, KeyError, TypeError, ValueError):
         pass
 
     return requirements
+
+
+def _build_options(sending: dict, completed_codes: set, in_progress_codes: set, school: str) -> list:
+    options = []
+    for item_group in sending.get('items', []):
+        courses_in_group = [ci for ci in item_group.get('items', []) if ci.get('type') == 'Course']
+        if not courses_in_group:
+            continue
+        group_courses = [_ccc_course(ci, completed_codes, in_progress_codes, school) for ci in courses_in_group]
+        options.append({
+            'courses': group_courses,
+            'satisfied': all(c['completed'] for c in group_courses),
+        })
+    return options
+
+
+def _append_requirement(requirements, recv_code, recv_name, art_row, completed_codes, in_progress_codes, school):
+    if not art_row:
+        requirements.append({
+            'receiving_code': recv_code,
+            'receiving_name': recv_name,
+            'no_articulation': True,
+            'satisfied': False,
+            'options': [],
+            'school': school,
+            'is_choose_one': False,
+        })
+        return
+
+    sending = art_row.get('articulation', {}).get('sendingArticulation', {})
+    no_art = sending.get('noArticulationReason')
+
+    if no_art:
+        requirements.append({
+            'receiving_code': recv_code,
+            'receiving_name': recv_name,
+            'no_articulation': True,
+            'satisfied': False,
+            'options': [],
+            'school': school,
+            'is_choose_one': False,
+        })
+        return
+
+    options = _build_options(sending, completed_codes, in_progress_codes, school)
+    satisfied = any(opt['satisfied'] for opt in options)
+
+    requirements.append({
+        'receiving_code': recv_code,
+        'receiving_name': recv_name,
+        'no_articulation': False,
+        'satisfied': satisfied,
+        'options': options,
+        'school': school,
+        'is_choose_one': False,
+    })
 
 
 def compute_remaining(user) -> list:
@@ -147,11 +259,7 @@ def compute_remaining(user) -> list:
         TranscriptEntry.objects.filter(user=user, status='in_progress').values_list('course_code', flat=True)
     )
     completed_codes = _normalized_set(completed_raw)
-    in_progress_codes = _normalized_set(in_progress_raw)
-
-    for code in list(completed_codes):
-        if code in in_progress_codes:
-            in_progress_codes.discard(code)
+    in_progress_codes = _normalized_set(in_progress_raw) - completed_codes
 
     targets = TransferTarget.objects.filter(user=user)
     results = []
@@ -169,17 +277,11 @@ def compute_remaining(user) -> list:
                     art = fetch_or_cache_articulation(key)
                 except Exception:
                     continue
-                reqs = _parse_requirements(art, completed_codes, school)
+                reqs = _parse_requirements(art, completed_codes, in_progress_codes, school)
                 for req in reqs:
                     rkey = req['receiving_code']
                     if rkey not in seen_recv:
                         seen_recv.add(rkey)
-                        for opt in req.get('options', []):
-                            for c in opt.get('courses', []):
-                                if not c['completed'] and normalize_course_code(c['code']) in in_progress_codes:
-                                    c['in_progress'] = True
-                                else:
-                                    c['in_progress'] = False
                         all_requirements.append(req)
 
         results.append({

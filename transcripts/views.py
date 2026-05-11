@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import TranscriptEntry
+from .parser import parse_transcript
 from .serializers import TranscriptEntrySerializer
 
 
@@ -21,6 +22,16 @@ class TranscriptView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TranscriptParseView(APIView):
+    def post(self, request):
+        text = request.data.get('text', '')
+        school = request.data.get('school', '')
+        if school not in ('deanza', 'foothill'):
+            return Response({'error': 'school must be deanza or foothill'}, status=status.HTTP_400_BAD_REQUEST)
+        parsed = parse_transcript(text, school)
+        return Response(parsed)
 
 
 class TranscriptDetailView(APIView):

@@ -1,8 +1,10 @@
 venv/
+backend/venv/
 __pycache__/
 *.pyc
 *.pyo
 .env
+backend/.env
 db.sqlite3
 *.egg-info/
 dist/

@@ -30,6 +30,7 @@ type TargetResult = {
   school_name: string
   major_name: string
   requirements: Requirement[]
+  recommended: Requirement[]
   total: number
   satisfied: number
 }
@@ -99,6 +100,39 @@ function RequirementRow({ req }: { req: Requirement }) {
   )
 }
 
+function RecommendedSection({ courses }: { courses: Requirement[] }) {
+  const [open, setOpen] = useState(false)
+  const done = courses.filter((c) => c.satisfied).length
+
+  return (
+    <div className="mt-6 border-t border-gray-100 pt-5">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center justify-between text-left group"
+      >
+        <div>
+          <p className="text-sm font-semibold text-gray-600 group-hover:text-gray-800 transition-colors">
+            Recommended — Counts Toward Major
+          </p>
+          <p className="text-xs text-gray-400 mt-0.5">
+            Not required for admission, but completing these at De Anza saves time at {open ? '' : '— '}
+            {courses.length} courses, {done} already done
+          </p>
+        </div>
+        <span className="text-gray-300 text-lg shrink-0 ml-4">{open ? '▲' : '▼'}</span>
+      </button>
+
+      {open && (
+        <div className="space-y-2 mt-4">
+          {courses.map((req, i) => (
+            <RequirementRow key={i} req={req} />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function TargetSection({ result }: { result: TargetResult }) {
   const remaining = result.requirements.filter((r) => !r.satisfied)
   const [showSatisfied, setShowSatisfied] = useState(false)
@@ -153,6 +187,10 @@ function TargetSection({ result }: { result: TargetResult }) {
             </div>
           )}
         </div>
+      )}
+
+      {result.recommended && result.recommended.length > 0 && (
+        <RecommendedSection courses={result.recommended} />
       )}
     </div>
   )

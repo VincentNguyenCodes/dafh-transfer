@@ -110,8 +110,9 @@ def _ccc_course(ci: dict, completed_codes: set, in_progress_codes: set, school: 
     }
 
 
-def _parse_requirements(articulation_json: dict, completed_codes: set, in_progress_codes: set, school: str) -> list:
+def _parse_requirements(articulation_json: dict, completed_codes: set, in_progress_codes: set, school: str) -> tuple:
     requirements = []
+    recommended = []
     try:
         result = articulation_json.get('result', {})
         raw_arts = result.get('articulations', '[]')
@@ -178,6 +179,32 @@ def _parse_requirements(articulation_json: dict, completed_codes: set, in_progre
                     'is_choose_one': True,
                 })
 
+            # Collect recommended: has articulation but not in the advisory required list
+            advisory_codes = required_codes | all_choose_one
+            for art_row in articulations:
+                cell_id = art_row.get('templateCellId')
+                recv_info = template_cells.get(cell_id, {})
+                recv_code = recv_info.get('code', '')
+                if not recv_code or recv_code in advisory_codes:
+                    continue
+                sending = art_row.get('articulation', {}).get('sendingArticulation', {})
+                if sending.get('noArticulationReason'):
+                    continue
+                recv_name = recv_info.get('name', '')
+                options = _build_options(sending, completed_codes, in_progress_codes, school)
+                if not options:
+                    continue
+                satisfied = any(opt['satisfied'] for opt in options)
+                recommended.append({
+                    'receiving_code': recv_code,
+                    'receiving_name': recv_name,
+                    'no_articulation': False,
+                    'satisfied': satisfied,
+                    'options': options,
+                    'school': school,
+                    'is_choose_one': False,
+                })
+
         else:
             for art_row in articulations:
                 cell_id = art_row.get('templateCellId')
@@ -189,7 +216,7 @@ def _parse_requirements(articulation_json: dict, completed_codes: set, in_progre
     except (AttributeError, KeyError, TypeError, ValueError):
         pass
 
-    return requirements
+    return requirements, recommended
 
 
 def _build_options(sending: dict, completed_codes: set, in_progress_codes: set, school: str) -> list:
@@ -269,6 +296,9 @@ def compute_remaining(user) -> list:
         all_requirements = []
         seen_recv = set()
 
+        all_recommended = []
+        seen_rec = set()
+
         for sending_id in [DEANZA_ID, FOOTHILL_ID]:
             school = _school_label(sending_id)
             keys = get_keys_for_target(target.receiving_institution_id, sending_id, year_id, target.major_name)
@@ -277,18 +307,24 @@ def compute_remaining(user) -> list:
                     art = fetch_or_cache_articulation(key)
                 except Exception:
                     continue
-                reqs = _parse_requirements(art, completed_codes, in_progress_codes, school)
+                reqs, recs = _parse_requirements(art, completed_codes, in_progress_codes, school)
                 for req in reqs:
                     rkey = req['receiving_code']
                     if rkey not in seen_recv:
                         seen_recv.add(rkey)
                         all_requirements.append(req)
+                for rec in recs:
+                    rkey = rec['receiving_code']
+                    if rkey not in seen_rec:
+                        seen_rec.add(rkey)
+                        all_recommended.append(rec)
 
         results.append({
             'target': f"{target.receiving_institution_name} — {target.major_name}",
             'school_name': target.receiving_institution_name,
             'major_name': target.major_name,
             'requirements': all_requirements,
+            'recommended': all_recommended,
             'total': len(all_requirements),
             'satisfied': sum(1 for r in all_requirements if r['satisfied']),
         })

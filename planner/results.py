@@ -43,26 +43,32 @@ def get_keys_for_target(receiving_id: int, sending_id: int, academic_year_id: in
 
 
 def parse_ccc_courses(articulation_json: dict) -> list[dict]:
+    import json as _json
     courses = []
+    seen = set()
     try:
-        result = articulation_json.get('result', articulation_json)
-        groups = result.get('groups', [])
-        for group in groups:
-            for row in group.get('rows', []):
-                for cell in row.get('cells', []):
-                    if cell.get('position') == 'Sending':
-                        for course in cell.get('courses', []):
-                            code = (
-                                course.get('courseIdentifierParenthetical')
-                                or f"{course.get('prefix', '')} {course.get('courseNumber', '')}".strip()
-                            )
-                            if code:
-                                courses.append({
-                                    'course_code': code,
-                                    'course_name': course.get('courseName', ''),
-                                    'units': course.get('maxUnits') or course.get('minUnits'),
-                                })
-    except (AttributeError, KeyError, TypeError):
+        result = articulation_json.get('result', {})
+        raw = result.get('articulations', '[]')
+        articulations = _json.loads(raw) if isinstance(raw, str) else raw
+
+        for art_row in articulations:
+            sending = art_row.get('articulation', {}).get('sendingArticulation', {})
+            if sending.get('noArticulationReason'):
+                continue
+            for item_group in sending.get('items', []):
+                for course_item in item_group.get('items', []):
+                    if course_item.get('type') != 'Course':
+                        continue
+                    code = f"{course_item.get('prefix', '')} {course_item.get('courseNumber', '')}".strip()
+                    if not code or code in seen:
+                        continue
+                    seen.add(code)
+                    courses.append({
+                        'course_code': code,
+                        'course_name': course_item.get('courseTitle', ''),
+                        'units': course_item.get('maxUnits') or course_item.get('minUnits'),
+                    })
+    except (AttributeError, KeyError, TypeError, ValueError):
         pass
     return courses
 

@@ -408,9 +408,33 @@ def _append_requirement(requirements, recv_code, recv_name, art_row, completed_c
         })
 
 
+def _build_series(series_config: list, completed_codes: set, in_progress_codes: set) -> list:
+    result = []
+    for group in series_config:
+        built_series = []
+        for s in group['series']:
+            courses = []
+            for code in s['courses']:
+                norm = normalize_course_code(code)
+                completed = code in completed_codes or norm in completed_codes
+                in_prog = (not completed) and (code in in_progress_codes or norm in in_progress_codes)
+                courses.append({'code': code, 'completed': completed, 'in_progress': in_prog})
+            completed_count = sum(1 for c in courses if c['completed'])
+            built_series.append({
+                'name': s['name'],
+                'courses': courses,
+                'completed_count': completed_count,
+                'total': len(courses),
+                'satisfied': completed_count == len(courses),
+            })
+        result.append({'label': group['label'], 'series': built_series})
+    return result
+
+
 def compute_remaining(user) -> list:
     from transcripts.models import TranscriptEntry
     from .models import TransferTarget
+    from .series_config import get_series_for_target
 
     completed_raw = set(
         TranscriptEntry.objects.filter(user=user, status='completed').values_list('course_code', flat=True)
@@ -452,12 +476,16 @@ def compute_remaining(user) -> list:
                         seen_rec.add(rkey)
                         all_recommended.append(rec)
 
+        series_config = get_series_for_target(target.receiving_institution_id, target.major_name)
+        elective_series = _build_series(series_config, completed_codes, in_progress_codes)
+
         results.append({
             'target': f"{target.receiving_institution_name} — {target.major_name}",
             'school_name': target.receiving_institution_name,
             'major_name': target.major_name,
             'requirements': all_requirements,
             'recommended': all_recommended,
+            'elective_series': elective_series,
             'total': len(all_requirements),
             'satisfied': sum(1 for r in all_requirements if r['satisfied']),
         })

@@ -24,12 +24,32 @@ type Requirement = {
   school: string
 }
 
+type ElectiveCourse = {
+  code: string
+  completed: boolean
+  in_progress: boolean
+}
+
+type ElectiveSeries = {
+  name: string
+  courses: ElectiveCourse[]
+  completed_count: number
+  total: number
+  satisfied: boolean
+}
+
+type ElectiveGroup = {
+  label: string
+  series: ElectiveSeries[]
+}
+
 type TargetResult = {
   target: string
   school_name: string
   major_name: string
   requirements: Requirement[]
   recommended: Requirement[]
+  elective_series: ElectiveGroup[]
   total: number
   satisfied: number
 }
@@ -239,6 +259,18 @@ export default function RequirementsTab() {
   const aggregated = buildAggregated(results, targetColorMap, (r) => r.requirements)
   const aggregatedRec = buildAggregated(results, targetColorMap, (r) => r.recommended)
 
+  const visibleResults = selectedTarget ? results.filter((r) => r.target === selectedTarget) : results
+  const electiveGroups: ElectiveGroup[] = []
+  const seenElectiveLabels = new Set<string>()
+  for (const r of visibleResults) {
+    for (const group of (r.elective_series ?? [])) {
+      if (!seenElectiveLabels.has(group.label)) {
+        seenElectiveLabels.add(group.label)
+        electiveGroups.push(group)
+      }
+    }
+  }
+
   const visible = selectedTarget
     ? aggregated.filter((r) => r.badges.some((b) => b.target === selectedTarget))
     : aggregated
@@ -367,6 +399,41 @@ export default function RequirementsTab() {
           </div>
         </div>
       )}
+
+      {electiveGroups.map((group) => (
+        <div key={group.label} className="mb-5 border border-amber-100 rounded-2xl overflow-hidden shadow-sm">
+          <div className="px-5 py-3 bg-amber-50 border-b border-amber-100">
+            <p className="text-sm font-bold text-amber-800">{group.label}</p>
+            <p className="text-xs text-amber-500 mt-0.5">Complete all courses in one series before transfer</p>
+          </div>
+          <div className="p-4 space-y-3 bg-white">
+            {group.series.map((s) => (
+              <div key={s.name} className={`rounded-xl border px-4 py-3 ${s.satisfied ? 'bg-green-50 border-green-100' : 'border-gray-100'}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm font-semibold text-gray-700">{s.name}</p>
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${s.satisfied ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                    {s.completed_count}/{s.total} done
+                  </span>
+                </div>
+                <div className="space-y-1">
+                  {s.courses.map((c, ci) => (
+                    <div key={ci} className="flex items-center gap-2">
+                      {c.completed
+                        ? <span className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center shrink-0"><span className="text-white text-xs font-bold">✓</span></span>
+                        : <span className="w-5 h-5 rounded-full border-2 border-gray-200 shrink-0" />
+                      }
+                      <span className={`font-mono text-sm font-semibold ${c.completed ? 'text-green-600 line-through' : 'text-gray-800'}`}>{c.code}</span>
+                      {c.in_progress && (
+                        <span className="text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full">In Progress</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
 
       {satisfied.length > 0 && (
         <div className="mb-5 border border-green-100 rounded-2xl overflow-hidden shadow-sm">

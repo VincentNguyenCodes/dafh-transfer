@@ -81,12 +81,6 @@ def _extract_codes_from_items(items: list, valid_ucsd_codes: set) -> tuple:
 
 
 def _parse_advisory(template: list, valid_ucsd_codes: set, agreement_key: str = ''):
-    """
-    Parse the GeneralText advisory.
-    Returns (required: set, advisory_recommended: set, choose_one_groups: list[set])
-    or None if no advisory found.
-    Tries Claude API first (cached 365 days), falls back to regex.
-    """
     if agreement_key:
         advisory_html = '\n'.join(
             g.get('content', '') for g in template
@@ -130,7 +124,13 @@ def _parse_advisory(template: list, valid_ucsd_codes: set, agreement_key: str = 
                 advisory_rec, _ = _extract_codes_from_html(rec_section, valid_ucsd_codes)
 
             if required or choose_one or advisory_rec:
-                return required, advisory_rec, choose_one
+                return {
+                    'required': required,
+                    'recommended': advisory_rec,
+                    'choose_one_groups': choose_one,
+                    'series_groups': [],
+                    'flags': [],
+                }
             continue
 
         items = _re.findall(r'<li[^>]*>(.*?)</li>', content, _re.DOTALL | _re.I)
@@ -138,7 +138,13 @@ def _parse_advisory(template: list, valid_ucsd_codes: set, agreement_key: str = 
             continue
         required, choose_one = _extract_codes_from_items(items, valid_ucsd_codes)
         if required or choose_one:
-            return required, set(), choose_one
+            return {
+                'required': required,
+                'recommended': set(),
+                'choose_one_groups': choose_one,
+                'series_groups': [],
+                'flags': [],
+            }
 
     return None
 
@@ -160,6 +166,8 @@ def _ccc_course(ci: dict, completed_codes: set, in_progress_codes: set, school: 
 def _parse_requirements(articulation_json: dict, completed_codes: set, in_progress_codes: set, school: str, agreement_key: str = '') -> tuple:
     requirements = []
     recommended = []
+    claude_series_groups = []
+    flags = []
     try:
         result = articulation_json.get('result', {})
         raw_arts = result.get('articulations', '[]')
@@ -187,8 +195,13 @@ def _parse_requirements(articulation_json: dict, completed_codes: set, in_progre
         cell_to_art = {a['templateCellId']: a for a in articulations}
 
         if advisory:
-            required_codes, advisory_rec_codes, choose_one_groups = advisory
+            required_codes = advisory['required']
+            advisory_rec_codes = advisory['recommended']
+            choose_one_groups = advisory['choose_one_groups']
+            claude_series_groups = advisory.get('series_groups', [])
+            flags = list(advisory.get('flags', []))
             all_choose_one = set().union(*choose_one_groups) if choose_one_groups else set()
+            series_codes_set = {c for g in claude_series_groups for opt in g.get('options', []) for c in opt.get('codes', [])}
 
             for rec_code in sorted(advisory_rec_codes):
                 art_row = next((cell_to_art[cid] for cid, info in template_cells.items()
@@ -270,7 +283,7 @@ def _parse_requirements(articulation_json: dict, completed_codes: set, in_progre
                 })
 
             # Collect recommended: has articulation but not in the advisory required list
-            advisory_codes = required_codes | all_choose_one | advisory_rec_codes
+            advisory_codes = required_codes | all_choose_one | advisory_rec_codes | series_codes_set
             for art_row in articulations:
                 cell_id = art_row.get('templateCellId')
                 recv_info = template_cells.get(cell_id, {})
@@ -303,10 +316,69 @@ def _parse_requirements(articulation_json: dict, completed_codes: set, in_progre
                 recv_name = recv_info.get('name', '')
                 _append_requirement(requirements, recv_code, recv_name, art_row, completed_codes, in_progress_codes, school)
 
+        claude_elective_series = _build_elective_series_from_claude(
+            claude_series_groups, template_cells, cell_to_art, completed_codes, in_progress_codes, school
+        )
     except (AttributeError, KeyError, TypeError, ValueError):
-        pass
+        claude_elective_series = []
 
-    return requirements, recommended
+    return requirements, recommended, claude_elective_series, flags
+
+
+def _build_elective_series_from_claude(claude_series_groups, template_cells, cell_to_art, completed_codes, in_progress_codes, school):
+    out = []
+    for sg in claude_series_groups:
+        built_options = []
+        for opt in sg.get('options', []):
+            ucsd_codes = opt.get('codes', [])
+            if not ucsd_codes:
+                continue
+            de_anza_courses = []
+            seen = set()
+            all_satisfied = True
+            any_courses = False
+            for ucsd_code in ucsd_codes:
+                art_row = next((cell_to_art[cid] for cid, info in template_cells.items()
+                                if info['code'] == ucsd_code and cid in cell_to_art), None)
+                if not art_row:
+                    all_satisfied = False
+                    continue
+                sending = art_row.get('articulation', {}).get('sendingArticulation', {})
+                if sending.get('noArticulationReason'):
+                    all_satisfied = False
+                    continue
+                options_for_code = _build_options(sending, completed_codes, in_progress_codes, school)
+                if not options_for_code:
+                    all_satisfied = False
+                    continue
+                if not any(o['satisfied'] for o in options_for_code):
+                    all_satisfied = False
+                first = options_for_code[0]
+                for c in first['courses']:
+                    if c['code'] not in seen:
+                        seen.add(c['code'])
+                        de_anza_courses.append({
+                            'code': c['code'],
+                            'completed': c['completed'],
+                            'in_progress': c['in_progress'],
+                        })
+                        any_courses = True
+            if not any_courses:
+                continue
+            completed_count = sum(1 for c in de_anza_courses if c['completed'])
+            built_options.append({
+                'name': opt.get('name', '') or f"Option {len(built_options) + 1}",
+                'courses': de_anza_courses,
+                'completed_count': completed_count,
+                'total': len(de_anza_courses),
+                'satisfied': all_satisfied and completed_count == len(de_anza_courses),
+            })
+        if built_options:
+            out.append({
+                'label': sg.get('label', 'Pick one complete series'),
+                'series': built_options,
+            })
+    return out
 
 
 def _build_option_groups(sending: dict, completed_codes: set, in_progress_codes: set, school: str) -> list:
@@ -456,6 +528,10 @@ def compute_remaining(user) -> list:
         all_recommended = []
         seen_rec = set()
 
+        claude_series_combined = []
+        seen_series_labels = set()
+        all_flags = []
+
         for sending_id in [DEANZA_ID, FOOTHILL_ID]:
             school = _school_label(sending_id)
             keys = get_keys_for_target(target.receiving_institution_id, sending_id, year_id, target.major_name)
@@ -464,7 +540,7 @@ def compute_remaining(user) -> list:
                     art = fetch_or_cache_articulation(key)
                 except Exception:
                     continue
-                reqs, recs = _parse_requirements(art, completed_codes, in_progress_codes, school, agreement_key=key)
+                reqs, recs, claude_series, flags = _parse_requirements(art, completed_codes, in_progress_codes, school, agreement_key=key)
                 for req in reqs:
                     rkey = req.get('dedup_key', req['receiving_code'])
                     if rkey not in seen_recv:
@@ -475,18 +551,43 @@ def compute_remaining(user) -> list:
                     if rkey not in seen_rec:
                         seen_rec.add(rkey)
                         all_recommended.append(rec)
+                for cs in claude_series:
+                    if cs['label'] not in seen_series_labels:
+                        seen_series_labels.add(cs['label'])
+                        claude_series_combined.append(cs)
+                for f in flags:
+                    if f not in all_flags:
+                        all_flags.append(f)
 
         series_config = get_series_config(target.receiving_institution_id, target.major_name)
-        suppress_subjects = series_config.get('suppress_subjects', set())
-        if suppress_subjects:
-            all_recommended = [
-                rec for rec in all_recommended
-                if not all(
-                    c['code'].split()[0] in suppress_subjects
-                    for opt in rec['options'] for c in opt['courses']
-                )
-            ]
-        elective_series = _build_series(series_config.get('groups', []), completed_codes, in_progress_codes)
+        manual_groups = series_config.get('groups', []) if series_config else []
+        if manual_groups:
+            elective_series = _build_series(manual_groups, completed_codes, in_progress_codes)
+            suppress_subjects = series_config.get('suppress_subjects', set())
+            if suppress_subjects:
+                all_recommended = [
+                    rec for rec in all_recommended
+                    if not all(
+                        c['code'].split()[0] in suppress_subjects
+                        for opt in rec['options'] for c in opt['courses']
+                    )
+                ]
+        else:
+            elective_series = claude_series_combined
+            series_de_anza_codes = set()
+            for group in elective_series:
+                for s in group['series']:
+                    for c in s['courses']:
+                        series_de_anza_codes.add(c['code'])
+                        series_de_anza_codes.add(normalize_course_code(c['code']))
+            if series_de_anza_codes:
+                all_recommended = [
+                    rec for rec in all_recommended
+                    if not all(
+                        (c['code'] in series_de_anza_codes or normalize_course_code(c['code']) in series_de_anza_codes)
+                        for opt in rec['options'] for c in opt['courses']
+                    )
+                ]
 
         results.append({
             'target': f"{target.receiving_institution_name} — {target.major_name}",
@@ -495,6 +596,7 @@ def compute_remaining(user) -> list:
             'requirements': all_requirements,
             'recommended': all_recommended,
             'elective_series': elective_series,
+            'flags': all_flags,
             'total': len(all_requirements),
             'satisfied': sum(1 for r in all_requirements if r['satisfied']),
         })

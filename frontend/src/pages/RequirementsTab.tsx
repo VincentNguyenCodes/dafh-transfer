@@ -50,6 +50,7 @@ type TargetResult = {
   requirements: Requirement[]
   recommended: Requirement[]
   elective_series: ElectiveGroup[]
+  flags?: string[]
   total: number
   satisfied: number
 }

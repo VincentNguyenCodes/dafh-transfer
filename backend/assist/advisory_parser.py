@@ -14,7 +14,7 @@ SYSTEM_PROMPT = (
 )
 
 USER_TEMPLATE = """\
-This is the General Information advisory from an ASSIST.org articulation agreement page.
+This is the General Information advisory from an ASSIST.org articulation agreement.
 It describes what a transfer student should complete before enrolling at the university.
 
 Advisory HTML:
@@ -23,18 +23,35 @@ Advisory HTML:
 Valid receiving-institution course codes found in this agreement: {codes}
 
 Extract and return JSON with these fields:
-- required: course codes that are explicitly REQUIRED for admission
-- recommended: course codes that are highly recommended but not strictly required
-- choose_one_groups: arrays of course codes where the student needs only ONE (e.g. "MATH54 or EECS16A or MATH56")
+- required: course codes explicitly REQUIRED for admission
+- recommended: course codes highly recommended but not strictly required
+- choose_one_groups: arrays of codes where the student picks ONE (e.g. "MATH54 or EECS16A")
+- series_groups: pick-one-complete-sequence requirements. Each group has a label and
+  multiple options, where each option is a full sequence the student commits to.
+  Example: science electives where the student picks the Physics series
+  (PHYS7A + PHYS7B + PHYS7C) OR the Chemistry series (CHEM1A + CHEM1B + CHEM1C)
+  OR the Biology series. Only include in series_groups when the advisory clearly
+  presents alternative complete sequences.
+- flags: array of strings noting anything unusual or ambiguous Claude detected.
+  Use one of these category prefixes: "unit_based:", "external_ref:", "ambiguous:",
+  "series_uncertain:", "no_clear_structure:", "other:".
 
 Rules:
-- Only use codes from the provided list above
-- If a course appears in a choose_one_group, do NOT also put it in required or recommended
-- If there is no clear required vs recommended distinction, put everything in required
-- If there are no course codes at all, return empty lists
+- Only use codes from the provided list
+- If a course appears in choose_one_groups or series_groups, do NOT also put it in required or recommended
+- If a series_group option references a sequence (3+ related courses), prefer series_groups over recommended
+- Leave any field as [] if not applicable
+- Flag anything where you had to guess or where the advisory references external pages,
+  unit-based requirements ("X units from list"), or ambiguous phrasing
 
-Return exactly this JSON structure:
-{{"required": [], "recommended": [], "choose_one_groups": [[]]}}"""
+Return exactly this JSON structure (no extra fields):
+{{
+  "required": [],
+  "recommended": [],
+  "choose_one_groups": [],
+  "series_groups": [],
+  "flags": []
+}}"""
 
 
 def parse_advisory_with_claude(advisory_html: str, valid_codes: set):
@@ -49,7 +66,7 @@ def parse_advisory_with_claude(advisory_html: str, valid_codes: set):
     client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
     message = client.messages.create(
         model='claude-haiku-4-5-20251001',
-        max_tokens=1024,
+        max_tokens=1500,
         system=SYSTEM_PROMPT,
         messages=[{'role': 'user', 'content': prompt}],
     )
@@ -68,19 +85,41 @@ def parse_advisory_with_claude(advisory_html: str, valid_codes: set):
         if any(c in valid_codes for c in group)
     ]
 
-    # Singleton choose_one groups are just required courses, not real choices
     real_choose_one = [g for g in choose_one if len(g) > 1]
     singleton_codes = {c for g in choose_one if len(g) == 1 for c in g}
     required |= singleton_codes
 
-    required -= {c for g in real_choose_one for c in g}
-    recommended -= {c for g in real_choose_one for c in g}
+    series_groups = []
+    for sg in data.get('series_groups', []):
+        valid_options = []
+        for opt in sg.get('options', []):
+            codes = [c for c in opt.get('codes', []) if c in valid_codes]
+            if codes:
+                valid_options.append({'name': opt.get('name', '').strip(), 'codes': codes})
+        if valid_options:
+            series_groups.append({
+                'label': sg.get('label', '').strip() or 'Pick one complete series',
+                'options': valid_options,
+            })
 
-    return required, recommended, real_choose_one
+    series_codes = {c for g in series_groups for opt in g['options'] for c in opt['codes']}
+
+    required -= {c for g in real_choose_one for c in g} | series_codes
+    recommended -= {c for g in real_choose_one for c in g} | series_codes
+
+    flags = [str(f).strip() for f in data.get('flags', []) if str(f).strip()]
+
+    return {
+        'required': required,
+        'recommended': recommended,
+        'choose_one_groups': real_choose_one,
+        'series_groups': series_groups,
+        'flags': flags,
+    }
 
 
 def get_cached_advisory_parse(agreement_key: str, advisory_html: str, valid_codes: set):
-    cache_key = f'advisory:{agreement_key}'
+    cache_key = f'advisory_v2:{agreement_key}'
     try:
         cached = AssistCache.objects.get(
             receiving_institution_id=-1,
@@ -90,11 +129,13 @@ def get_cached_advisory_parse(agreement_key: str, advisory_html: str, valid_code
         )
         if cached.cached_at >= timezone.now() - timedelta(days=365):
             d = cached.raw_json
-            return (
-                set(d.get('required', [])),
-                set(d.get('recommended', [])),
-                [set(g) for g in d.get('choose_one_groups', [])],
-            )
+            return {
+                'required': set(d.get('required', [])),
+                'recommended': set(d.get('recommended', [])),
+                'choose_one_groups': [set(g) for g in d.get('choose_one_groups', [])],
+                'series_groups': d.get('series_groups', []),
+                'flags': d.get('flags', []),
+            }
         cached.delete()
     except AssistCache.DoesNotExist:
         pass
@@ -103,16 +144,18 @@ def get_cached_advisory_parse(agreement_key: str, advisory_html: str, valid_code
     if result is None:
         return None
 
-    required, recommended, choose_one = result
     AssistCache.objects.create(
         receiving_institution_id=-1,
         sending_institution_id=-1,
         academic_year_id=-1,
         major_code=cache_key,
         raw_json={
-            'required': list(required),
-            'recommended': list(recommended),
-            'choose_one_groups': [list(g) for g in choose_one],
+            'required': list(result['required']),
+            'recommended': list(result['recommended']),
+            'choose_one_groups': [list(g) for g in result['choose_one_groups']],
+            'series_groups': result['series_groups'],
+            'flags': result['flags'],
+            'agreement_key': agreement_key,
         },
     )
     return result

@@ -47,7 +47,7 @@ export default function Dashboard() {
     return (
       <div className="min-h-screen bg-slate-50">
         <header className="bg-white border-b border-gray-100 px-6 py-4">
-          <div className="max-w-3xl mx-auto flex items-center justify-between">
+          <div className="max-w-5xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 bg-indigo-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-xs">D</span>
@@ -60,7 +60,7 @@ export default function Dashboard() {
           </div>
         </header>
 
-        <main className="max-w-3xl mx-auto px-6 py-10">
+        <main className="max-w-5xl mx-auto px-6 py-10">
           <div className="mb-8">
             <h1 className="text-2xl font-bold text-gray-900 mb-1">Your Transfer Plan</h1>
             <p className="text-gray-500 text-sm">Complete each step to see which classes you still need.</p>
@@ -120,7 +120,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="bg-white border-b border-gray-100 px-6 py-4">
-        <div className="max-w-3xl mx-auto flex items-center justify-between">
+        <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 bg-indigo-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-xs">D</span>
@@ -134,7 +134,7 @@ export default function Dashboard() {
       </header>
 
       <div className="sticky top-0 z-20 bg-white border-b border-gray-100">
-        <div className="max-w-3xl mx-auto px-6 flex">
+        <div className="max-w-5xl mx-auto px-6 flex">
           {TABS.map((tab) => (
             <button
               key={tab.id}
@@ -151,7 +151,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <main className="max-w-3xl mx-auto px-6 py-10">
+      <main className="max-w-5xl mx-auto px-6 py-10">
         {activeTab === 'requirements' && <RequirementsTab />}
         {activeTab === 'targets' && <TransferTargetsTab />}
         {activeTab === 'classes' && <ClassesTab />}

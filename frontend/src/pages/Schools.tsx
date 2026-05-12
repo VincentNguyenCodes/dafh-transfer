@@ -2,6 +2,16 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../api/client'
 
+function Chevron() {
+  return (
+    <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
+      <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+      </svg>
+    </div>
+  )
+}
+
 type Institution = { id: number; name: string }
 type Major = { label: string; key: string }
 type Target = {
@@ -163,42 +173,51 @@ export default function Schools() {
           <div className="space-y-4">
             {rows.map((row, idx) => (
               <div key={idx} className="space-y-3">
-                <select
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white appearance-none"
-                  value={row.receiving_institution_id ?? ''}
-                  onChange={(e) => updateRow(idx, 'receiving_institution_id', Number(e.target.value))}
-                >
-                  <option value="">Select a school...</option>
-                  {institutions.map((inst) => (
-                    <option key={inst.id} value={inst.id}>{inst.name}</option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select
+                    className="w-full border border-gray-200 rounded-xl px-4 py-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white appearance-none"
+                    value={row.receiving_institution_id ?? ''}
+                    onChange={(e) => updateRow(idx, 'receiving_institution_id', Number(e.target.value))}
+                  >
+                    <option value="">Select a school...</option>
+                    {institutions.map((inst) => (
+                      <option key={inst.id} value={inst.id}>{inst.name}</option>
+                    ))}
+                  </select>
+                  <Chevron />
+                </div>
 
                 {row.receiving_institution_id && (
-                  <select
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white appearance-none disabled:opacity-50"
-                    value={row.major_code ?? ''}
-                    disabled={majorsMap[row.receiving_institution_id] === 'loading' || !majorsMap[row.receiving_institution_id]}
-                    onChange={(e) => updateRow(idx, 'major_key' as keyof Row, e.target.value)}
-                  >
-                    <option value="">
-                      {majorsMap[row.receiving_institution_id] === 'loading'
-                        ? 'Loading majors...'
-                        : 'Select a major...'}
-                    </option>
-                    {Array.isArray(majorsMap[row.receiving_institution_id]) &&
-                      (majorsMap[row.receiving_institution_id] as Major[]).map((m) => (
-                        <option key={m.key} value={m.key}>{m.label}</option>
-                      ))}
-                  </select>
+                  <div className="relative">
+                    <select
+                      className="w-full border border-gray-200 rounded-xl px-4 py-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white appearance-none disabled:opacity-50"
+                      value={row.major_code ?? ''}
+                      disabled={majorsMap[row.receiving_institution_id] === 'loading' || !majorsMap[row.receiving_institution_id]}
+                      onChange={(e) => updateRow(idx, 'major_key' as keyof Row, e.target.value)}
+                    >
+                      <option value="">
+                        {majorsMap[row.receiving_institution_id] === 'loading'
+                          ? 'Loading majors...'
+                          : 'Select a major...'}
+                      </option>
+                      {Array.isArray(majorsMap[row.receiving_institution_id]) &&
+                        (majorsMap[row.receiving_institution_id] as Major[]).map((m) => (
+                          <option key={m.key} value={m.key}>{m.label}</option>
+                        ))}
+                    </select>
+                    <Chevron />
+                  </div>
                 )}
 
                 {rows.length > 1 && (
                   <button
                     onClick={() => setRows((prev) => prev.filter((_, i) => i !== idx))}
-                    className="text-xs text-red-400 hover:text-red-600 transition-colors"
+                    className="flex items-center gap-1.5 text-xs font-medium text-red-400 hover:text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors"
                   >
-                    Remove this row
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    Remove row
                   </button>
                 )}
               </div>

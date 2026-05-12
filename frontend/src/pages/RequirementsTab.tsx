@@ -270,6 +270,8 @@ export default function RequirementsTab() {
       }
     }
   }
+  const unsatisfiedElectiveGroups = electiveGroups.filter((g) => !g.series.some((s) => s.satisfied))
+  const satisfiedElectiveGroups = electiveGroups.filter((g) => g.series.some((s) => s.satisfied))
 
   const visible = selectedTarget
     ? aggregated.filter((r) => r.badges.some((b) => b.target === selectedTarget))
@@ -381,7 +383,7 @@ export default function RequirementsTab() {
         </div>
       )}
 
-      {(unsatisfiedRec.length > 0 || electiveGroups.length > 0) && (
+      {(unsatisfiedRec.length > 0 || unsatisfiedElectiveGroups.length > 0) && (
         <div className="mb-5 border border-violet-100 rounded-2xl overflow-hidden shadow-sm">
           <div className="px-5 py-3 bg-violet-50 border-b border-violet-100 flex items-center justify-between">
             <div>
@@ -389,14 +391,14 @@ export default function RequirementsTab() {
               <p className="text-xs text-violet-400 mt-0.5">Not required for admission, but saves units after transfer</p>
             </div>
             <span className="text-sm font-bold text-violet-600 bg-white px-2.5 py-0.5 rounded-full border border-violet-100">
-              {unsatisfiedRec.length + electiveGroups.reduce((n, g) => n + g.series.length, 0)}
+              {unsatisfiedRec.length + unsatisfiedElectiveGroups.reduce((n, g) => n + g.series.length, 0)}
             </span>
           </div>
           <div className="p-4 space-y-2 bg-white">
             {unsatisfiedRec.map((req) => (
               <AggregatedRequirementRow key={req.key} req={req} />
             ))}
-            {electiveGroups.map((group) => (
+            {unsatisfiedElectiveGroups.map((group) => (
               <div key={group.label} className="rounded-2xl border border-violet-100 overflow-hidden">
                 <p className="text-xs font-semibold text-violet-500 uppercase tracking-wide px-4 pt-3 pb-1">{group.label}</p>
                 <div className="p-3 space-y-2">
@@ -450,7 +452,7 @@ export default function RequirementsTab() {
         </div>
       )}
 
-      {satisfiedRec.length > 0 && (
+      {(satisfiedRec.length > 0 || satisfiedElectiveGroups.length > 0) && (
         <div className="mb-5 border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
           <div className="px-5 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
             <div>
@@ -458,12 +460,28 @@ export default function RequirementsTab() {
               <p className="text-xs text-gray-400 mt-0.5">Recommended courses you have already finished</p>
             </div>
             <span className="text-sm font-bold text-gray-500 bg-white px-2.5 py-0.5 rounded-full border border-gray-200">
-              {satisfiedRec.length}
+              {satisfiedRec.length + satisfiedElectiveGroups.length}
             </span>
           </div>
           <div className="p-4 space-y-2 bg-white">
             {satisfiedRec.map((req) => (
               <AggregatedRequirementRow key={req.key} req={req} />
+            ))}
+            {satisfiedElectiveGroups.map((group) => (
+              <div key={group.label} className="rounded-xl border border-green-100 bg-green-50 px-4 py-3">
+                <p className="text-xs font-semibold text-green-600 uppercase tracking-wide mb-2">{group.label}</p>
+                {group.series.filter((s) => s.satisfied).map((s) => (
+                  <div key={s.name} className="space-y-1">
+                    <p className="text-sm font-semibold text-green-700 mb-1">{s.name} — completed</p>
+                    {s.courses.map((c, ci) => (
+                      <div key={ci} className="flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center shrink-0"><span className="text-white text-xs font-bold">✓</span></span>
+                        <span className="font-mono text-sm font-semibold text-green-600 line-through">{c.code}</span>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
             ))}
           </div>
         </div>

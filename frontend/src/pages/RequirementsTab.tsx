@@ -299,7 +299,7 @@ export default function RequirementsTab() {
         <div className="flex items-center gap-5">
           <div className="flex-1">
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs font-semibold text-indigo-600">Required</span>
+              <span className="text-xs font-semibold text-indigo-600">Required Classes</span>
               <span className="text-xs font-bold text-gray-700">
                 {satisfied.length} / {satisfied.length + unsatisfied.length} done
               </span>
@@ -314,7 +314,7 @@ export default function RequirementsTab() {
           <div className="w-px h-8 bg-gray-200 shrink-0"></div>
           <div className="flex-1">
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs font-semibold text-violet-600">Recommended</span>
+              <span className="text-xs font-semibold text-violet-600">Recommended Classes</span>
               <span className="text-xs font-bold text-gray-700">
                 {satisfiedRec.length} / {satisfiedRec.length + unsatisfiedRec.length} done
               </span>
@@ -334,7 +334,7 @@ export default function RequirementsTab() {
         <div className="mb-5 border border-indigo-100 rounded-2xl overflow-hidden shadow-sm">
           <div className="px-5 py-3 bg-indigo-50 border-b border-indigo-100 flex items-center justify-between">
             <div>
-              <p className="text-sm font-bold text-indigo-800">Required - Need to Take</p>
+              <p className="text-sm font-bold text-indigo-800">Required Classes - Need to Take</p>
               <p className="text-xs text-indigo-400 mt-0.5">Must complete for admission</p>
             </div>
             <span className="text-sm font-bold text-indigo-600 bg-white px-2.5 py-0.5 rounded-full border border-indigo-100">
@@ -353,7 +353,7 @@ export default function RequirementsTab() {
         <div className="mb-5 border border-violet-100 rounded-2xl overflow-hidden shadow-sm">
           <div className="px-5 py-3 bg-violet-50 border-b border-violet-100 flex items-center justify-between">
             <div>
-              <p className="text-sm font-bold text-violet-800">Recommended - Need to Take</p>
+              <p className="text-sm font-bold text-violet-800">Recommended Classes - Need to Take</p>
               <p className="text-xs text-violet-400 mt-0.5">Not required for admission, but saves units after transfer</p>
             </div>
             <span className="text-sm font-bold text-violet-600 bg-white px-2.5 py-0.5 rounded-full border border-violet-100">
@@ -372,7 +372,7 @@ export default function RequirementsTab() {
         <div className="mb-5 border border-green-100 rounded-2xl overflow-hidden shadow-sm">
           <div className="px-5 py-3 bg-green-50 border-b border-green-100 flex items-center justify-between">
             <div>
-              <p className="text-sm font-bold text-green-800">Completed Required</p>
+              <p className="text-sm font-bold text-green-800">Completed Required Classes</p>
               <p className="text-xs text-green-400 mt-0.5">Required courses you have already finished</p>
             </div>
             <span className="text-sm font-bold text-green-600 bg-white px-2.5 py-0.5 rounded-full border border-green-100">
@@ -391,7 +391,7 @@ export default function RequirementsTab() {
         <div className="mb-5 border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
           <div className="px-5 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
             <div>
-              <p className="text-sm font-bold text-gray-700">Completed Recommended</p>
+              <p className="text-sm font-bold text-gray-700">Completed Recommended Classes</p>
               <p className="text-xs text-gray-400 mt-0.5">Recommended courses you have already finished</p>
             </div>
             <span className="text-sm font-bold text-gray-500 bg-white px-2.5 py-0.5 rounded-full border border-gray-200">

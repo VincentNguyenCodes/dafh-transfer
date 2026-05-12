@@ -151,7 +151,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <main className="max-w-5xl mx-auto px-6 py-10">
+      <main className="w-full px-8 py-10">
         {activeTab === 'requirements' && <RequirementsTab />}
         {activeTab === 'targets' && <TransferTargetsTab />}
         {activeTab === 'classes' && <ClassesTab />}

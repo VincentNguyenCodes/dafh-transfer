@@ -295,7 +295,7 @@ export default function RequirementsTab() {
         })}
       </div>
 
-      <div className="sticky top-[44px] z-10 -mx-6 px-6 py-3 mb-6 bg-white/95 backdrop-blur border-b border-gray-100 shadow-sm">
+      <div className="sticky top-[44px] z-10 -mx-8 px-8 py-3 mb-6 bg-white/95 backdrop-blur border-b border-gray-100 shadow-sm">
         <div className="flex items-center gap-5">
           <div className="flex-1">
             <div className="flex items-center justify-between mb-1.5">

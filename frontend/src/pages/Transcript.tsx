@@ -51,6 +51,7 @@ export default function Transcript() {
     }
   }
 
+
   const removeParsed = (school: SchoolKey, idx: number) => {
     setParsed((p) => ({ ...p, [school]: p[school].filter((_, i) => i !== idx) }))
   }
@@ -235,7 +236,7 @@ export default function Transcript() {
         {renderSchool('deanza', 'De Anza College')}
         {renderSchool('foothill', 'Foothill College')}
 
-        {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+{error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
         <button
           onClick={handleSave}

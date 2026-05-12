@@ -36,10 +36,8 @@ export default function Landing() {
     <div className="min-h-screen flex">
       <div className="hidden lg:flex lg:w-1/2 bg-indigo-600 flex-col justify-between p-12">
         <div>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-              <span className="text-indigo-600 font-bold text-sm">D</span>
-            </div>
+          <div className="flex items-center gap-3">
+            <img src="/src/assets/logo.png" alt="DAFH Transfer" className="w-12 h-12 object-contain bg-white rounded-xl p-1" />
             <span className="text-white font-semibold text-lg">DAFH Transfer</span>
           </div>
         </div>
@@ -62,9 +60,7 @@ export default function Landing() {
         <div className="w-full max-w-md">
           <div className="mb-8 lg:hidden">
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">D</span>
-              </div>
+              <img src="/src/assets/logo.png" alt="DAFH Transfer" className="w-8 h-8 object-contain" />
               <span className="text-gray-900 font-semibold text-lg">DAFH Transfer</span>
             </div>
           </div>

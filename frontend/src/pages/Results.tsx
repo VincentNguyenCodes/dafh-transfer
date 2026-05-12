@@ -222,9 +222,7 @@ export default function Results() {
           <div className="flex items-center gap-3">
             <button onClick={() => navigate('/dashboard')} className="text-gray-400 hover:text-gray-600 transition-colors">←</button>
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 bg-indigo-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xs">D</span>
-              </div>
+              <img src="/src/assets/logo.png" alt="DAFH Transfer" className="w-8 h-8 object-contain" />
               <span className="font-semibold text-gray-900">DAFH Transfer</span>
             </div>
           </div>

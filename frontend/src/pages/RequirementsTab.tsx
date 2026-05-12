@@ -59,16 +59,17 @@ const BADGE_COLORS = [
   { bg: 'bg-cyan-100', text: 'text-cyan-700' },
 ]
 
-function buildAggregated(results: TargetResult[]): AggregatedReq[] {
-  const targetColorMap = new Map<string, number>()
-  results.forEach((r, i) => targetColorMap.set(r.target, i % BADGE_COLORS.length))
-
+function buildAggregated(
+  results: TargetResult[],
+  targetColorMap: Map<string, number>,
+  getReqs: (r: TargetResult) => Requirement[]
+): AggregatedReq[] {
   const map = new Map<string, AggregatedReq>()
 
   for (const result of results) {
     const colorIdx = targetColorMap.get(result.target) ?? 0
 
-    for (const req of result.requirements) {
+    for (const req of getReqs(result)) {
       const key = req.no_articulation
         ? `no_art:${req.receiving_code}:${result.target}`
         : req.options.flatMap((o) => o.courses.map((c) => c.code)).sort().join('|')
@@ -232,18 +233,26 @@ export default function RequirementsTab() {
     )
   }
 
-  const aggregated = buildAggregated(results)
+  const targetColorMap = new Map<string, number>()
+  results.forEach((r, i) => targetColorMap.set(r.target, i % BADGE_COLORS.length))
+
+  const aggregated = buildAggregated(results, targetColorMap, (r) => r.requirements)
+  const aggregatedRec = buildAggregated(results, targetColorMap, (r) => r.recommended)
 
   const visible = selectedTarget
     ? aggregated.filter((r) => r.badges.some((b) => b.target === selectedTarget))
     : aggregated
 
+  const visibleRec = selectedTarget
+    ? aggregatedRec.filter((r) => r.badges.some((b) => b.target === selectedTarget))
+    : aggregatedRec
+
   const unsatisfied = visible.filter((r) => !r.satisfied && !r.no_articulation)
   const satisfied = visible.filter((r) => r.satisfied)
   const noArticulation = visible.filter((r) => r.no_articulation)
 
-  const targetColorMap = new Map<string, number>()
-  results.forEach((r, i) => targetColorMap.set(r.target, i % BADGE_COLORS.length))
+  const unsatisfiedRec = visibleRec.filter((r) => !r.satisfied && !r.no_articulation)
+  const satisfiedRec = visibleRec.filter((r) => r.satisfied)
 
   return (
     <div>
@@ -295,13 +304,18 @@ export default function RequirementsTab() {
           {unsatisfied.length > 0 && (
             <>
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 px-5 py-4 mb-6 flex items-center gap-4">
-                <div>
+                <div className="text-center">
                   <p className="text-3xl font-bold text-indigo-600">{unsatisfied.length}</p>
-                  <p className="text-xs text-gray-400">classes still needed</p>
+                  <p className="text-xs text-gray-400">required</p>
+                </div>
+                <div className="h-10 w-px bg-gray-100"></div>
+                <div className="text-center">
+                  <p className="text-3xl font-bold text-violet-500">{unsatisfiedRec.length}</p>
+                  <p className="text-xs text-gray-400">recommended</p>
                 </div>
                 <div className="h-10 w-px bg-gray-100"></div>
                 <p className="text-xs text-gray-500 leading-relaxed">
-                  Hover a badge to see the major. If multiple options appear for a class, you only need one.
+                  Hover a badge to see the major. If multiple options appear, you only need one.
                 </p>
               </div>
               <div className="space-y-2 mb-8">
@@ -332,6 +346,43 @@ export default function RequirementsTab() {
           <p className="text-xs text-gray-400">
             {noArticulation.length} requirement{noArticulation.length > 1 ? 's' : ''} have no community college articulation path and cannot be satisfied at De Anza or Foothill.
           </p>
+        </div>
+      )}
+
+      {visibleRec.length > 0 && (
+        <div className="mt-8 border-t border-gray-100 pt-6">
+          <div className="mb-4">
+            <p className="text-sm font-bold text-gray-700">Recommended - Counts Toward Major</p>
+            <p className="text-xs text-gray-400 mt-0.5">
+              Not required for admission, but taking these at De Anza or Foothill means fewer units to complete after you transfer.
+            </p>
+          </div>
+
+          {unsatisfiedRec.length > 0 && (
+            <>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">
+                Not yet taken ({unsatisfiedRec.length})
+              </p>
+              <div className="space-y-2 mb-6">
+                {unsatisfiedRec.map((req) => (
+                  <AggregatedRequirementRow key={req.key} req={req} />
+                ))}
+              </div>
+            </>
+          )}
+
+          {satisfiedRec.length > 0 && (
+            <>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">
+                Completed ({satisfiedRec.length})
+              </p>
+              <div className="space-y-2">
+                {satisfiedRec.map((req) => (
+                  <AggregatedRequirementRow key={req.key} req={req} />
+                ))}
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>

@@ -174,7 +174,6 @@ export default function RequirementsTab() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [selectedTarget, setSelectedTarget] = useState<string | null>(null)
-  const [showSatisfied, setShowSatisfied] = useState(false)
 
   const load = () => {
     setLoading(true)
@@ -272,49 +271,45 @@ export default function RequirementsTab() {
         })}
       </div>
 
-      {unsatisfied.length === 0 && !showSatisfied ? (
+      {unsatisfied.length === 0 && satisfied.length === 0 ? (
         <div className="bg-green-50 border border-green-100 rounded-2xl p-5 text-center mb-4">
           <p className="text-green-700 font-semibold">All requirements satisfied!</p>
         </div>
       ) : (
         <>
           {unsatisfied.length > 0 && (
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 px-5 py-4 mb-6 flex items-center gap-4">
-              <div>
-                <p className="text-3xl font-bold text-indigo-600">{unsatisfied.length}</p>
-                <p className="text-xs text-gray-400">classes still needed</p>
+            <>
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 px-5 py-4 mb-6 flex items-center gap-4">
+                <div>
+                  <p className="text-3xl font-bold text-indigo-600">{unsatisfied.length}</p>
+                  <p className="text-xs text-gray-400">classes still needed</p>
+                </div>
+                <div className="h-10 w-px bg-gray-100"></div>
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  Hover a badge to see the major. If multiple options appear for a class, you only need one.
+                </p>
               </div>
-              <div className="h-10 w-px bg-gray-100"></div>
-              <p className="text-xs text-gray-500 leading-relaxed">
-                Hover a badge to see the major. If multiple options appear for a class, you only need one.
+              <div className="space-y-2 mb-8">
+                {unsatisfied.map((req) => (
+                  <AggregatedRequirementRow key={req.key} req={req} />
+                ))}
+              </div>
+            </>
+          )}
+
+          {satisfied.length > 0 && (
+            <>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">
+                Completed ({satisfied.length})
               </p>
-            </div>
+              <div className="space-y-2 mb-4">
+                {satisfied.map((req) => (
+                  <AggregatedRequirementRow key={req.key} req={req} />
+                ))}
+              </div>
+            </>
           )}
-
-          <div className="space-y-2 mb-4">
-            {unsatisfied.map((req) => (
-              <AggregatedRequirementRow key={req.key} req={req} />
-            ))}
-          </div>
         </>
-      )}
-
-      {satisfied.length > 0 && (
-        <div className="mb-4">
-          <button
-            onClick={() => setShowSatisfied((s) => !s)}
-            className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            {showSatisfied ? 'Hide' : 'Show'} {satisfied.length} completed requirements
-          </button>
-          {showSatisfied && (
-            <div className="space-y-2 mt-2">
-              {satisfied.map((req) => (
-                <AggregatedRequirementRow key={req.key} req={req} />
-              ))}
-            </div>
-          )}
-        </div>
       )}
 
       {noArticulation.length > 0 && (

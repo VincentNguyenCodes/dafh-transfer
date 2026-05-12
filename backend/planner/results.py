@@ -309,17 +309,46 @@ def _parse_requirements(articulation_json: dict, completed_codes: set, in_progre
     return requirements, recommended
 
 
-def _build_options(sending: dict, completed_codes: set, in_progress_codes: set, school: str) -> list:
-    options = []
-    for item_group in sending.get('items', []):
+def _build_option_groups(sending: dict, completed_codes: set, in_progress_codes: set, school: str) -> list:
+    items = sending.get('items', [])
+    if not items:
+        return []
+
+    conjunctions = sending.get('courseGroupConjunctions', [])
+    has_and_between_groups = any(cg.get('groupConjunction') == 'And' for cg in conjunctions)
+
+    per_group = []
+    for item_group in items:
         courses_in_group = [ci for ci in item_group.get('items', []) if ci.get('type') == 'Course']
         if not courses_in_group:
             continue
+        within_conjunction = item_group.get('courseConjunction', 'And')
         group_courses = [_ccc_course(ci, completed_codes, in_progress_codes, school) for ci in courses_in_group]
-        options.append({
-            'courses': group_courses,
-            'satisfied': all(c['completed'] for c in group_courses),
-        })
+
+        if within_conjunction == 'Or':
+            group_options = [{'courses': [c], 'satisfied': c['completed']} for c in group_courses]
+        else:
+            group_options = [{'courses': group_courses, 'satisfied': all(c['completed'] for c in group_courses)}]
+
+        per_group.append(group_options)
+
+    if not per_group:
+        return []
+
+    if has_and_between_groups:
+        return per_group
+    else:
+        merged = []
+        for g in per_group:
+            merged.extend(g)
+        return [merged]
+
+
+def _build_options(sending: dict, completed_codes: set, in_progress_codes: set, school: str) -> list:
+    groups = _build_option_groups(sending, completed_codes, in_progress_codes, school)
+    options = []
+    for g in groups:
+        options.extend(g)
     return options
 
 
@@ -351,18 +380,32 @@ def _append_requirement(requirements, recv_code, recv_name, art_row, completed_c
         })
         return
 
-    options = _build_options(sending, completed_codes, in_progress_codes, school)
-    satisfied = any(opt['satisfied'] for opt in options)
+    option_groups = _build_option_groups(sending, completed_codes, in_progress_codes, school)
 
-    requirements.append({
-        'receiving_code': recv_code,
-        'receiving_name': recv_name,
-        'no_articulation': False,
-        'satisfied': satisfied,
-        'options': options,
-        'school': school,
-        'is_choose_one': False,
-    })
+    if not option_groups:
+        requirements.append({
+            'receiving_code': recv_code,
+            'receiving_name': recv_name,
+            'no_articulation': True,
+            'satisfied': False,
+            'options': [],
+            'school': school,
+            'is_choose_one': False,
+        })
+        return
+
+    for idx, options in enumerate(option_groups):
+        satisfied = any(opt['satisfied'] for opt in options)
+        code = recv_code if len(option_groups) == 1 else f'{recv_code}_{idx}'
+        requirements.append({
+            'receiving_code': code,
+            'receiving_name': recv_name,
+            'no_articulation': False,
+            'satisfied': satisfied,
+            'options': options,
+            'school': school,
+            'is_choose_one': False,
+        })
 
 
 def compute_remaining(user) -> list:

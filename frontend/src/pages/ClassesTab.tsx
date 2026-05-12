@@ -31,6 +31,7 @@ export default function ClassesTab() {
   const [savedEntries, setSavedEntries] = useState<Entry[]>([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [saveMsg, setSaveMsg] = useState('')
 
   useEffect(() => {
     api.get('/transcript/').then(({ data }) => setSavedEntries(data))
@@ -71,23 +72,27 @@ export default function ClassesTab() {
   }
 
   const handleSave = async () => {
-    setSaving(true)
     setError('')
+    setSaveMsg('')
+    const toSave = [
+      ...parsed.deanza,
+      ...parsed.foothill,
+      ...manualEntries.filter((e) => e.course_code.trim()),
+    ]
+    if (toSave.length === 0) {
+      setSaveMsg('No new classes to save. Paste a transcript or add a class manually first.')
+      return
+    }
+    setSaving(true)
     try {
-      const toSave = [
-        ...parsed.deanza,
-        ...parsed.foothill,
-        ...manualEntries.filter((e) => e.course_code.trim()),
-      ]
-      if (toSave.length > 0) {
-        const { data } = await api.post('/transcript/', toSave)
-        setSavedEntries((prev) => [...prev, ...(Array.isArray(data) ? data : [data])])
-        setParsed({ deanza: [], foothill: [] })
-        setPasteText({ deanza: '', foothill: '' })
-        setManualEntries([])
-      }
+      const { data } = await api.post('/transcript/', toSave)
+      setSavedEntries((prev) => [...prev, ...(Array.isArray(data) ? data : [data])])
+      setParsed({ deanza: [], foothill: [] })
+      setPasteText({ deanza: '', foothill: '' })
+      setManualEntries([])
+      setSaveMsg(`Saved ${toSave.length} class${toSave.length > 1 ? 'es' : ''}.`)
     } catch {
-      setError('Failed to save. Some classes may already be saved.')
+      setError('Failed to save. Some classes may already be saved - try removing duplicates.')
     } finally {
       setSaving(false)
     }
@@ -227,7 +232,16 @@ export default function ClassesTab() {
       {renderSchool('deanza', 'De Anza College')}
       {renderSchool('foothill', 'Foothill College')}
 
-      {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-3">
+          <p className="text-red-600 text-sm">{error}</p>
+        </div>
+      )}
+      {saveMsg && !error && (
+        <div className="bg-green-50 border border-green-100 rounded-xl px-4 py-3 mb-3">
+          <p className="text-green-700 text-sm">{saveMsg}</p>
+        </div>
+      )}
 
       <button
         onClick={handleSave}

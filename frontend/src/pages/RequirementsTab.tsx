@@ -124,9 +124,24 @@ function AggregatedRequirementRow({ req }: { req: AggregatedReq }) {
         <p className="text-xs text-gray-400 italic">No community college articulation available</p>
       )}
 
-      {!req.no_articulation && req.satisfied && (
-        <p className="text-xs text-green-600">Already satisfied</p>
-      )}
+      {!req.no_articulation && req.satisfied && (() => {
+        const completedOpt = req.options.find((o) => o.satisfied)
+        if (!completedOpt) return <p className="text-xs text-green-600">Already satisfied</p>
+        return (
+          <div className="space-y-1">
+            {completedOpt.courses.map((c, ci) => (
+              <div key={ci} className="flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center shrink-0">
+                  <span className="text-white text-xs font-bold">✓</span>
+                </span>
+                <span className="font-mono text-sm font-semibold text-green-700">{c.code}</span>
+                <span className="text-xs text-gray-500 truncate">{c.name}</span>
+                {c.units && <span className="text-xs text-gray-300 shrink-0 ml-auto">{c.units}u</span>}
+              </div>
+            ))}
+          </div>
+        )
+      })()}
 
       {!req.no_articulation && !req.satisfied && remaining.length > 0 && (
         <div className="space-y-2">

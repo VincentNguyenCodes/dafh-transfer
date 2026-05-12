@@ -20,65 +20,104 @@ def parse_transcript(text: str, school: str) -> list[dict]:
 def _parse_completed(text: str, school: str, seen: set) -> list[dict]:
     by_key: dict[str, dict] = {}
     lines = text.split('\n')
-    i = 0
 
-    while i < len(lines) - 2:
+    EXCLUDED_GRADES = {'W', 'EW', 'NC', 'NP', 'RD', 'UW'}
+    IN_PROGRESS_GRADES = {'IP', 'I'}
+
+    i = 0
+    while i < len(lines):
         line = lines[i].strip()
 
-        m = re.match(
+        # 3-line format: line ends exactly at DU/FU, title on next line, grade line after
+        header_m = re.match(
             r'^([A-Z][A-Z /]*?)\s+([DF][0-9A-Z]*\.?[A-Z0-9]*)\s+(DU|FU)\s*$',
             line,
         )
-        if not m:
+        if header_m and i + 1 < len(lines):
+            subject = header_m.group(1).strip()
+            code = header_m.group(2).strip()
+            title_line = lines[i + 1].strip()
+
+            if title_line and not re.match(r'^(Subject|Term|Institution|Transcript|Course)', title_line):
+                j = i + 2
+                while j < min(i + 5, len(lines)) and not lines[j].strip():
+                    j += 1
+                if j < len(lines):
+                    grade_line = lines[j].strip()
+                    gm = re.match(r'^([A-Z]{1,2}[+-]?|IP)\s+([\d.]+)', grade_line)
+                    if gm:
+                        grade = gm.group(1)
+                        units = float(gm.group(2))
+                        key = f'{subject}_{code}'
+                        seen.add(key)
+                        if grade not in EXCLUDED_GRADES:
+                            status = 'in_progress' if grade in IN_PROGRESS_GRADES else 'completed'
+                            by_key[key] = {
+                                'school': school,
+                                'course_code': f'{subject} {code}',
+                                'course_name': title_line,
+                                'units': str(units),
+                                'grade': grade,
+                                'status': status,
+                            }
+                        i = j + 1
+                        continue
+
+        # Single-line format with two numeric columns (attempted + earned) then grade:
+        # SUBJECT CODE DU/FU Title 5.00 5.00 A [Grade Mode] [Quality Points]
+        sl2 = re.match(
+            r'^([A-Z][A-Z /]*?)\s+([DF][0-9A-Z]*\.?[A-Z0-9]*)\s+(DU|FU)\s+(.+?)\s+([\d.]+)\s+([\d.]+)\s+([A-Z]{1,2}[+-]?)(?=\s|$)',
+            line,
+        )
+        if sl2:
+            subject = sl2.group(1).strip()
+            code = sl2.group(2).strip()
+            title_line = sl2.group(4).strip()
+            units = float(sl2.group(5))
+            grade = sl2.group(7)
+            key = f'{subject}_{code}'
+            seen.add(key)
+            if grade not in EXCLUDED_GRADES:
+                status = 'in_progress' if grade in IN_PROGRESS_GRADES else 'completed'
+                by_key[key] = {
+                    'school': school,
+                    'course_code': f'{subject} {code}',
+                    'course_name': title_line,
+                    'units': str(units),
+                    'grade': grade,
+                    'status': status,
+                }
             i += 1
             continue
 
-        subject = m.group(1).strip()
-        code = m.group(2).strip()
-
-        title_line = lines[i + 1].strip() if i + 1 < len(lines) else ''
-
-        if not title_line or re.match(r'^(Subject|Term|Institution|Transcript|Course)', title_line):
+        # Single-line format with one numeric column then grade:
+        # SUBJECT CODE DU/FU Title 5.00 A [Grade Mode]
+        sl1 = re.match(
+            r'^([A-Z][A-Z /]*?)\s+([DF][0-9A-Z]*\.?[A-Z0-9]*)\s+(DU|FU)\s+(.+?)\s+([\d.]+)\s+([A-Z]{1,2}[+-]?)(?=\s|$)',
+            line,
+        )
+        if sl1:
+            subject = sl1.group(1).strip()
+            code = sl1.group(2).strip()
+            title_line = sl1.group(4).strip()
+            units = float(sl1.group(5))
+            grade = sl1.group(6)
+            key = f'{subject}_{code}'
+            seen.add(key)
+            if grade not in EXCLUDED_GRADES:
+                status = 'in_progress' if grade in IN_PROGRESS_GRADES else 'completed'
+                by_key[key] = {
+                    'school': school,
+                    'course_code': f'{subject} {code}',
+                    'course_name': title_line,
+                    'units': str(units),
+                    'grade': grade,
+                    'status': status,
+                }
             i += 1
             continue
 
-        # Skip blank lines between title and grade (some transcript formats insert one)
-        j = i + 2
-        while j < min(i + 5, len(lines)) and not lines[j].strip():
-            j += 1
-
-        if j >= len(lines):
-            i += 1
-            continue
-
-        grade_line = lines[j].strip()
-        gm = re.match(r'^([A-Z]{1,2}[+-]?|IP)\s+([\d.]+)', grade_line)
-        if not gm:
-            i += 1
-            continue
-
-        grade = gm.group(1)
-        units = float(gm.group(2))
-
-        EXCLUDED_GRADES = {'W', 'EW', 'NC', 'NP', 'RD', 'UW'}
-        IN_PROGRESS_GRADES = {'IP', 'I'}
-
-        key = f'{subject}_{code}'
-        seen.add(key)
-
-        if grade not in EXCLUDED_GRADES:
-            status = 'in_progress' if grade in IN_PROGRESS_GRADES else 'completed'
-            # Overwrite if retaken — last occurrence in transcript = most recent term
-            by_key[key] = {
-                'school': school,
-                'course_code': f'{subject} {code}',
-                'course_name': title_line,
-                'units': str(units),
-                'grade': grade,
-                'status': status,
-            }
-
-        i = j + 1
+        i += 1
 
     return list(by_key.values())
 

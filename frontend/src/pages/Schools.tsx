@@ -95,7 +95,7 @@ export default function Schools() {
       }
       if (saved) setRows([{}])
       await api.patch('/progress/', { current_step: 3 })
-      navigate('/results')
+      navigate('/dashboard')
     } catch {
       setError('Failed to save. Check your selections and try again.')
     } finally {

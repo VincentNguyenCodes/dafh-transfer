@@ -6,6 +6,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Transfer planner for De Anza (ID: 113) and Foothill (ID: 51) community college students. Given a student's transcript and selected transfer targets (UC/CSU school + major), it fetches live articulation data from ASSIST.org and shows which CCC courses satisfy each transfer requirement.
 
+## Critical Rules
+  - Commits: suggest 3 options before every commit, commit after each small change, only push at the end after asking                                  
+  - No Co-Authored-By in commit messages                                                                                                               
+  - No em dashes in any written text                                                                                                                   
+  - No comments or docstrings in code files 
+
 ## Commands
 
 ### Backend (Django)

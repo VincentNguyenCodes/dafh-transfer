@@ -34,6 +34,8 @@ export default function Schools() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [editMajorKey, setEditMajorKey] = useState('')
 
   useEffect(() => {
     Promise.all([
@@ -84,6 +86,34 @@ export default function Schools() {
   const deleteTarget = async (id: number) => {
     await api.delete(`/targets/${id}/`)
     setSavedTargets((prev) => prev.filter((t) => t.id !== id))
+  }
+
+  const startEdit = (t: Target) => {
+    setEditingId(t.id!)
+    setEditMajorKey(t.major_code)
+    loadMajors(t.receiving_institution_id)
+  }
+
+  const cancelEdit = () => { setEditingId(null); setEditMajorKey('') }
+
+  const handleEdit = async (t: Target) => {
+    const majors = majorsMap[t.receiving_institution_id]
+    const major = Array.isArray(majors) ? majors.find((m) => m.key === editMajorKey) : null
+    if (!major || major.key === t.major_code) { cancelEdit(); return }
+    try {
+      await api.delete(`/targets/${t.id}/`)
+      const { data } = await api.post('/targets/', {
+        receiving_institution_id: t.receiving_institution_id,
+        receiving_institution_name: t.receiving_institution_name,
+        major_name: major.label,
+        major_code: major.key,
+        academic_year_id: t.academic_year_id,
+      })
+      setSavedTargets((prev) => prev.map((s) => s.id === t.id ? data : s))
+      cancelEdit()
+    } catch {
+      setError('Failed to update. Try again.')
+    }
   }
 
   const handleSave = async () => {
@@ -152,14 +182,46 @@ export default function Schools() {
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Saved targets</p>
             <div className="space-y-2">
               {savedTargets.map((t) => (
-                <div key={t.id} className="flex items-center gap-3 bg-gray-50 rounded-xl px-4 py-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{t.receiving_institution_name}</p>
-                    <p className="text-xs text-gray-500 truncate">{t.major_name}</p>
-                  </div>
-                  <button onClick={() => deleteTarget(t.id!)} className="text-red-400 hover:text-red-600 text-xs shrink-0 transition-colors">
-                    Remove
-                  </button>
+                <div key={t.id} className="bg-gray-50 rounded-xl px-4 py-3">
+                  {editingId === t.id ? (
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-gray-900">{t.receiving_institution_name}</p>
+                      <div className="relative">
+                        <select
+                          className="w-full border border-gray-200 rounded-lg px-3 py-2 pr-9 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white appearance-none disabled:opacity-50"
+                          value={editMajorKey}
+                          disabled={majorsMap[t.receiving_institution_id] === 'loading'}
+                          onChange={(e) => setEditMajorKey(e.target.value)}
+                        >
+                          {majorsMap[t.receiving_institution_id] === 'loading' && <option>Loading majors...</option>}
+                          {Array.isArray(majorsMap[t.receiving_institution_id]) &&
+                            (majorsMap[t.receiving_institution_id] as Major[]).map((m) => (
+                              <option key={m.key} value={m.key}>{m.label}</option>
+                            ))}
+                        </select>
+                        <Chevron />
+                      </div>
+                      <div className="flex gap-3">
+                        <button onClick={() => handleEdit(t)} className="text-xs text-indigo-600 hover:text-indigo-800 font-medium transition-colors">Save</button>
+                        <button onClick={cancelEdit} className="text-xs text-gray-400 hover:text-gray-600 transition-colors">Cancel</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">{t.receiving_institution_name}</p>
+                        <p className="text-xs text-gray-500 truncate">{t.major_name}</p>
+                      </div>
+                      <button onClick={() => startEdit(t)} className="text-indigo-400 hover:text-indigo-600 text-xs shrink-0 transition-colors font-medium">
+                        Edit
+                      </button>
+                      <button onClick={() => deleteTarget(t.id!)} className="text-red-400 hover:text-red-600 shrink-0 transition-colors">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -170,52 +232,55 @@ export default function Schools() {
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Add schools</p>
           <div className="space-y-4">
             {rows.map((row, idx) => (
-              <div key={idx} className="space-y-3">
-                <div className="relative">
-                  <select
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white appearance-none"
-                    value={row.receiving_institution_id ?? ''}
-                    onChange={(e) => updateRow(idx, 'receiving_institution_id', Number(e.target.value))}
-                  >
-                    <option value="">Select a school...</option>
-                    {institutions.map((inst) => (
-                      <option key={inst.id} value={inst.id}>{inst.name}</option>
-                    ))}
-                  </select>
-                  <Chevron />
-                </div>
-
-                {row.receiving_institution_id && (
+              <div key={idx} className="flex items-start gap-2">
+                <div className="flex-1 space-y-3">
                   <div className="relative">
                     <select
-                      className="w-full border border-gray-200 rounded-xl px-4 py-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white appearance-none disabled:opacity-50"
-                      value={row.major_code ?? ''}
-                      disabled={majorsMap[row.receiving_institution_id] === 'loading' || !majorsMap[row.receiving_institution_id]}
-                      onChange={(e) => updateRow(idx, 'major_key' as keyof Row, e.target.value)}
+                      className="w-full border border-gray-200 rounded-xl px-4 py-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white appearance-none"
+                      value={row.receiving_institution_id ?? ''}
+                      onChange={(e) => updateRow(idx, 'receiving_institution_id', Number(e.target.value))}
                     >
-                      <option value="">
-                        {majorsMap[row.receiving_institution_id] === 'loading'
-                          ? 'Loading majors...'
-                          : 'Select a major...'}
-                      </option>
-                      {Array.isArray(majorsMap[row.receiving_institution_id]) &&
-                        (majorsMap[row.receiving_institution_id] as Major[]).map((m) => (
-                          <option key={m.key} value={m.key}>{m.label}</option>
-                        ))}
+                      <option value="">Select a school...</option>
+                      {institutions.map((inst) => (
+                        <option key={inst.id} value={inst.id}>{inst.name}</option>
+                      ))}
                     </select>
+                    <Chevron />
+                  </div>
+
+                  {row.receiving_institution_id && (
+                    <div className="relative">
+                      <select
+                        className="w-full border border-gray-200 rounded-xl px-4 py-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white appearance-none disabled:opacity-50"
+                        value={row.major_code ?? ''}
+                        disabled={majorsMap[row.receiving_institution_id] === 'loading' || !majorsMap[row.receiving_institution_id]}
+                        onChange={(e) => updateRow(idx, 'major_key' as keyof Row, e.target.value)}
+                      >
+                        <option value="">
+                          {majorsMap[row.receiving_institution_id] === 'loading'
+                            ? 'Loading majors...'
+                            : 'Select a major...'}
+                        </option>
+                        {Array.isArray(majorsMap[row.receiving_institution_id]) &&
+                          (majorsMap[row.receiving_institution_id] as Major[]).map((m) => (
+                            <option key={m.key} value={m.key}>{m.label}</option>
+                          ))}
+                      </select>
                     <Chevron />
                   </div>
                 )}
 
+                </div>
+
                 {rows.length > 1 && (
                   <button
                     onClick={() => setRows((prev) => prev.filter((_, i) => i !== idx))}
-                    className="flex items-center gap-1.5 text-xs font-medium text-red-400 hover:text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors"
+                    className="mt-1 p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors shrink-0"
+                    title="Remove row"
                   >
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
-                    Remove row
                   </button>
                 )}
               </div>

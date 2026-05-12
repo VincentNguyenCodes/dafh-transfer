@@ -232,44 +232,41 @@ export default function Schools() {
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Add schools</p>
           <div className="space-y-4">
             {rows.map((row, idx) => (
-              <div key={idx} className="flex items-start gap-2">
-                <div className="flex-1 space-y-3">
-                  <div className="relative">
-                    <select
-                      className="w-full border border-gray-200 rounded-xl px-4 py-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white appearance-none"
-                      value={row.receiving_institution_id ?? ''}
-                      onChange={(e) => updateRow(idx, 'receiving_institution_id', Number(e.target.value))}
-                    >
-                      <option value="">Select a school...</option>
-                      {institutions.map((inst) => (
-                        <option key={inst.id} value={inst.id}>{inst.name}</option>
+              <div key={idx} className="flex items-center gap-2 flex-1">
+                <div className="relative flex-1">
+                  <select
+                    className="w-full border border-gray-200 rounded-xl px-4 py-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white appearance-none"
+                    value={row.receiving_institution_id ?? ''}
+                    onChange={(e) => updateRow(idx, 'receiving_institution_id', Number(e.target.value))}
+                  >
+                    <option value="">Select a school...</option>
+                    {institutions.map((inst) => (
+                      <option key={inst.id} value={inst.id}>{inst.name}</option>
+                    ))}
+                  </select>
+                  <Chevron />
+                </div>
+
+                <div className="relative flex-1">
+                  <select
+                    className="w-full border border-gray-200 rounded-xl px-4 py-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white appearance-none disabled:opacity-50"
+                    value={row.major_code ?? ''}
+                    disabled={!row.receiving_institution_id || majorsMap[row.receiving_institution_id] === 'loading' || !majorsMap[row.receiving_institution_id]}
+                    onChange={(e) => updateRow(idx, 'major_key' as keyof Row, e.target.value)}
+                  >
+                    <option value="">
+                      {!row.receiving_institution_id
+                        ? 'Select a school first...'
+                        : majorsMap[row.receiving_institution_id] === 'loading'
+                        ? 'Loading majors...'
+                        : 'Select a major...'}
+                    </option>
+                    {Array.isArray(majorsMap[row.receiving_institution_id!]) &&
+                      (majorsMap[row.receiving_institution_id!] as Major[]).map((m) => (
+                        <option key={m.key} value={m.key}>{m.label}</option>
                       ))}
-                    </select>
-                    <Chevron />
-                  </div>
-
-                  {row.receiving_institution_id && (
-                    <div className="relative">
-                      <select
-                        className="w-full border border-gray-200 rounded-xl px-4 py-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white appearance-none disabled:opacity-50"
-                        value={row.major_code ?? ''}
-                        disabled={majorsMap[row.receiving_institution_id] === 'loading' || !majorsMap[row.receiving_institution_id]}
-                        onChange={(e) => updateRow(idx, 'major_key' as keyof Row, e.target.value)}
-                      >
-                        <option value="">
-                          {majorsMap[row.receiving_institution_id] === 'loading'
-                            ? 'Loading majors...'
-                            : 'Select a major...'}
-                        </option>
-                        {Array.isArray(majorsMap[row.receiving_institution_id]) &&
-                          (majorsMap[row.receiving_institution_id] as Major[]).map((m) => (
-                            <option key={m.key} value={m.key}>{m.label}</option>
-                          ))}
-                      </select>
-                    <Chevron />
-                  </div>
-                )}
-
+                  </select>
+                  <Chevron />
                 </div>
 
                 {rows.length > 1 && (

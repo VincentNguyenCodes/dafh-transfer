@@ -434,7 +434,7 @@ def _build_series(series_config: list, completed_codes: set, in_progress_codes: 
 def compute_remaining(user) -> list:
     from transcripts.models import TranscriptEntry
     from .models import TransferTarget
-    from .series_config import get_series_for_target
+    from .series_config import get_series_config
 
     completed_raw = set(
         TranscriptEntry.objects.filter(user=user, status='completed').values_list('course_code', flat=True)
@@ -476,8 +476,17 @@ def compute_remaining(user) -> list:
                         seen_rec.add(rkey)
                         all_recommended.append(rec)
 
-        series_config = get_series_for_target(target.receiving_institution_id, target.major_name)
-        elective_series = _build_series(series_config, completed_codes, in_progress_codes)
+        series_config = get_series_config(target.receiving_institution_id, target.major_name)
+        suppress_subjects = series_config.get('suppress_subjects', set())
+        if suppress_subjects:
+            all_recommended = [
+                rec for rec in all_recommended
+                if not all(
+                    c['code'].split()[0] in suppress_subjects
+                    for opt in rec['options'] for c in opt['courses']
+                )
+            ]
+        elective_series = _build_series(series_config.get('groups', []), completed_codes, in_progress_codes)
 
         results.append({
             'target': f"{target.receiving_institution_name} — {target.major_name}",

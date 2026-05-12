@@ -134,12 +134,12 @@ export default function Dashboard() {
       </header>
 
       <div className="sticky top-0 z-20 bg-white border-b border-gray-100">
-        <div className="max-w-5xl mx-auto px-6 flex">
+        <div className="flex">
           {TABS.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+              className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${
                 activeTab === tab.id
                   ? 'border-indigo-600 text-indigo-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700'

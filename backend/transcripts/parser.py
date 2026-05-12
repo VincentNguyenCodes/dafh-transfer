@@ -18,7 +18,7 @@ def parse_transcript(text: str, school: str) -> list[dict]:
 
 
 def _parse_completed(text: str, school: str, seen: set) -> list[dict]:
-    courses = []
+    by_key: dict[str, dict] = {}
     lines = text.split('\n')
     i = 0
 
@@ -52,7 +52,7 @@ def _parse_completed(text: str, school: str, seen: set) -> list[dict]:
             continue
 
         grade_line = lines[j].strip()
-        gm = re.match(r'^([A-Z][+-]?|P|NP|W|IP)\s+([\d.]+)', grade_line)
+        gm = re.match(r'^([A-Z]{1,2}[+-]?|IP)\s+([\d.]+)', grade_line)
         if not gm:
             i += 1
             continue
@@ -60,23 +60,27 @@ def _parse_completed(text: str, school: str, seen: set) -> list[dict]:
         grade = gm.group(1)
         units = float(gm.group(2))
 
+        EXCLUDED_GRADES = {'W', 'EW', 'NC', 'NP', 'RD', 'UW'}
+        IN_PROGRESS_GRADES = {'IP', 'I'}
+
         key = f'{subject}_{code}'
-        if key not in seen:
-            seen.add(key)
-            if grade != 'W':
-                status = 'in_progress' if grade == 'IP' else 'completed'
-                courses.append({
-                    'school': school,
-                    'course_code': f'{subject} {code}',
-                    'course_name': title_line,
-                    'units': str(units),
-                    'grade': grade,
-                    'status': status,
-                })
+        seen.add(key)
+
+        if grade not in EXCLUDED_GRADES:
+            status = 'in_progress' if grade in IN_PROGRESS_GRADES else 'completed'
+            # Overwrite if retaken — last occurrence in transcript = most recent term
+            by_key[key] = {
+                'school': school,
+                'course_code': f'{subject} {code}',
+                'course_name': title_line,
+                'units': str(units),
+                'grade': grade,
+                'status': status,
+            }
 
         i = j + 1
 
-    return courses
+    return list(by_key.values())
 
 
 def _parse_in_progress(text: str, school: str, seen: set) -> list[dict]:

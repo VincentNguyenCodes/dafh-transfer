@@ -91,14 +91,24 @@ def parse_advisory_with_claude(advisory_html: str, valid_codes: set):
 
     series_groups = []
     for sg in data.get('series_groups', []):
+        if not isinstance(sg, dict):
+            continue
         valid_options = []
         for opt in sg.get('options', []):
-            codes = [c for c in opt.get('codes', []) if c in valid_codes]
+            if isinstance(opt, dict):
+                raw_codes = opt.get('codes', [])
+                opt_name = (opt.get('name') or '').strip()
+            elif isinstance(opt, list):
+                raw_codes = opt
+                opt_name = ''
+            else:
+                continue
+            codes = [c for c in raw_codes if c in valid_codes]
             if codes:
-                valid_options.append({'name': opt.get('name', '').strip(), 'codes': codes})
+                valid_options.append({'name': opt_name, 'codes': codes})
         if valid_options:
             series_groups.append({
-                'label': sg.get('label', '').strip() or 'Pick one complete series',
+                'label': (sg.get('label') or '').strip() or 'Pick one complete series',
                 'options': valid_options,
             })
 

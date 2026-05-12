@@ -33,11 +33,6 @@ class TranscriptParseView(APIView):
         if request.data.get('debug'):
             lines = text.replace('\r\n', '\n').replace('\r', '\n').split('\n')
             return Response({'lines': [{'i': i, 'repr': repr(l)} for i, l in enumerate(lines[:100])]})
-        import sys
-        print(f'\n=== TRANSCRIPT PARSE ({school}) first 60 lines ===', file=sys.stderr)
-        for i, line in enumerate(text.replace('\r\n', '\n').replace('\r', '\n').split('\n')[:60]):
-            print(f'{i:3}: {repr(line)}', file=sys.stderr)
-        print('=== END ===\n', file=sys.stderr)
         parsed = parse_transcript(text, school)
         return Response(parsed)
 

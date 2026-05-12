@@ -4,9 +4,18 @@ import re
 def parse_transcript(text: str, school: str) -> list[dict]:
     text = text.replace('\r\n', '\n').replace('\r', '\n')
 
-    ip_split = re.split(r'Course\(s\)\s+in\s+[Pp]rogress', text, maxsplit=1)
-    completed_text = ip_split[0]
-    in_progress_text = ip_split[1] if len(ip_split) > 1 else ''
+    # Match "Course(s) in Progress" only when it appears alone on its line
+    # (not "Course(s) in progress table Subject..." which is a compact table header).
+    # Use the LAST such match — the transcript nav bar at the top also contains this
+    # phrase as a link, so the first match is a false positive.
+    matches = list(re.finditer(r'Course\(s\)\s+in\s+[Pp]rogress\s*\n', text))
+    if matches:
+        last = matches[-1]
+        completed_text = text[:last.start()]
+        in_progress_text = text[last.end():]
+    else:
+        completed_text = text
+        in_progress_text = ''
 
     seen: set[str] = set()
     courses: list[dict] = []
@@ -28,7 +37,6 @@ def _parse_completed(text: str, school: str, seen: set) -> list[dict]:
     while i < len(lines):
         line = lines[i].strip()
 
-        # 3-line format: line ends exactly at DU/FU, title on next line, grade line after
         header_m = re.match(
             r'^([A-Z][A-Z /]*?)\s+([DF][0-9A-Z]*\.?[A-Z0-9]*)\s+(DU|FU)\s*$',
             line,
@@ -40,7 +48,7 @@ def _parse_completed(text: str, school: str, seen: set) -> list[dict]:
 
             if title_line and not re.match(r'^(Subject|Term|Institution|Transcript|Course)', title_line):
                 j = i + 2
-                while j < min(i + 5, len(lines)) and not lines[j].strip():
+                while j < min(i + 6, len(lines)) and not lines[j].strip():
                     j += 1
                 if j < len(lines):
                     grade_line = lines[j].strip()
@@ -63,8 +71,6 @@ def _parse_completed(text: str, school: str, seen: set) -> list[dict]:
                         i = j + 1
                         continue
 
-        # Single-line format with two numeric columns (attempted + earned) then grade:
-        # SUBJECT CODE DU/FU Title 5.00 5.00 A [Grade Mode] [Quality Points]
         sl2 = re.match(
             r'^([A-Z][A-Z /]*?)\s+([DF][0-9A-Z]*\.?[A-Z0-9]*)\s+(DU|FU)\s+(.+?)\s+([\d.]+)\s+([\d.]+)\s+([A-Z]{1,2}[+-]?)(?=\s|$)',
             line,
@@ -90,8 +96,6 @@ def _parse_completed(text: str, school: str, seen: set) -> list[dict]:
             i += 1
             continue
 
-        # Single-line format with one numeric column then grade:
-        # SUBJECT CODE DU/FU Title 5.00 A [Grade Mode]
         sl1 = re.match(
             r'^([A-Z][A-Z /]*?)\s+([DF][0-9A-Z]*\.?[A-Z0-9]*)\s+(DU|FU)\s+(.+?)\s+([\d.]+)\s+([A-Z]{1,2}[+-]?)(?=\s|$)',
             line,
@@ -133,7 +137,6 @@ def _parse_in_progress(text: str, school: str, seen: set) -> list[dict]:
         if not line:
             continue
 
-        # Format: SUBJECT CODE LEVEL TITLE... UNITS  (no grade column)
         m = re.match(
             r'^([A-Z][A-Z /]*?)\s+([DF][0-9A-Z]*\.?[A-Z0-9]*)\s+(DU|FU)\s+(.+?)\s+([\d.]+)\s*$',
             line,

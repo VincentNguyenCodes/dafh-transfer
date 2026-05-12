@@ -133,7 +133,7 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <div className="bg-white border-b border-gray-100">
+      <div className="sticky top-0 z-20 bg-white border-b border-gray-100">
         <div className="max-w-3xl mx-auto px-6 flex">
           {TABS.map((tab) => (
             <button

@@ -295,94 +295,128 @@ export default function RequirementsTab() {
         })}
       </div>
 
-      {unsatisfied.length === 0 && satisfied.length === 0 ? (
-        <div className="bg-green-50 border border-green-100 rounded-2xl p-5 text-center mb-4">
+      <div className="sticky top-[44px] z-10 -mx-6 px-6 py-3 mb-6 bg-white/95 backdrop-blur border-b border-gray-100 shadow-sm">
+        <div className="flex items-center gap-5">
+          <div className="flex-1">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-xs font-semibold text-indigo-600">Required</span>
+              <span className="text-xs font-bold text-gray-700">
+                {satisfied.length} / {satisfied.length + unsatisfied.length} done
+              </span>
+            </div>
+            <div className="w-full bg-indigo-100 rounded-full h-1.5">
+              <div
+                className="bg-indigo-600 h-1.5 rounded-full transition-all"
+                style={{ width: `${satisfied.length + unsatisfied.length > 0 ? (satisfied.length / (satisfied.length + unsatisfied.length)) * 100 : 0}%` }}
+              />
+            </div>
+          </div>
+          <div className="w-px h-8 bg-gray-200 shrink-0"></div>
+          <div className="flex-1">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-xs font-semibold text-violet-600">Recommended</span>
+              <span className="text-xs font-bold text-gray-700">
+                {satisfiedRec.length} / {satisfiedRec.length + unsatisfiedRec.length} done
+              </span>
+            </div>
+            <div className="w-full bg-violet-100 rounded-full h-1.5">
+              <div
+                className="bg-violet-500 h-1.5 rounded-full transition-all"
+                style={{ width: `${satisfiedRec.length + unsatisfiedRec.length > 0 ? (satisfiedRec.length / (satisfiedRec.length + unsatisfiedRec.length)) * 100 : 0}%` }}
+              />
+            </div>
+          </div>
+        </div>
+        <p className="text-xs text-gray-400 mt-2">Hover a badge to see the major. If multiple options appear, you only need one.</p>
+      </div>
+
+      {unsatisfied.length > 0 && (
+        <div className="mb-5 border border-indigo-100 rounded-2xl overflow-hidden shadow-sm">
+          <div className="px-5 py-3 bg-indigo-50 border-b border-indigo-100 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-bold text-indigo-800">Required - Need to Take</p>
+              <p className="text-xs text-indigo-400 mt-0.5">Must complete for admission</p>
+            </div>
+            <span className="text-sm font-bold text-indigo-600 bg-white px-2.5 py-0.5 rounded-full border border-indigo-100">
+              {unsatisfied.length}
+            </span>
+          </div>
+          <div className="p-4 space-y-2 bg-white">
+            {unsatisfied.map((req) => (
+              <AggregatedRequirementRow key={req.key} req={req} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {unsatisfiedRec.length > 0 && (
+        <div className="mb-5 border border-violet-100 rounded-2xl overflow-hidden shadow-sm">
+          <div className="px-5 py-3 bg-violet-50 border-b border-violet-100 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-bold text-violet-800">Recommended - Need to Take</p>
+              <p className="text-xs text-violet-400 mt-0.5">Not required for admission, but saves units after transfer</p>
+            </div>
+            <span className="text-sm font-bold text-violet-600 bg-white px-2.5 py-0.5 rounded-full border border-violet-100">
+              {unsatisfiedRec.length}
+            </span>
+          </div>
+          <div className="p-4 space-y-2 bg-white">
+            {unsatisfiedRec.map((req) => (
+              <AggregatedRequirementRow key={req.key} req={req} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {satisfied.length > 0 && (
+        <div className="mb-5 border border-green-100 rounded-2xl overflow-hidden shadow-sm">
+          <div className="px-5 py-3 bg-green-50 border-b border-green-100 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-bold text-green-800">Completed Required</p>
+              <p className="text-xs text-green-400 mt-0.5">Required courses you have already finished</p>
+            </div>
+            <span className="text-sm font-bold text-green-600 bg-white px-2.5 py-0.5 rounded-full border border-green-100">
+              {satisfied.length}
+            </span>
+          </div>
+          <div className="p-4 space-y-2 bg-white">
+            {satisfied.map((req) => (
+              <AggregatedRequirementRow key={req.key} req={req} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {satisfiedRec.length > 0 && (
+        <div className="mb-5 border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+          <div className="px-5 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-bold text-gray-700">Completed Recommended</p>
+              <p className="text-xs text-gray-400 mt-0.5">Recommended courses you have already finished</p>
+            </div>
+            <span className="text-sm font-bold text-gray-500 bg-white px-2.5 py-0.5 rounded-full border border-gray-200">
+              {satisfiedRec.length}
+            </span>
+          </div>
+          <div className="p-4 space-y-2 bg-white">
+            {satisfiedRec.map((req) => (
+              <AggregatedRequirementRow key={req.key} req={req} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {unsatisfied.length === 0 && satisfied.length === 0 && unsatisfiedRec.length === 0 && satisfiedRec.length === 0 && (
+        <div className="bg-green-50 border border-green-100 rounded-2xl p-5 text-center">
           <p className="text-green-700 font-semibold">All requirements satisfied!</p>
         </div>
-      ) : (
-        <>
-          {unsatisfied.length > 0 && (
-            <>
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 px-5 py-4 mb-6 flex items-center gap-4">
-                <div className="text-center">
-                  <p className="text-3xl font-bold text-indigo-600">{unsatisfied.length}</p>
-                  <p className="text-xs text-gray-400">required</p>
-                </div>
-                <div className="h-10 w-px bg-gray-100"></div>
-                <div className="text-center">
-                  <p className="text-3xl font-bold text-violet-500">{unsatisfiedRec.length}</p>
-                  <p className="text-xs text-gray-400">recommended</p>
-                </div>
-                <div className="h-10 w-px bg-gray-100"></div>
-                <p className="text-xs text-gray-500 leading-relaxed">
-                  Hover a badge to see the major. If multiple options appear, you only need one.
-                </p>
-              </div>
-              <div className="space-y-2 mb-8">
-                {unsatisfied.map((req) => (
-                  <AggregatedRequirementRow key={req.key} req={req} />
-                ))}
-              </div>
-            </>
-          )}
-
-          {satisfied.length > 0 && (
-            <>
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">
-                Completed ({satisfied.length})
-              </p>
-              <div className="space-y-2 mb-4">
-                {satisfied.map((req) => (
-                  <AggregatedRequirementRow key={req.key} req={req} />
-                ))}
-              </div>
-            </>
-          )}
-        </>
       )}
 
       {noArticulation.length > 0 && (
         <div className="mt-2 border-t border-gray-100 pt-4">
           <p className="text-xs text-gray-400">
-            {noArticulation.length} requirement{noArticulation.length > 1 ? 's' : ''} have no community college articulation path and cannot be satisfied at De Anza or Foothill.
+            {noArticulation.length} requirement{noArticulation.length > 1 ? 's' : ''} have no community college articulation path.
           </p>
-        </div>
-      )}
-
-      {visibleRec.length > 0 && (
-        <div className="mt-8 border-t border-gray-100 pt-6">
-          <div className="mb-4">
-            <p className="text-sm font-bold text-gray-700">Recommended - Counts Toward Major</p>
-            <p className="text-xs text-gray-400 mt-0.5">
-              Not required for admission, but taking these at De Anza or Foothill means fewer units to complete after you transfer.
-            </p>
-          </div>
-
-          {unsatisfiedRec.length > 0 && (
-            <>
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">
-                Not yet taken ({unsatisfiedRec.length})
-              </p>
-              <div className="space-y-2 mb-6">
-                {unsatisfiedRec.map((req) => (
-                  <AggregatedRequirementRow key={req.key} req={req} />
-                ))}
-              </div>
-            </>
-          )}
-
-          {satisfiedRec.length > 0 && (
-            <>
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">
-                Completed ({satisfiedRec.length})
-              </p>
-              <div className="space-y-2">
-                {satisfiedRec.map((req) => (
-                  <AggregatedRequirementRow key={req.key} req={req} />
-                ))}
-              </div>
-            </>
-          )}
         </div>
       )}
     </div>

@@ -518,16 +518,17 @@ def _option_remaining_count(opt):
 def _pick_best_option(options, saved_pref_idx=None):
     if not options:
         return None, []
-    if saved_pref_idx is not None and 0 <= saved_pref_idx < len(options):
-        return options[saved_pref_idx], []
     if len(options) == 1:
         return options[0], []
     scored = [(_option_remaining_count(o), i, o) for i, o in enumerate(options)]
     min_remaining = min(s[0] for s in scored)
-    tied = [s for s in scored if s[0] == min_remaining]
+    tied_indices = [s[1] for s in scored if s[0] == min_remaining]
+    tied = [s[2] for s in scored if s[0] == min_remaining]
     if len(tied) == 1:
-        return tied[0][2], []
-    return None, [t[2] for t in tied]
+        return tied[0], []
+    if saved_pref_idx is not None and saved_pref_idx in tied_indices:
+        return options[saved_pref_idx], []
+    return None, tied
 
 
 def compute_best_schedule(targets_results: list, user_prefs=None) -> dict:

@@ -105,12 +105,14 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
     const addFrom = (reqs: Requirement[], schoolName: string, kind: 'required' | 'recommended') => {
       for (const req of reqs) {
         if (req.no_articulation || req.options.length <= 1) continue
+        const remainingCounts = req.options.map((o) => o.courses.filter((c) => !c.completed).length)
+        const minRem = Math.min(...remainingCounts)
+        if (minRem === 0) continue
         const key = requirementKey(req)
         const existing = map.get(key)
         if (existing) {
           existing.targets.add(schoolName)
         } else {
-          const remainingCounts = req.options.map((o) => o.courses.filter((c) => !c.completed).length)
           map.set(key, { req, targets: new Set([schoolName]), key, remainingCounts, kind })
         }
       }

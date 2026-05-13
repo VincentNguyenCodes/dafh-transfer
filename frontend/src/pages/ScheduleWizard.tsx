@@ -160,62 +160,72 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
     visibleReqs.every((m) => picks[m.key] !== undefined) &&
     visibleElectives.every((e) => electivePicks[e.key] !== undefined)
 
+  const completedCodes = useMemo(() => {
+    const s = new Set<string>()
+    for (const t of transcript) {
+      if (t.status === 'completed' || t.status === 'in_progress') {
+        s.add(t.course_code)
+        s.add(normalizeCode(t.course_code))
+      }
+    }
+    return s
+  }, [transcript])
+
+  const isTaken = (code: string) => completedCodes.has(code) || completedCodes.has(normalizeCode(code))
+
   const classBank: ClassBankItem[] = useMemo(() => {
     if (!results) return []
     const bank = new Map<string, { code: string; name: string; units: number | null; needed_for: Set<string> }>()
     const add = (code: string, name: string, units: number | null, target: string) => {
+      if (isTaken(code)) return
       const existing = bank.get(code)
       if (existing) {
-        existing.needed_for.add(target)
+        if (target) existing.needed_for.add(target)
         if (!existing.units && units != null) existing.units = units
         if ((!existing.name || existing.name === existing.code) && name && name !== code) existing.name = name
       } else {
-        bank.set(code, { code, name, units, needed_for: new Set([target]) })
+        bank.set(code, { code, name, units, needed_for: new Set(target ? [target] : []) })
       }
+    }
+    const pickOption = (req: Requirement) => {
+      if (req.options.length <= 1) return req.options[0]
+      const k = requirementKey(req)
+      const idx = picks[k] ?? (scheduleType === 'optimal'
+        ? req.options.map((o) => o.courses.filter((c) => !c.completed).length).indexOf(Math.min(...req.options.map((o) => o.courses.filter((c) => !c.completed).length)))
+        : 0)
+      return req.options[idx] || req.options[0]
     }
     for (const r of results) {
       for (const req of r.requirements) {
         if (req.no_articulation) continue
-        let chosenIdx = 0
-        if (req.options.length > 1) {
-          const k = requirementKey(req)
-          chosenIdx = picks[k] ?? (scheduleType === 'optimal'
-            ? req.options.map((o) => o.courses.filter((c) => !c.completed).length).indexOf(Math.min(...req.options.map((o) => o.courses.filter((c) => !c.completed).length)))
-            : 0)
-        }
-        const opt = req.options[chosenIdx] || req.options[0]
-        for (const c of opt.courses) {
-          add(c.code, c.name, c.units, r.school_name)
-        }
+        const opt = pickOption(req)
+        if (!opt) continue
+        for (const c of opt.courses) add(c.code, c.name, c.units, r.school_name)
+      }
+      for (const rec of r.recommended) {
+        if (rec.no_articulation) continue
+        const opt = pickOption(rec)
+        if (!opt) continue
+        for (const c of opt.courses) add(c.code, c.name, c.units, r.school_name)
       }
       for (const group of r.elective_series) {
         const k = electiveGroupKey(group)
         const idx = electivePicks[k]
         const series = idx !== undefined ? group.series[idx] : group.series.find((s) => s.satisfied) || group.series[0]
         if (!series) continue
-        for (const c of series.courses) {
-          add(c.code, c.code, null, r.school_name)
-        }
+        for (const c of series.courses) add(c.code, c.code, null, r.school_name)
       }
     }
-    for (const t of transcript) {
-      if (t.status !== 'completed' && t.status !== 'in_progress') continue
-      const code = t.course_code
-      const units = t.units ? parseFloat(t.units) : null
-      add(code, t.course_name || code, units, '')
-    }
-    return Array.from(bank.values()).map((c) => ({ ...c, needed_for: Array.from(c.needed_for).filter(Boolean) }))
-  }, [results, transcript, picks, electivePicks, scheduleType])
+    return Array.from(bank.values()).map((c) => ({ ...c, needed_for: Array.from(c.needed_for) }))
+  }, [results, picks, electivePicks, scheduleType, completedCodes])
 
   const initialQuarters: Quarter[] = useMemo(() => {
     const byTerm: Record<string, string[]> = {}
     for (const t of transcript) {
       if (!t.term) continue
       if (t.status !== 'completed' && t.status !== 'in_progress') continue
-      const inBank = classBank.find((c) => c.code === t.course_code || normalizeCode(c.code) === normalizeCode(t.course_code))
-      const code = inBank?.code || t.course_code
       if (!byTerm[t.term]) byTerm[t.term] = []
-      if (!byTerm[t.term].includes(code)) byTerm[t.term].push(code)
+      if (!byTerm[t.term].includes(t.course_code)) byTerm[t.term].push(t.course_code)
     }
     return Object.entries(byTerm)
       .map(([termStr, codes]) => {
@@ -233,7 +243,16 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
         if (a.year !== b.year) return a.year - b.year
         return order[a.term] - order[b.term]
       })
-  }, [transcript, classBank])
+  }, [transcript])
+
+  const taken: ClassItem[] = useMemo(() => transcript
+    .filter((t) => t.status === 'completed' || t.status === 'in_progress')
+    .map((t) => ({
+      code: t.course_code,
+      name: t.course_name || t.course_code,
+      units: t.units ? parseFloat(t.units) : null,
+      needed_for: [],
+    })), [transcript])
 
   const save = async (quarters: Quarter[], remainingBank: ClassItem[]) => {
     setSaving(true)
@@ -276,6 +295,7 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
     return (
       <ScheduleBuilder
         classBank={classBank}
+        prePlaced={taken}
         initialQuarters={initialQuarters}
         name={name}
         onNameChange={setName}

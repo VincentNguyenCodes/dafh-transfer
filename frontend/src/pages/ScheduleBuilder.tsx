@@ -21,6 +21,7 @@ const BANK_ID = 'bank'
 
 type Props = {
   classBank: ClassItem[]
+  prePlaced?: ClassItem[]
   initialQuarters?: Quarter[]
   name: string
   onNameChange: (name: string) => void
@@ -30,7 +31,7 @@ type Props = {
   error: string
 }
 
-export default function ScheduleBuilder({ classBank, initialQuarters = [], name, onNameChange, onBack, onSave, saving, error }: Props) {
+export default function ScheduleBuilder({ classBank, prePlaced = [], initialQuarters = [], name, onNameChange, onBack, onSave, saving, error }: Props) {
   const [editingName, setEditingName] = useState(!name)
   const [draftName, setDraftName] = useState(name)
   const [quarters, setQuarters] = useState<Quarter[]>(initialQuarters)
@@ -45,8 +46,9 @@ export default function ScheduleBuilder({ classBank, initialQuarters = [], name,
   const classByCode = useMemo(() => {
     const m = new Map<string, ClassItem>()
     for (const c of classBank) m.set(c.code, c)
+    for (const c of prePlaced) if (!m.has(c.code)) m.set(c.code, c)
     return m
-  }, [classBank])
+  }, [classBank, prePlaced])
 
   const addQuarter = () => {
     const lastYear = quarters.length > 0 ? quarters[quarters.length - 1].year : new Date().getFullYear()

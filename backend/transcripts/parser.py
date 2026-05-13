@@ -26,6 +26,9 @@ def parse_transcript(text: str, school: str) -> list[dict]:
     return courses
 
 
+_TERM_RE = re.compile(r'Term\s*:\s*(\d{4})\s+(Fall|Winter|Spring|Summer)', re.I)
+
+
 def _parse_completed(text: str, school: str, seen: set) -> list[dict]:
     by_key: dict[str, dict] = {}
     lines = text.split('\n')
@@ -33,9 +36,17 @@ def _parse_completed(text: str, school: str, seen: set) -> list[dict]:
     EXCLUDED_GRADES = {'W', 'EW', 'NC', 'NP', 'RD', 'UW'}
     IN_PROGRESS_GRADES = {'IP', 'I'}
 
+    current_term = ''
+
     i = 0
     while i < len(lines):
         line = lines[i].strip()
+
+        term_m = _TERM_RE.search(line)
+        if term_m:
+            current_term = f"{term_m.group(2).capitalize()} {term_m.group(1)}"
+            i += 1
+            continue
 
         header_m = re.match(
             r'^([A-Z][A-Z /]*?)\s+([DF][0-9A-Z]*\.?[A-Z0-9]*)\s+(DU|FU)\s*$',
@@ -67,6 +78,7 @@ def _parse_completed(text: str, school: str, seen: set) -> list[dict]:
                                 'units': str(units),
                                 'grade': grade,
                                 'status': status,
+                                'term': current_term,
                             }
                         i = j + 1
                         continue
@@ -92,6 +104,7 @@ def _parse_completed(text: str, school: str, seen: set) -> list[dict]:
                     'units': str(units),
                     'grade': grade,
                     'status': status,
+                    'term': current_term,
                 }
             i += 1
             continue
@@ -117,6 +130,7 @@ def _parse_completed(text: str, school: str, seen: set) -> list[dict]:
                     'units': str(units),
                     'grade': grade,
                     'status': status,
+                    'term': current_term,
                 }
             i += 1
             continue
@@ -131,10 +145,16 @@ def _parse_in_progress(text: str, school: str, seen: set) -> list[dict]:
         return []
 
     courses = []
+    current_term = ''
 
     for line in text.split('\n'):
         line = line.strip()
         if not line:
+            continue
+
+        term_m = _TERM_RE.search(line)
+        if term_m:
+            current_term = f"{term_m.group(2).capitalize()} {term_m.group(1)}"
             continue
 
         m = re.match(
@@ -159,6 +179,7 @@ def _parse_in_progress(text: str, school: str, seen: set) -> list[dict]:
                 'units': str(units),
                 'grade': '',
                 'status': 'in_progress',
+                'term': current_term,
             })
 
     return courses

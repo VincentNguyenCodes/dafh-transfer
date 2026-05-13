@@ -53,6 +53,13 @@ function requirementKey(req: Requirement): string {
   return req.options.flatMap((o) => o.courses.map((c) => c.code)).sort().join('|')
 }
 
+function normalizeCode(code: string): string {
+  const parts = code.split(/\s+/)
+  if (parts.length < 2) return code
+  const last = parts[parts.length - 1].replace(/^[DF]0*/, '').replace(/\.$/, '')
+  return [...parts.slice(0, -1), last].join(' ')
+}
+
 function electiveGroupKey(group: ElectiveGroup): string {
   return 'elective:' + group.label + '|' + group.series
     .flatMap((s) => s.courses.map((c) => c.code))
@@ -60,8 +67,20 @@ function electiveGroupKey(group: ElectiveGroup): string {
     .join('|')
 }
 
+type TranscriptEntry = {
+  id: number
+  school: string
+  course_code: string
+  course_name: string
+  units: string | null
+  grade: string
+  status: string
+  term: string
+}
+
 export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Props) {
   const [results, setResults] = useState<TargetResult[] | null>(null)
+  const [transcript, setTranscript] = useState<TranscriptEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [picks, setPicks] = useState<Record<string, number>>({})
@@ -71,8 +90,11 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
   const [name, setName] = useState('')
 
   useEffect(() => {
-    api.get('/results/')
-      .then(({ data }) => setResults(data))
+    Promise.all([api.get('/results/'), api.get('/transcript/')])
+      .then(([r, t]) => {
+        setResults(r.data)
+        setTranscript(t.data)
+      })
       .catch(() => setError('Failed to load your requirements.'))
       .finally(() => setLoading(false))
   }, [])
@@ -145,13 +167,15 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
       const existing = bank.get(code)
       if (existing) {
         existing.needed_for.add(target)
+        if (!existing.units && units != null) existing.units = units
+        if ((!existing.name || existing.name === existing.code) && name && name !== code) existing.name = name
       } else {
         bank.set(code, { code, name, units, needed_for: new Set([target]) })
       }
     }
     for (const r of results) {
       for (const req of r.requirements) {
-        if (req.no_articulation || req.satisfied) continue
+        if (req.no_articulation) continue
         let chosenIdx = 0
         if (req.options.length > 1) {
           const k = requirementKey(req)
@@ -161,7 +185,6 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
         }
         const opt = req.options[chosenIdx] || req.options[0]
         for (const c of opt.courses) {
-          if (c.completed) continue
           add(c.code, c.name, c.units, r.school_name)
         }
       }
@@ -171,13 +194,46 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
         const series = idx !== undefined ? group.series[idx] : group.series.find((s) => s.satisfied) || group.series[0]
         if (!series) continue
         for (const c of series.courses) {
-          if (c.completed) continue
           add(c.code, c.code, null, r.school_name)
         }
       }
     }
-    return Array.from(bank.values()).map((c) => ({ ...c, needed_for: Array.from(c.needed_for) }))
-  }, [results, picks, electivePicks, scheduleType])
+    for (const t of transcript) {
+      if (t.status !== 'completed' && t.status !== 'in_progress') continue
+      const code = t.course_code
+      const units = t.units ? parseFloat(t.units) : null
+      add(code, t.course_name || code, units, '')
+    }
+    return Array.from(bank.values()).map((c) => ({ ...c, needed_for: Array.from(c.needed_for).filter(Boolean) }))
+  }, [results, transcript, picks, electivePicks, scheduleType])
+
+  const initialQuarters: Quarter[] = useMemo(() => {
+    const byTerm: Record<string, string[]> = {}
+    for (const t of transcript) {
+      if (!t.term) continue
+      if (t.status !== 'completed' && t.status !== 'in_progress') continue
+      const inBank = classBank.find((c) => c.code === t.course_code || normalizeCode(c.code) === normalizeCode(t.course_code))
+      const code = inBank?.code || t.course_code
+      if (!byTerm[t.term]) byTerm[t.term] = []
+      if (!byTerm[t.term].includes(code)) byTerm[t.term].push(code)
+    }
+    return Object.entries(byTerm)
+      .map(([termStr, codes]) => {
+        const [term, yearStr] = termStr.split(' ')
+        const validTerm = (['Fall', 'Winter', 'Spring', 'Summer'].includes(term) ? term : 'Fall') as Quarter['term']
+        return {
+          id: `q-${termStr.replace(/\s/g, '-')}`,
+          term: validTerm,
+          year: parseInt(yearStr, 10) || new Date().getFullYear(),
+          class_codes: codes,
+        }
+      })
+      .sort((a, b) => {
+        const order = { Winter: 0, Spring: 1, Summer: 2, Fall: 3 }
+        if (a.year !== b.year) return a.year - b.year
+        return order[a.term] - order[b.term]
+      })
+  }, [transcript, classBank])
 
   const save = async (quarters: Quarter[], remainingBank: ClassItem[]) => {
     setSaving(true)
@@ -220,6 +276,7 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
     return (
       <ScheduleBuilder
         classBank={classBank}
+        initialQuarters={initialQuarters}
         name={name}
         onNameChange={setName}
         onBack={() => setStage('picking')}

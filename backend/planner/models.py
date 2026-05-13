@@ -22,10 +22,14 @@ class TransferTarget(models.Model):
 
 
 class OptionPreference(models.Model):
+    SCOPE_CUSTOM = 'custom'
+    SCOPE_SCHEDULE = 'schedule'
+
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='option_preferences')
+    scope = models.CharField(max_length=20, default=SCOPE_CUSTOM)
     requirement_key = models.CharField(max_length=500)
     chosen_option_index = models.IntegerField()
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ('user', 'requirement_key')
+        unique_together = ('user', 'scope', 'requirement_key')

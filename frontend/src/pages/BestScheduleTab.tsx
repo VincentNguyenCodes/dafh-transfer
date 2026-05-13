@@ -60,7 +60,7 @@ export default function BestScheduleTab() {
     setSaving(key)
     setError('')
     try {
-      await api.post('/option-preferences/', { requirement_key: key, chosen_option_index: idx })
+      await api.post('/option-preferences/', { scope: 'schedule', requirement_key: key, chosen_option_index: idx })
       load()
     } catch {
       setError('Failed to save your choice.')

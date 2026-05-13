@@ -55,7 +55,7 @@ class BestScheduleView(APIView):
         results = compute_remaining(request.user)
         prefs = {
             p.requirement_key: p.chosen_option_index
-            for p in OptionPreference.objects.filter(user=request.user)
+            for p in OptionPreference.objects.filter(user=request.user, scope=OptionPreference.SCOPE_SCHEDULE)
         }
         schedule = compute_best_schedule(results, user_prefs=prefs)
         return Response(schedule)
@@ -63,10 +63,12 @@ class BestScheduleView(APIView):
 
 class OptionPreferenceView(APIView):
     def get(self, request):
-        prefs = OptionPreference.objects.filter(user=request.user).values('requirement_key', 'chosen_option_index')
+        scope = request.query_params.get('scope') or OptionPreference.SCOPE_CUSTOM
+        prefs = OptionPreference.objects.filter(user=request.user, scope=scope).values('requirement_key', 'chosen_option_index')
         return Response(list(prefs))
 
     def post(self, request):
+        scope = request.data.get('scope') or OptionPreference.SCOPE_CUSTOM
         key = request.data.get('requirement_key')
         idx = request.data.get('chosen_option_index')
         if not key or idx is None:
@@ -77,14 +79,16 @@ class OptionPreferenceView(APIView):
             return Response({'error': 'chosen_option_index must be an integer'}, status=status.HTTP_400_BAD_REQUEST)
         OptionPreference.objects.update_or_create(
             user=request.user,
+            scope=scope,
             requirement_key=key,
             defaults={'chosen_option_index': idx},
         )
-        return Response({'requirement_key': key, 'chosen_option_index': idx})
+        return Response({'scope': scope, 'requirement_key': key, 'chosen_option_index': idx})
 
     def delete(self, request):
+        scope = request.data.get('scope') or request.query_params.get('scope') or OptionPreference.SCOPE_CUSTOM
         key = request.data.get('requirement_key') or request.query_params.get('requirement_key')
         if not key:
             return Response({'error': 'requirement_key required'}, status=status.HTTP_400_BAD_REQUEST)
-        OptionPreference.objects.filter(user=request.user, requirement_key=key).delete()
+        OptionPreference.objects.filter(user=request.user, scope=scope, requirement_key=key).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)

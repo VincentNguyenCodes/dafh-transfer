@@ -151,6 +151,17 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
 
   const visibleElectives = useMemo(() => electiveGroups, [electiveGroups])
 
+  const completedCodes = useMemo(() => {
+    const s = new Set<string>()
+    for (const t of transcript) {
+      if (t.status === 'completed' || t.status === 'in_progress') {
+        s.add(t.course_code)
+        s.add(normalizeCode(t.course_code))
+      }
+    }
+    return s
+  }, [transcript])
+
   useEffect(() => {
     if (!results) return
 
@@ -239,17 +250,6 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
   const allPicked =
     visibleReqs.every((m) => picks[m.key] !== undefined) &&
     visibleElectives.every((e) => electivePicks[e.key] !== undefined)
-
-  const completedCodes = useMemo(() => {
-    const s = new Set<string>()
-    for (const t of transcript) {
-      if (t.status === 'completed' || t.status === 'in_progress') {
-        s.add(t.course_code)
-        s.add(normalizeCode(t.course_code))
-      }
-    }
-    return s
-  }, [transcript])
 
   const isTaken = (code: string) => completedCodes.has(code) || completedCodes.has(normalizeCode(code))
 

@@ -179,16 +179,17 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
 
   const classBank: ClassBankItem[] = useMemo(() => {
     if (!results) return []
-    const bank = new Map<string, { code: string; name: string; units: number | null; needed_for: Set<string> }>()
-    const add = (code: string, name: string, units: number | null, target: string) => {
+    const bank = new Map<string, { code: string; name: string; units: number | null; needed_for: Set<string>; kind: 'required' | 'recommended' }>()
+    const add = (code: string, name: string, units: number | null, target: string, kind: 'required' | 'recommended') => {
       if (isTaken(code)) return
       const existing = bank.get(code)
       if (existing) {
         if (target) existing.needed_for.add(target)
         if (!existing.units && units != null) existing.units = units
         if ((!existing.name || existing.name === existing.code) && name && name !== code) existing.name = name
+        if (kind === 'required') existing.kind = 'required'
       } else {
-        bank.set(code, { code, name, units, needed_for: new Set(target ? [target] : []) })
+        bank.set(code, { code, name, units, needed_for: new Set(target ? [target] : []), kind })
       }
     }
     const pickOption = (req: Requirement) => {
@@ -204,20 +205,20 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
         if (req.no_articulation) continue
         const opt = pickOption(req)
         if (!opt) continue
-        for (const c of opt.courses) add(c.code, c.name, c.units, r.school_name)
+        for (const c of opt.courses) add(c.code, c.name, c.units, r.school_name, 'required')
       }
       for (const rec of r.recommended) {
         if (rec.no_articulation) continue
         const opt = pickOption(rec)
         if (!opt) continue
-        for (const c of opt.courses) add(c.code, c.name, c.units, r.school_name)
+        for (const c of opt.courses) add(c.code, c.name, c.units, r.school_name, 'recommended')
       }
       for (const group of r.elective_series) {
         const k = electiveGroupKey(group)
         const idx = electivePicks[k]
         const series = idx !== undefined ? group.series[idx] : group.series.find((s) => s.satisfied) || group.series[0]
         if (!series) continue
-        for (const c of series.courses) add(c.code, c.code, null, r.school_name)
+        for (const c of series.courses) add(c.code, c.code, null, r.school_name, 'recommended')
       }
     }
     return Array.from(bank.values()).map((c) => ({ ...c, needed_for: Array.from(c.needed_for) }))

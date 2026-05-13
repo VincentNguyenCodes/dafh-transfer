@@ -7,6 +7,7 @@ export type ClassItem = {
   name: string
   units: number | null
   needed_for: string[]
+  kind?: 'required' | 'recommended'
 }
 
 export type Quarter = {
@@ -295,20 +296,50 @@ function QuarterCard({
   )
 }
 
+function abbreviateSchool(name: string): string {
+  const lower = name.toLowerCase()
+  if (lower.includes('berkeley')) return 'UCB'
+  if (lower.includes('los angeles')) return 'UCLA'
+  if (lower.includes('san diego')) return 'UCSD'
+  if (lower.includes('santa barbara')) return 'UCSB'
+  if (lower.includes('irvine')) return 'UCI'
+  if (lower.includes('davis')) return 'UCD'
+  if (lower.includes('santa cruz')) return 'UCSC'
+  if (lower.includes('riverside')) return 'UCR'
+  if (lower.includes('merced')) return 'UCM'
+  const words = name.split(/[\s,]+/).filter(Boolean)
+  return words.map((w) => w[0]).join('').slice(0, 4).toUpperCase()
+}
+
 function ClassChip({ c, dragging }: { c: ClassItem; dragging?: boolean }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: c.code })
   const hidden = isDragging && !dragging
+  const isRequired = c.kind === 'required'
+  const isRecommended = c.kind === 'recommended'
+  const colorClass = isRequired
+    ? 'border-red-200 bg-red-50'
+    : isRecommended
+      ? 'border-yellow-200 bg-yellow-50'
+      : 'border-gray-200 bg-white'
+  const schoolAbbrevs = (c.needed_for || []).filter(Boolean).map(abbreviateSchool)
+  const uniqueSchools = Array.from(new Set(schoolAbbrevs))
   return (
     <div
       ref={setNodeRef}
       {...attributes}
       {...listeners}
-      className={`flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 bg-white cursor-grab active:cursor-grabbing select-none shadow-sm ${
+      title={c.needed_for && c.needed_for.length > 0 ? `${c.kind === 'required' ? 'Required' : c.kind === 'recommended' ? 'Recommended' : ''} for: ${c.needed_for.join(', ')}` : undefined}
+      className={`flex flex-col gap-0.5 px-3 py-2 rounded-xl border ${colorClass} cursor-grab active:cursor-grabbing select-none shadow-sm ${
         hidden ? 'opacity-30' : ''
       } ${dragging ? 'shadow-lg' : ''}`}
     >
-      <span className="font-mono text-sm font-semibold text-gray-900">{c.code}</span>
-      {c.units != null && <span className="text-xs text-gray-400">{c.units}u</span>}
+      <div className="flex items-center gap-2">
+        <span className="font-mono text-sm font-semibold text-gray-900">{c.code}</span>
+        {c.units != null && <span className="text-xs text-gray-400">{c.units}u</span>}
+      </div>
+      {uniqueSchools.length > 0 && (
+        <span className="text-[10px] text-gray-500 font-medium">{uniqueSchools.join(' · ')}</span>
+      )}
     </div>
   )
 }

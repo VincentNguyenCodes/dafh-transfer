@@ -369,7 +369,7 @@ export default function RequirementsTab() {
         <div className="mb-4 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
             <div>
-              <p className="text-sm font-semibold text-gray-900 tracking-tight">Required - Need to Take</p>
+              <p className="text-sm font-semibold text-gray-900 tracking-tight">Required - Have Not Completed</p>
               <p className="text-xs text-gray-400 mt-0.5">Must complete for admission</p>
             </div>
             <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full">
@@ -388,7 +388,7 @@ export default function RequirementsTab() {
         <div className="mb-4 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
             <div>
-              <p className="text-sm font-semibold text-gray-900 tracking-tight">Recommended - Need to Take</p>
+              <p className="text-sm font-semibold text-gray-900 tracking-tight">Recommended - Have Not Completed</p>
               <p className="text-xs text-gray-400 mt-0.5">Not required, but saves units after transfer</p>
             </div>
             <span className="text-xs font-bold text-violet-600 bg-violet-50 px-2.5 py-1 rounded-full">

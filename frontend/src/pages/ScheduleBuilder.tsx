@@ -1,0 +1,252 @@
+import { DndContext, DragOverlay, PointerSensor, useDraggable, useDroppable, useSensor, useSensors } from '@dnd-kit/core'
+import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core'
+import { useMemo, useState } from 'react'
+
+export type ClassItem = {
+  code: string
+  name: string
+  units: number | null
+  needed_for: string[]
+}
+
+export type Quarter = {
+  id: string
+  term: 'Fall' | 'Winter' | 'Spring' | 'Summer'
+  year: number
+  class_codes: string[]
+}
+
+const TERMS: Quarter['term'][] = ['Winter', 'Spring', 'Summer', 'Fall']
+const BANK_ID = 'bank'
+
+type Props = {
+  classBank: ClassItem[]
+  initialQuarters?: Quarter[]
+  onBack: () => void
+  onSave: (quarters: Quarter[], remainingBank: ClassItem[]) => void
+  saving: boolean
+  error: string
+}
+
+export default function ScheduleBuilder({ classBank, initialQuarters = [], onBack, onSave, saving, error }: Props) {
+  const [quarters, setQuarters] = useState<Quarter[]>(initialQuarters)
+  const [bankCodes, setBankCodes] = useState<string[]>(() => {
+    const placed = new Set(initialQuarters.flatMap((q) => q.class_codes))
+    return classBank.map((c) => c.code).filter((code) => !placed.has(code))
+  })
+  const [activeDragId, setActiveDragId] = useState<string | null>(null)
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
+
+  const classByCode = useMemo(() => {
+    const m = new Map<string, ClassItem>()
+    for (const c of classBank) m.set(c.code, c)
+    return m
+  }, [classBank])
+
+  const addQuarter = () => {
+    const lastYear = quarters.length > 0 ? quarters[quarters.length - 1].year : new Date().getFullYear()
+    const lastTermIdx = quarters.length > 0 ? TERMS.indexOf(quarters[quarters.length - 1].term) : -1
+    let nextTermIdx = (lastTermIdx + 1) % TERMS.length
+    let nextYear = lastYear
+    if (lastTermIdx >= 0 && nextTermIdx === 0) nextYear = lastYear + 1
+    setQuarters((q) => [...q, {
+      id: `q-${Date.now()}`,
+      term: TERMS[nextTermIdx],
+      year: nextYear,
+      class_codes: [],
+    }])
+  }
+
+  const removeQuarter = (id: string) => {
+    setQuarters((qs) => {
+      const removed = qs.find((q) => q.id === id)
+      if (removed) setBankCodes((b) => [...b, ...removed.class_codes])
+      return qs.filter((q) => q.id !== id)
+    })
+  }
+
+  const updateQuarter = (id: string, patch: Partial<Quarter>) => {
+    setQuarters((qs) => qs.map((q) => (q.id === id ? { ...q, ...patch } : q)))
+  }
+
+  const onDragStart = (e: DragStartEvent) => {
+    setActiveDragId(String(e.active.id))
+  }
+
+  const onDragEnd = (e: DragEndEvent) => {
+    setActiveDragId(null)
+    const code = String(e.active.id)
+    const overId = e.over ? String(e.over.id) : null
+    if (!overId) return
+
+    setQuarters((qs) => qs.map((q) => ({ ...q, class_codes: q.class_codes.filter((c) => c !== code) })))
+    setBankCodes((b) => b.filter((c) => c !== code))
+
+    if (overId === BANK_ID) {
+      setBankCodes((b) => (b.includes(code) ? b : [...b, code]))
+    } else {
+      setQuarters((qs) => qs.map((q) => (q.id === overId ? { ...q, class_codes: [...q.class_codes, code] } : q)))
+    }
+  }
+
+  const remainingBank = useMemo(
+    () => bankCodes.map((code) => classByCode.get(code)).filter((c): c is ClassItem => !!c),
+    [bankCodes, classByCode]
+  )
+
+  const totalRemaining = bankCodes.length
+  const totalPlanned = quarters.reduce((n, q) => n + q.class_codes.length, 0)
+
+  return (
+    <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
+      <div>
+        <div className="mb-5 flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-bold text-gray-900 mb-1">Build your schedule</h2>
+            <p className="text-gray-500 text-sm">Drag classes from the bank into the quarter you plan to take them.</p>
+          </div>
+          <button onClick={onBack} className="text-sm text-gray-500 hover:text-gray-700">Back</button>
+        </div>
+
+        <div className="text-xs text-gray-500 mb-3">
+          {totalRemaining} in bank · {totalPlanned} planned across {quarters.length} quarter{quarters.length === 1 ? '' : 's'}
+        </div>
+
+        <ClassBank items={remainingBank} />
+
+        <div className="mt-6 space-y-3">
+          {quarters.map((q) => (
+            <QuarterCard
+              key={q.id}
+              quarter={q}
+              classes={q.class_codes.map((code) => classByCode.get(code)).filter((c): c is ClassItem => !!c)}
+              onChange={(patch) => updateQuarter(q.id, patch)}
+              onRemove={() => removeQuarter(q.id)}
+            />
+          ))}
+        </div>
+
+        <button
+          onClick={addQuarter}
+          className="mt-4 w-full border-2 border-dashed border-gray-200 hover:border-gray-300 hover:bg-gray-50 rounded-2xl py-4 text-sm font-medium text-gray-500 transition-colors"
+        >
+          + Add quarter
+        </button>
+
+        {error && <p className="text-sm text-red-500 mt-4">{error}</p>}
+
+        <div className="sticky bottom-0 -mx-8 mt-6 px-8 py-3 bg-white border-t border-gray-100 flex items-center justify-between">
+          <button onClick={onBack} className="text-sm text-gray-700 hover:text-gray-900 font-medium">Back</button>
+          <button
+            onClick={() => onSave(quarters, remainingBank)}
+            disabled={saving}
+            className="bg-indigo-600 text-white text-sm font-medium px-5 py-2 rounded-lg disabled:opacity-40 hover:bg-indigo-700 transition-colors"
+          >
+            {saving ? 'Saving...' : 'Save schedule'}
+          </button>
+        </div>
+      </div>
+
+      <DragOverlay>
+        {activeDragId && classByCode.get(activeDragId) ? (
+          <ClassChip c={classByCode.get(activeDragId)!} dragging />
+        ) : null}
+      </DragOverlay>
+    </DndContext>
+  )
+}
+
+function ClassBank({ items }: { items: ClassItem[] }) {
+  const { setNodeRef, isOver } = useDroppable({ id: BANK_ID })
+  return (
+    <div
+      ref={setNodeRef}
+      className={`rounded-2xl border-2 ${isOver ? 'border-indigo-300 bg-indigo-50/40' : 'border-gray-100 bg-white'} shadow-sm overflow-hidden transition-colors`}
+    >
+      <div className="px-5 py-3 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
+        <div>
+          <p className="text-sm font-bold text-gray-900">Class bank</p>
+          <p className="text-xs text-gray-500 mt-0.5">Drag a class into a quarter below</p>
+        </div>
+        <span className="text-xs font-bold text-gray-600 bg-white px-2 py-0.5 rounded-full border border-gray-200">{items.length}</span>
+      </div>
+      <div className="p-4">
+        {items.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-6">All classes have been placed.</p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {items.map((c) => <ClassChip key={c.code} c={c} />)}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function QuarterCard({
+  quarter,
+  classes,
+  onChange,
+  onRemove,
+}: {
+  quarter: Quarter
+  classes: ClassItem[]
+  onChange: (patch: Partial<Quarter>) => void
+  onRemove: () => void
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: quarter.id })
+  const totalUnits = classes.reduce((n, c) => n + (c.units || 0), 0)
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`rounded-2xl border-2 ${isOver ? 'border-indigo-300 bg-indigo-50/40' : 'border-gray-100 bg-white'} shadow-sm overflow-hidden transition-colors`}
+    >
+      <div className="px-5 py-3 border-b border-gray-100 flex items-center gap-3">
+        <select
+          value={quarter.term}
+          onChange={(e) => onChange({ term: e.target.value as Quarter['term'] })}
+          className="text-sm font-bold text-gray-900 bg-transparent focus:outline-none focus:ring-2 focus:ring-indigo-200 rounded px-1"
+        >
+          {TERMS.map((t) => <option key={t} value={t}>{t}</option>)}
+        </select>
+        <input
+          type="number"
+          value={quarter.year}
+          onChange={(e) => onChange({ year: parseInt(e.target.value || '0', 10) })}
+          className="text-sm font-bold text-gray-900 w-20 bg-transparent focus:outline-none focus:ring-2 focus:ring-indigo-200 rounded px-1"
+        />
+        <span className="text-xs text-gray-500 flex-1">{totalUnits} units · {classes.length} class{classes.length === 1 ? '' : 'es'}</span>
+        <button onClick={onRemove} className="text-xs text-gray-400 hover:text-red-500 transition-colors">Remove</button>
+      </div>
+      <div className="p-4 min-h-[80px]">
+        {classes.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-4">Drop classes here</p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {classes.map((c) => <ClassChip key={c.code} c={c} />)}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function ClassChip({ c, dragging }: { c: ClassItem; dragging?: boolean }) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: c.code })
+  const hidden = isDragging && !dragging
+  return (
+    <div
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      className={`flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 bg-white cursor-grab active:cursor-grabbing select-none shadow-sm ${
+        hidden ? 'opacity-30' : ''
+      } ${dragging ? 'shadow-lg' : ''}`}
+    >
+      <span className="font-mono text-sm font-semibold text-gray-900">{c.code}</span>
+      {c.units != null && <span className="text-xs text-gray-400">{c.units}u</span>}
+    </div>
+  )
+}

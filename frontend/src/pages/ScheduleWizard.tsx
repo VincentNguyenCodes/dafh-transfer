@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import api from '../api/client'
+import ScheduleBuilder, { type ClassItem, type Quarter } from './ScheduleBuilder'
 
 type CourseItem = {
   code: string
@@ -40,12 +41,7 @@ type TargetResult = {
   elective_series: ElectiveGroup[]
 }
 
-type ClassBankItem = {
-  code: string
-  name: string
-  units: number | null
-  needed_for: string[]
-}
+type ClassBankItem = ClassItem
 
 type Props = {
   scheduleType: 'custom' | 'optimal'
@@ -182,7 +178,7 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
     return Array.from(bank.values()).map((c) => ({ ...c, needed_for: Array.from(c.needed_for) }))
   }, [results, picks, electivePicks, scheduleType])
 
-  const save = async () => {
+  const save = async (quarters: Quarter[], remainingBank: ClassItem[]) => {
     setSaving(true)
     setError('')
     try {
@@ -193,8 +189,8 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
       await api.post('/schedules/', {
         name: defaultName,
         schedule_type: scheduleType,
-        quarters: [],
-        class_bank: classBank,
+        quarters,
+        class_bank: remainingBank,
       })
       onSaved()
     } catch {
@@ -224,7 +220,7 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
 
   if (stage === 'building') {
     return (
-      <BuilderPlaceholder
+      <ScheduleBuilder
         classBank={classBank}
         onBack={() => setStage('picking')}
         onSave={save}
@@ -357,64 +353,3 @@ function PickerCard({
   )
 }
 
-function BuilderPlaceholder({
-  classBank,
-  onBack,
-  onSave,
-  saving,
-  error,
-}: {
-  classBank: ClassBankItem[]
-  onBack: () => void
-  onSave: () => void
-  saving: boolean
-  error: string
-}) {
-  return (
-    <div>
-      <div className="mb-5 flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900 mb-1">Review your schedule</h2>
-          <p className="text-gray-500 text-sm">These are the classes you still need to take. The quarter-by-quarter builder is coming next.</p>
-        </div>
-        <button onClick={onBack} className="text-sm text-gray-500 hover:text-gray-700">Back</button>
-      </div>
-
-      <div className="border border-gray-100 rounded-2xl overflow-hidden shadow-sm mb-5">
-        <div className="px-5 py-3 bg-gray-50 border-b border-gray-100">
-          <p className="text-sm font-bold text-gray-900">Class bank</p>
-          <p className="text-xs text-gray-500 mt-0.5">{classBank.length} class{classBank.length === 1 ? '' : 'es'} you still need</p>
-        </div>
-        <div className="p-4 space-y-2 bg-white">
-          {classBank.length === 0 ? (
-            <p className="text-sm text-gray-500 text-center py-6">No classes needed — you have already taken everything.</p>
-          ) : (
-            classBank.map((c) => (
-              <div key={c.code} className="rounded-xl border border-gray-100 px-4 py-3">
-                <div className="flex items-center gap-3 mb-1">
-                  <span className="font-mono text-sm font-semibold text-gray-900 shrink-0">{c.code}</span>
-                  <span className="text-sm text-gray-600 truncate flex-1">{c.name}</span>
-                  {c.units != null && <span className="text-xs text-gray-400 shrink-0">{c.units}u</span>}
-                </div>
-                <p className="text-xs text-gray-500">Needed for: {c.needed_for.join(', ')}</p>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-
-      {error && <p className="text-sm text-red-500 mb-3">{error}</p>}
-
-      <div className="flex items-center justify-end gap-3">
-        <button onClick={onBack} className="text-sm text-gray-700 hover:text-gray-900 font-medium">Back</button>
-        <button
-          onClick={onSave}
-          disabled={saving}
-          className="bg-indigo-600 text-white text-sm font-medium px-5 py-2 rounded-lg disabled:opacity-40 hover:bg-indigo-700 transition-colors"
-        >
-          {saving ? 'Saving...' : 'Save schedule'}
-        </button>
-      </div>
-    </div>
-  )
-}

@@ -19,3 +19,13 @@ class TransferTarget(models.Model):
 
     class Meta:
         unique_together = ('user', 'receiving_institution_id', 'major_code')
+
+
+class OptionPreference(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='option_preferences')
+    requirement_key = models.CharField(max_length=500)
+    chosen_option_index = models.IntegerField()
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('user', 'requirement_key')

@@ -2,7 +2,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import StudentProgress, TransferTarget
+from .models import OptionPreference, StudentProgress, TransferTarget
 from .results import compute_best_schedule, compute_remaining
 from .serializers import StudentProgressSerializer, TransferTargetSerializer
 
@@ -55,3 +55,32 @@ class BestScheduleView(APIView):
         results = compute_remaining(request.user)
         schedule = compute_best_schedule(results)
         return Response(schedule)
+
+
+class OptionPreferenceView(APIView):
+    def get(self, request):
+        prefs = OptionPreference.objects.filter(user=request.user).values('requirement_key', 'chosen_option_index')
+        return Response(list(prefs))
+
+    def post(self, request):
+        key = request.data.get('requirement_key')
+        idx = request.data.get('chosen_option_index')
+        if not key or idx is None:
+            return Response({'error': 'requirement_key and chosen_option_index required'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            idx = int(idx)
+        except (TypeError, ValueError):
+            return Response({'error': 'chosen_option_index must be an integer'}, status=status.HTTP_400_BAD_REQUEST)
+        OptionPreference.objects.update_or_create(
+            user=request.user,
+            requirement_key=key,
+            defaults={'chosen_option_index': idx},
+        )
+        return Response({'requirement_key': key, 'chosen_option_index': idx})
+
+    def delete(self, request):
+        key = request.data.get('requirement_key') or request.query_params.get('requirement_key')
+        if not key:
+            return Response({'error': 'requirement_key required'}, status=status.HTTP_400_BAD_REQUEST)
+        OptionPreference.objects.filter(user=request.user, requirement_key=key).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

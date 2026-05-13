@@ -218,7 +218,9 @@ export default function RequirementsTab() {
     api.get('/results/')
       .then(({ data }) => {
         setResults(data)
-        setSelectedTarget(null)
+        if (data && data.length > 0) {
+          setSelectedTarget(data[0].target)
+        }
       })
       .catch(() => setError('Failed to load results. Make sure you have saved schools and classes.'))
       .finally(() => setLoading(false))
@@ -302,16 +304,6 @@ export default function RequirementsTab() {
       </div>
 
       <div className="flex gap-2 flex-wrap mb-6">
-        <button
-          onClick={() => setSelectedTarget(null)}
-          className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-            selectedTarget === null
-              ? 'bg-gray-900 text-white'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-          }`}
-        >
-          All Schools
-        </button>
         {results.map((r) => {
           const colorIdx = targetColorMap.get(r.target) ?? 0
           const color = BADGE_COLORS[colorIdx]
@@ -319,7 +311,7 @@ export default function RequirementsTab() {
           return (
             <button
               key={r.target}
-              onClick={() => setSelectedTarget(isActive ? null : r.target)}
+              onClick={() => setSelectedTarget(r.target)}
               className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
                 isActive ? `${color.bg} ${color.text} ring-2 ring-offset-1 ring-current` : `${color.bg} ${color.text} opacity-70 hover:opacity-100`
               }`}

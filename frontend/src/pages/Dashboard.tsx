@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../api/client'
+import BestScheduleTab from './BestScheduleTab'
 import ClassesTab from './ClassesTab'
+import CustomPlanTab from './CustomPlanTab'
 import RequirementsTab from './RequirementsTab'
 import TransferTargetsTab from './TransferTargetsTab'
 
@@ -11,10 +13,12 @@ const STEPS = [
   { num: 3, label: 'View Your Results', desc: 'See which classes you still need to take', path: '/dashboard', icon: '✅' },
 ]
 
-type Tab = 'requirements' | 'targets' | 'classes'
+type Tab = 'requirements' | 'custom' | 'schedule' | 'targets' | 'classes'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'requirements', label: 'Requirements' },
+  { id: 'custom', label: 'Custom Plan' },
+  { id: 'schedule', label: 'Best Schedule' },
   { id: 'targets', label: 'Transfer Targets' },
   { id: 'classes', label: 'Classes' },
 ]
@@ -151,6 +155,8 @@ export default function Dashboard() {
 
       <main className="w-full px-8 py-10">
         {activeTab === 'requirements' && <RequirementsTab />}
+        {activeTab === 'custom' && <CustomPlanTab />}
+        {activeTab === 'schedule' && <BestScheduleTab />}
         {activeTab === 'targets' && <TransferTargetsTab />}
         {activeTab === 'classes' && <ClassesTab />}
       </main>

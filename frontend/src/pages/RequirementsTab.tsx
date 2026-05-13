@@ -61,6 +61,8 @@ type Badge = {
   major_name: string
   colorIdx: number
   satisfied: boolean
+  receiving_code: string
+  receiving_name: string
 }
 
 type AggregatedReq = {
@@ -69,6 +71,10 @@ type AggregatedReq = {
   satisfied: boolean
   no_articulation: boolean
   badges: Badge[]
+}
+
+function fmtCode(code: string) {
+  return code.replace(/([A-Za-z]+)(\d)/, '$1 $2')
 }
 
 const BADGE_COLORS = [
@@ -101,6 +107,8 @@ function buildAggregated(
         major_name: result.major_name,
         colorIdx,
         satisfied: req.satisfied,
+        receiving_code: req.receiving_code,
+        receiving_name: req.receiving_name,
       }
 
       if (!req.no_articulation && map.has(key)) {
@@ -133,10 +141,10 @@ function AggregatedRequirementRow({ req }: { req: AggregatedReq }) {
           return (
             <span
               key={i}
-              title={b.major_name}
+              title={`${b.major_name}${b.receiving_name ? ` · ${b.receiving_name}` : ''}`}
               className={`text-xs px-2 py-0.5 rounded-full font-medium ${color.bg} ${color.text} ${b.satisfied ? 'opacity-40 line-through' : ''}`}
             >
-              {b.school_name}
+              {b.school_name}{b.receiving_code ? ` · ${fmtCode(b.receiving_code)}` : ''}
             </span>
           )
         })}

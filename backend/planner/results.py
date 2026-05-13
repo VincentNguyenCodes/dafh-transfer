@@ -418,10 +418,22 @@ def _build_option_groups(sending: dict, completed_codes: set, in_progress_codes:
 
 def _build_options(sending: dict, completed_codes: set, in_progress_codes: set, school: str) -> list:
     groups = _build_option_groups(sending, completed_codes, in_progress_codes, school)
-    options = []
-    for g in groups:
-        options.extend(g)
-    return options
+    if not groups:
+        return []
+    if len(groups) == 1:
+        return groups[0]
+    combined = groups[0]
+    for next_group in groups[1:]:
+        new_combined = []
+        for opt_a in combined:
+            for opt_b in next_group:
+                merged = opt_a['courses'] + opt_b['courses']
+                new_combined.append({
+                    'courses': merged,
+                    'satisfied': all(c['completed'] for c in merged),
+                })
+        combined = new_combined
+    return combined
 
 
 def _append_requirement(requirements, recv_code, recv_name, art_row, completed_codes, in_progress_codes, school):

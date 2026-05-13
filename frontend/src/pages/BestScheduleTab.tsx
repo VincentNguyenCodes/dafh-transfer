@@ -12,7 +12,7 @@ type CourseInOption = {
   in_progress: boolean
 }
 
-type TiedOption = { courses: CourseInOption[]; satisfied: boolean }
+type TiedOption = { courses: CourseInOption[]; satisfied: boolean; name?: string }
 
 type NeedsChoice = {
   requirement_key: string
@@ -139,12 +139,15 @@ export default function BestScheduleTab() {
                       disabled={saving === nc.requirement_key}
                       className="w-full text-left px-3 py-2 rounded-lg border border-gray-100 hover:bg-gray-50 hover:border-gray-200 disabled:opacity-40 transition-colors"
                     >
+                      {opt.name && (
+                        <p className="text-xs font-semibold text-gray-700 mb-1">{opt.name}</p>
+                      )}
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
                         {opt.courses.map((c, ci) => (
                           <span key={ci} className="flex items-center gap-1.5">
                             {ci > 0 && <span className="text-xs text-gray-400">+</span>}
                             <span className={`font-mono text-sm font-semibold ${c.completed ? 'text-gray-500 line-through' : 'text-gray-900'}`}>{c.code}</span>
-                            <span className="text-xs text-gray-500">{c.name}</span>
+                            {c.name && <span className="text-xs text-gray-500">{c.name}</span>}
                           </span>
                         ))}
                       </div>

@@ -591,13 +591,40 @@ def compute_best_schedule(targets_results: list, user_prefs=None) -> dict:
             series_list = group.get('series', [])
             if not series_list:
                 continue
+
             satisfied = next((s for s in series_list if s.get('satisfied')), None)
-            best_series = satisfied or max(
-                series_list,
-                key=lambda s: (s.get('completed_count', 0), -s.get('total', 9999)),
+            if satisfied:
+                for c in satisfied.get('courses', []):
+                    add_course(c, target_label, group.get('label', 'Elective series'), 'elective')
+                continue
+
+            label = group.get('label', 'Elective series')
+            key = 'elective:' + label + '|' + '|'.join(
+                sorted(c.get('code', '') for s in series_list for c in s.get('courses', []))
             )
-            for c in best_series.get('courses', []):
-                add_course(c, target_label, group.get('label', 'Elective series'), 'elective')
+
+            saved = user_prefs.get(key)
+            if saved is not None and 0 <= saved < len(series_list):
+                for c in series_list[saved].get('courses', []):
+                    add_course(c, target_label, label, 'elective')
+                continue
+
+            if key not in needs_choice_keys:
+                needs_choice_keys.add(key)
+                needs_choice.append({
+                    'requirement_key': key,
+                    'receiving_code': 'elective',
+                    'receiving_name': label,
+                    'target': target_label,
+                    'options': [
+                        {
+                            'name': s.get('name', ''),
+                            'courses': s.get('courses', []),
+                            'satisfied': s.get('satisfied', False),
+                        }
+                        for s in series_list
+                    ],
+                })
 
     out = []
     for c in classes.values():

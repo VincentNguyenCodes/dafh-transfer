@@ -503,6 +503,97 @@ def _build_series(series_config: list, completed_codes: set, in_progress_codes: 
     return result
 
 
+def _pick_best_option(options):
+    if not options:
+        return None
+    if len(options) == 1:
+        return options[0]
+    best = options[0]
+    best_score = -1
+    for opt in options:
+        completed_count = sum(1 for c in opt['courses'] if c.get('completed'))
+        in_progress_count = sum(1 for c in opt['courses'] if c.get('in_progress'))
+        total = len(opt['courses'])
+        remaining = total - completed_count - in_progress_count
+        score = completed_count * 1000 + in_progress_count * 100 - remaining
+        if score > best_score:
+            best_score = score
+            best = opt
+    return best
+
+
+def compute_best_schedule(targets_results: list) -> dict:
+    classes = {}
+
+    def add_course(c, target_label, req_name, kind):
+        code = c['code']
+        if c.get('completed'):
+            return
+        entry = classes.get(code)
+        if not entry:
+            entry = {
+                'code': code,
+                'name': c.get('name', ''),
+                'units': c.get('units'),
+                'school': c.get('school', ''),
+                'in_progress': c.get('in_progress', False),
+                'needed_for': [],
+                'kinds': set(),
+            }
+            classes[code] = entry
+        entry['needed_for'].append({'target': target_label, 'requirement': req_name})
+        entry['kinds'].add(kind)
+
+    for r in targets_results:
+        target_label = r.get('school_name') or r.get('target', '')
+
+        for req in r.get('requirements', []):
+            if req.get('no_articulation') or req.get('satisfied'):
+                continue
+            best = _pick_best_option(req.get('options', []))
+            if not best:
+                continue
+            for c in best.get('courses', []):
+                add_course(c, target_label, req.get('receiving_name') or req.get('receiving_code', ''), 'required')
+
+        for rec in r.get('recommended', []):
+            if rec.get('no_articulation') or rec.get('satisfied'):
+                continue
+            best = _pick_best_option(rec.get('options', []))
+            if not best:
+                continue
+            for c in best.get('courses', []):
+                add_course(c, target_label, rec.get('receiving_name') or rec.get('receiving_code', ''), 'recommended')
+
+        for group in r.get('elective_series', []):
+            series_list = group.get('series', [])
+            if not series_list:
+                continue
+            satisfied = next((s for s in series_list if s.get('satisfied')), None)
+            best_series = satisfied or max(
+                series_list,
+                key=lambda s: (s.get('completed_count', 0), -s.get('total', 9999)),
+            )
+            for c in best_series.get('courses', []):
+                add_course(c, target_label, group.get('label', 'Elective series'), 'elective')
+
+    out = []
+    for c in classes.values():
+        c['kinds'] = sorted(c['kinds'])
+        out.append(c)
+    out.sort(key=lambda c: (
+        0 if c['in_progress'] else 1,
+        'required' not in c['kinds'],
+        c['code'],
+    ))
+
+    return {
+        'classes': out,
+        'total': len(out),
+        'in_progress': sum(1 for c in out if c['in_progress']),
+    }
+
+
 def compute_remaining(user) -> list:
     from transcripts.models import TranscriptEntry
     from .models import TransferTarget

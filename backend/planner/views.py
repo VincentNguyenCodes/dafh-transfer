@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import StudentProgress, TransferTarget
-from .results import compute_remaining
+from .results import compute_best_schedule, compute_remaining
 from .serializers import StudentProgressSerializer, TransferTargetSerializer
 
 
@@ -48,3 +48,10 @@ class ResultsView(APIView):
     def get(self, request):
         results = compute_remaining(request.user)
         return Response(results)
+
+
+class BestScheduleView(APIView):
+    def get(self, request):
+        results = compute_remaining(request.user)
+        schedule = compute_best_schedule(results)
+        return Response(schedule)

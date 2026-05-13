@@ -22,13 +22,17 @@ const BANK_ID = 'bank'
 type Props = {
   classBank: ClassItem[]
   initialQuarters?: Quarter[]
+  name: string
+  onNameChange: (name: string) => void
   onBack: () => void
   onSave: (quarters: Quarter[], remainingBank: ClassItem[]) => void
   saving: boolean
   error: string
 }
 
-export default function ScheduleBuilder({ classBank, initialQuarters = [], onBack, onSave, saving, error }: Props) {
+export default function ScheduleBuilder({ classBank, initialQuarters = [], name, onNameChange, onBack, onSave, saving, error }: Props) {
+  const [editingName, setEditingName] = useState(!name)
+  const [draftName, setDraftName] = useState(name)
   const [quarters, setQuarters] = useState<Quarter[]>(initialQuarters)
   const [bankCodes, setBankCodes] = useState<string[]>(() => {
     const placed = new Set(initialQuarters.flatMap((q) => q.class_codes))
@@ -101,12 +105,62 @@ export default function ScheduleBuilder({ classBank, initialQuarters = [], onBac
   return (
     <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
       <div>
-        <div className="mb-5 flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-bold text-gray-900 mb-1">Build your schedule</h2>
+        <div className="mb-5 flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            {editingName ? (
+              <div className="flex items-center gap-2 mb-1">
+                <input
+                  type="text"
+                  value={draftName}
+                  onChange={(e) => setDraftName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && draftName.trim()) {
+                      onNameChange(draftName.trim())
+                      setEditingName(false)
+                    }
+                    if (e.key === 'Escape' && name) {
+                      setDraftName(name)
+                      setEditingName(false)
+                    }
+                  }}
+                  placeholder="Name this schedule..."
+                  autoFocus
+                  className="text-xl font-bold text-gray-900 bg-transparent border-b-2 border-indigo-400 focus:outline-none focus:border-indigo-600 px-1 py-0.5 flex-1"
+                />
+                <button
+                  onClick={() => {
+                    if (!draftName.trim()) return
+                    onNameChange(draftName.trim())
+                    setEditingName(false)
+                  }}
+                  disabled={!draftName.trim()}
+                  className="text-sm bg-indigo-600 text-white px-3 py-1 rounded-lg disabled:opacity-40 hover:bg-indigo-700"
+                >
+                  Set
+                </button>
+                {name && (
+                  <button
+                    onClick={() => { setDraftName(name); setEditingName(false) }}
+                    className="text-sm text-gray-500 hover:text-gray-700"
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 mb-1">
+                <h2 className="text-xl font-bold text-gray-900 truncate">{name}</h2>
+                <button
+                  onClick={() => { setDraftName(name); setEditingName(true) }}
+                  className="text-xs text-gray-500 hover:text-gray-700 underline"
+                >
+                  Rename
+                </button>
+              </div>
+            )}
             <p className="text-gray-500 text-sm">Drag classes from the bank into the quarter you plan to take them.</p>
           </div>
-          <button onClick={onBack} className="text-sm text-gray-500 hover:text-gray-700">Back</button>
+          <button onClick={onBack} className="text-sm text-gray-500 hover:text-gray-700 shrink-0 mt-1">Back</button>
         </div>
 
         <div className="text-xs text-gray-500 mb-3">
@@ -139,7 +193,10 @@ export default function ScheduleBuilder({ classBank, initialQuarters = [], onBac
         <div className="sticky bottom-0 -mx-8 mt-6 px-8 py-3 bg-white border-t border-gray-100 flex items-center justify-between">
           <button onClick={onBack} className="text-sm text-gray-700 hover:text-gray-900 font-medium">Back</button>
           <button
-            onClick={() => onSave(quarters, remainingBank)}
+            onClick={() => {
+              if (!name) { setEditingName(true); return }
+              onSave(quarters, remainingBank)
+            }}
             disabled={saving}
             className="bg-indigo-600 text-white text-sm font-medium px-5 py-2 rounded-lg disabled:opacity-40 hover:bg-indigo-700 transition-colors"
           >

@@ -68,6 +68,7 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
   const [electivePicks, setElectivePicks] = useState<Record<string, number>>({})
   const [stage, setStage] = useState<'picking' | 'building'>('picking')
   const [saving, setSaving] = useState(false)
+  const [name, setName] = useState('')
 
   useEffect(() => {
     api.get('/results/')
@@ -182,19 +183,16 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
     setSaving(true)
     setError('')
     try {
-      const count = (await api.get('/schedules/')).data.length
-      const defaultName = scheduleType === 'optimal'
-        ? `Optimal plan ${count + 1}`
-        : `Custom plan ${count + 1}`
       await api.post('/schedules/', {
-        name: defaultName,
+        name,
         schedule_type: scheduleType,
         quarters,
         class_bank: remainingBank,
       })
       onSaved()
-    } catch {
-      setError('Failed to save schedule.')
+    } catch (err: unknown) {
+      const errAxios = err as { response?: { data?: { error?: string } } }
+      setError(errAxios?.response?.data?.error || 'Failed to save schedule.')
       setSaving(false)
     }
   }
@@ -222,6 +220,8 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
     return (
       <ScheduleBuilder
         classBank={classBank}
+        name={name}
+        onNameChange={setName}
         onBack={() => setStage('picking')}
         onSave={save}
         saving={saving}

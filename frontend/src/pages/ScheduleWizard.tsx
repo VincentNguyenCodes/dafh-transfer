@@ -150,12 +150,16 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
   const visibleElectives = useMemo(() => electiveGroups, [electiveGroups])
 
   useEffect(() => {
-    if (scheduleType !== 'optimal' || !results) return
+    if (!results) return
     const auto: Record<string, number> = {}
     for (const m of multiOptionReqs) {
       const min = Math.min(...m.remainingCounts)
       const tied = m.remainingCounts.map((c, i) => c === min ? i : -1).filter((i) => i >= 0)
-      if (tied.length === 1) auto[m.key] = tied[0]
+      if (scheduleType === 'optimal') {
+        if (tied.length === 1) auto[m.key] = tied[0]
+      } else {
+        auto[m.key] = tied[0]
+      }
     }
     setPicks((p) => ({ ...auto, ...p }))
   }, [scheduleType, results, multiOptionReqs])
@@ -400,36 +404,49 @@ function PickerCard({
         <p className="text-xs text-gray-500">{subtitle}</p>
       </div>
       <div className="space-y-1">
-        {options.map((opt, oi) => {
-          const isSelected = oi === selected
-          return (
-            <label
-              key={oi}
-              className={`flex items-start gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors ${
-                isSelected ? 'bg-indigo-50 border border-indigo-200' : 'hover:bg-gray-50 border border-transparent'
-              }`}
-            >
-              <input
-                type="radio"
-                checked={isSelected}
-                onChange={() => onSelect(oi)}
-                className="accent-indigo-600 mt-0.5"
-              />
-              <div className="flex-1">
-                {opt.seriesName && <p className="text-xs font-semibold text-gray-700 mb-1">{opt.seriesName}</p>}
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
-                  {opt.courses.map((c, ci) => (
-                    <span key={ci} className="flex items-center gap-1.5">
-                      {ci > 0 && <span className="text-xs text-gray-400">+</span>}
-                      <span className={`font-mono text-sm font-semibold ${c.completed ? 'text-gray-500 line-through' : 'text-gray-900'}`}>{c.code}</span>
-                      {c.name && c.name !== c.code && <span className="text-xs text-gray-500">{c.name}</span>}
+        {(() => {
+          const remainingCounts = options.map((opt) => opt.courses.filter((c) => !c.completed).length)
+          const minRemaining = Math.min(...remainingCounts)
+          return options.map((opt, oi) => {
+            const isSelected = oi === selected
+            const remaining = remainingCounts[oi]
+            const isOptimal = remaining === minRemaining
+            return (
+              <label
+                key={oi}
+                className={`flex items-start gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors ${
+                  isSelected ? 'bg-indigo-50 border border-indigo-200' : 'hover:bg-gray-50 border border-transparent'
+                }`}
+              >
+                <input
+                  type="radio"
+                  checked={isSelected}
+                  onChange={() => onSelect(oi)}
+                  className="accent-indigo-600 mt-0.5"
+                />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    {opt.seriesName && <p className="text-xs font-semibold text-gray-700">{opt.seriesName}</p>}
+                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
+                      isOptimal ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                    }`}>
+                      {remaining === 0 ? 'Already done' : `${remaining} class${remaining === 1 ? '' : 'es'} to take`}
                     </span>
-                  ))}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
+                    {opt.courses.map((c, ci) => (
+                      <span key={ci} className="flex items-center gap-1.5">
+                        {ci > 0 && <span className="text-xs text-gray-400">+</span>}
+                        <span className={`font-mono text-sm font-semibold ${c.completed ? 'text-gray-500 line-through' : 'text-gray-900'}`}>{c.code}</span>
+                        {c.name && c.name !== c.code && <span className="text-xs text-gray-500">{c.name}</span>}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            </label>
-          )
-        })}
+              </label>
+            )
+          })
+        })()}
       </div>
     </div>
   )

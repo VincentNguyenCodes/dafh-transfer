@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import BestScheduleView, OptionPreferenceView, ProgressView, ResultsView, TransferTargetDetailView, TransferTargetView
+from .views import BestScheduleView, OptionPreferenceView, ProgressView, ResultsView, ScheduleDetailView, ScheduleListView, TransferTargetDetailView, TransferTargetView
 
 urlpatterns = [
     path('progress/', ProgressView.as_view(), name='progress'),
@@ -9,4 +9,6 @@ urlpatterns = [
     path('results/', ResultsView.as_view(), name='results'),
     path('best-schedule/', BestScheduleView.as_view(), name='best-schedule'),
     path('option-preferences/', OptionPreferenceView.as_view(), name='option-preferences'),
+    path('schedules/', ScheduleListView.as_view(), name='schedules'),
+    path('schedules/<int:pk>/', ScheduleDetailView.as_view(), name='schedule-detail'),
 ]

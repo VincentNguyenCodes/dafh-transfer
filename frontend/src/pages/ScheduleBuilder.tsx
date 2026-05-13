@@ -171,24 +171,25 @@ export default function ScheduleBuilder({ classBank, prePlaced = [], initialQuar
 
         <ClassBank items={remainingBank} />
 
-        <div className="mt-6 space-y-3">
-          {quarters.map((q) => (
-            <QuarterCard
-              key={q.id}
-              quarter={q}
-              classes={q.class_codes.map((code) => classByCode.get(code)).filter((c): c is ClassItem => !!c)}
-              onChange={(patch) => updateQuarter(q.id, patch)}
-              onRemove={() => removeQuarter(q.id)}
-            />
-          ))}
+        <div className="mt-6 -mx-8 px-8 overflow-x-auto pb-3">
+          <div className="flex gap-3 items-start min-w-min">
+            {quarters.map((q) => (
+              <QuarterCard
+                key={q.id}
+                quarter={q}
+                classes={q.class_codes.map((code) => classByCode.get(code)).filter((c): c is ClassItem => !!c)}
+                onChange={(patch) => updateQuarter(q.id, patch)}
+                onRemove={() => removeQuarter(q.id)}
+              />
+            ))}
+            <button
+              onClick={addQuarter}
+              className="shrink-0 w-56 h-32 border-2 border-dashed border-gray-200 hover:border-gray-300 hover:bg-gray-50 rounded-2xl text-sm font-medium text-gray-500 transition-colors"
+            >
+              + Add quarter
+            </button>
+          </div>
         </div>
-
-        <button
-          onClick={addQuarter}
-          className="mt-4 w-full border-2 border-dashed border-gray-200 hover:border-gray-300 hover:bg-gray-50 rounded-2xl py-4 text-sm font-medium text-gray-500 transition-colors"
-        >
-          + Add quarter
-        </button>
 
         {error && <p className="text-sm text-red-500 mt-4">{error}</p>}
 
@@ -260,30 +261,32 @@ function QuarterCard({
   return (
     <div
       ref={setNodeRef}
-      className={`rounded-2xl border-2 ${isOver ? 'border-indigo-300 bg-indigo-50/40' : 'border-gray-100 bg-white'} shadow-sm overflow-hidden transition-colors`}
+      className={`shrink-0 w-56 rounded-2xl border-2 ${isOver ? 'border-indigo-300 bg-indigo-50/40' : 'border-gray-100 bg-white'} shadow-sm flex flex-col transition-colors`}
     >
-      <div className="px-5 py-3 border-b border-gray-100 flex items-center gap-3">
-        <select
-          value={quarter.term}
-          onChange={(e) => onChange({ term: e.target.value as Quarter['term'] })}
-          className="text-sm font-bold text-gray-900 bg-transparent focus:outline-none focus:ring-2 focus:ring-indigo-200 rounded px-1"
-        >
-          {TERMS.map((t) => <option key={t} value={t}>{t}</option>)}
-        </select>
-        <input
-          type="number"
-          value={quarter.year}
-          onChange={(e) => onChange({ year: parseInt(e.target.value || '0', 10) })}
-          className="text-sm font-bold text-gray-900 w-20 bg-transparent focus:outline-none focus:ring-2 focus:ring-indigo-200 rounded px-1"
-        />
-        <span className="text-xs text-gray-500 flex-1">{totalUnits} units · {classes.length} class{classes.length === 1 ? '' : 'es'}</span>
-        <button onClick={onRemove} className="text-xs text-gray-400 hover:text-red-500 transition-colors">Remove</button>
+      <div className="px-3 py-2 border-b border-gray-100">
+        <div className="flex items-center gap-1 mb-1">
+          <select
+            value={quarter.term}
+            onChange={(e) => onChange({ term: e.target.value as Quarter['term'] })}
+            className="text-sm font-bold text-gray-900 bg-transparent focus:outline-none focus:ring-2 focus:ring-indigo-200 rounded px-1 min-w-0"
+          >
+            {TERMS.map((t) => <option key={t} value={t}>{t}</option>)}
+          </select>
+          <input
+            type="number"
+            value={quarter.year}
+            onChange={(e) => onChange({ year: parseInt(e.target.value || '0', 10) })}
+            className="text-sm font-bold text-gray-900 w-16 bg-transparent focus:outline-none focus:ring-2 focus:ring-indigo-200 rounded px-1"
+          />
+          <button onClick={onRemove} className="ml-auto text-xs text-gray-400 hover:text-red-500 transition-colors">×</button>
+        </div>
+        <p className="text-xs text-gray-500">{totalUnits}u · {classes.length} class{classes.length === 1 ? '' : 'es'}</p>
       </div>
-      <div className="p-4 min-h-[80px]">
+      <div className="p-2 flex-1 min-h-[120px]">
         {classes.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-4">Drop classes here</p>
+          <p className="text-xs text-gray-400 text-center py-6">Drop classes here</p>
         ) : (
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-col gap-1.5">
             {classes.map((c) => <ClassChip key={c.code} c={c} />)}
           </div>
         )}

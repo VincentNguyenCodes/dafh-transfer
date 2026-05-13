@@ -234,17 +234,7 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
       if (!changed) break
     }
 
-    if (scheduleType === 'optimal') {
-      const auto: Record<string, number> = {}
-      for (const m of multiOptionReqs) {
-        const min = Math.min(...m.remainingCounts)
-        const tied = m.remainingCounts.map((c, i) => (c === min ? i : -1)).filter((i) => i >= 0)
-        if (tied.length === 1) auto[m.key] = current[m.key]
-      }
-      setPicks((p) => ({ ...auto, ...p }))
-    } else {
-      setPicks((p) => ({ ...current, ...p }))
-    }
+    setPicks((p) => ({ ...current, ...p }))
   }, [scheduleType, results, multiOptionReqs, completedCodes])
 
   const allPicked =

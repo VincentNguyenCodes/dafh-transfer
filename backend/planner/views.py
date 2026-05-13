@@ -88,7 +88,8 @@ class OptionPreferenceView(APIView):
     def delete(self, request):
         scope = request.data.get('scope') or request.query_params.get('scope') or OptionPreference.SCOPE_CUSTOM
         key = request.data.get('requirement_key') or request.query_params.get('requirement_key')
-        if not key:
-            return Response({'error': 'requirement_key required'}, status=status.HTTP_400_BAD_REQUEST)
-        OptionPreference.objects.filter(user=request.user, scope=scope, requirement_key=key).delete()
+        qs = OptionPreference.objects.filter(user=request.user, scope=scope)
+        if key:
+            qs = qs.filter(requirement_key=key)
+        qs.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)

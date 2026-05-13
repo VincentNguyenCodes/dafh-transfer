@@ -68,6 +68,17 @@ export default function BestScheduleTab() {
     }
   }
 
+  const resetPicks = async () => {
+    if (!confirm('Reset all your Best Schedule choices? You will be prompted again for any ties.')) return
+    setError('')
+    try {
+      await api.delete('/option-preferences/', { params: { scope: 'schedule' } })
+      load()
+    } catch {
+      setError('Failed to reset your choices.')
+    }
+  }
+
   if (loading) {
     return (
       <div className="text-center py-16">
@@ -101,7 +112,10 @@ export default function BestScheduleTab() {
             We picked the option for each requirement that minimizes the classes you still need. When two options need the same number of classes, you decide.
           </p>
         </div>
-        <button onClick={load} className="text-sm text-gray-700 hover:text-gray-900 font-medium shrink-0">Refresh</button>
+        <div className="flex items-center gap-3 shrink-0">
+          <button onClick={resetPicks} className="text-sm text-gray-700 hover:text-gray-900 font-medium">Reset choices</button>
+          <button onClick={load} className="text-sm text-gray-700 hover:text-gray-900 font-medium">Refresh</button>
+        </div>
       </div>
 
       {needs_choice.length > 0 && (

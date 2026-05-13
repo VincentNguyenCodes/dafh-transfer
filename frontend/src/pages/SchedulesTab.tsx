@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import api from '../api/client'
+import ScheduleWizard from './ScheduleWizard'
 
 type Schedule = {
   id: number
@@ -16,6 +17,7 @@ export default function SchedulesTab() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [creating, setCreating] = useState(false)
+  const [wizardType, setWizardType] = useState<'custom' | 'optimal' | null>(null)
   const [busy, setBusy] = useState<number | null>(null)
 
   const load = () => {
@@ -40,6 +42,16 @@ export default function SchedulesTab() {
     } finally {
       setBusy(null)
     }
+  }
+
+  if (wizardType) {
+    return (
+      <ScheduleWizard
+        scheduleType={wizardType}
+        onCancel={() => setWizardType(null)}
+        onSaved={() => { setWizardType(null); load() }}
+      />
+    )
   }
 
   if (loading) {
@@ -110,28 +122,16 @@ export default function SchedulesTab() {
       )}
 
       {creating && (
-        <CreateScheduleModal onClose={() => setCreating(false)} onCreated={() => { setCreating(false); load() }} />
+        <CreateScheduleModal
+          onClose={() => setCreating(false)}
+          onPicked={(kind) => { setCreating(false); setWizardType(kind) }}
+        />
       )}
     </div>
   )
 }
 
-function CreateScheduleModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState('')
-
-  const create = async (kind: 'custom' | 'optimal') => {
-    setBusy(true)
-    setError('')
-    try {
-      await api.post('/schedules/', { schedule_type: kind })
-      onCreated()
-    } catch {
-      setError('Failed to create schedule.')
-      setBusy(false)
-    }
-  }
-
+function CreateScheduleModal({ onClose, onPicked }: { onClose: () => void; onPicked: (kind: 'custom' | 'optimal') => void }) {
   return (
     <div className="fixed inset-0 bg-gray-900/40 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
@@ -139,24 +139,20 @@ function CreateScheduleModal({ onClose, onCreated }: { onClose: () => void; onCr
         <p className="text-sm text-gray-500 mb-5">Choose how you want to build this schedule.</p>
 
         <button
-          onClick={() => create('custom')}
-          disabled={busy}
-          className="w-full text-left rounded-xl border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/40 px-4 py-4 mb-3 transition-colors disabled:opacity-40"
+          onClick={() => onPicked('custom')}
+          className="w-full text-left rounded-xl border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/40 px-4 py-4 mb-3 transition-colors"
         >
           <p className="text-sm font-semibold text-gray-900 mb-0.5">Create custom</p>
           <p className="text-xs text-gray-500">Pick your option for every requirement that has alternatives.</p>
         </button>
 
         <button
-          onClick={() => create('optimal')}
-          disabled={busy}
-          className="w-full text-left rounded-xl border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/40 px-4 py-4 transition-colors disabled:opacity-40"
+          onClick={() => onPicked('optimal')}
+          className="w-full text-left rounded-xl border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/40 px-4 py-4 transition-colors"
         >
           <p className="text-sm font-semibold text-gray-900 mb-0.5">Create optimal</p>
           <p className="text-xs text-gray-500">We pick the option that requires the fewest classes. You decide on ties.</p>
         </button>
-
-        {error && <p className="text-xs text-red-500 mt-3">{error}</p>}
 
         <div className="mt-5 flex justify-end">
           <button onClick={onClose} className="text-sm text-gray-500 hover:text-gray-700">Cancel</button>

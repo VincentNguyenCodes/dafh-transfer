@@ -98,7 +98,10 @@ export default function ScheduleBuilder({ classBank, prePlaced = [], initialQuar
   }
 
   const remainingBank = useMemo(
-    () => bankCodes.map((code) => classByCode.get(code)).filter((c): c is ClassItem => !!c),
+    () => bankCodes
+      .map((code) => classByCode.get(code))
+      .filter((c): c is ClassItem => !!c)
+      .sort((a, b) => a.code.localeCompare(b.code)),
     [bankCodes, classByCode]
   )
 

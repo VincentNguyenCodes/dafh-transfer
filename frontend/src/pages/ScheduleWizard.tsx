@@ -101,19 +101,23 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
 
   const multiOptionReqs = useMemo(() => {
     if (!results) return []
-    const map = new Map<string, { req: Requirement; targets: Set<string>; key: string; remainingCounts: number[] }>()
-    for (const r of results) {
-      for (const req of r.requirements) {
-        if (req.no_articulation || req.satisfied || req.options.length <= 1) continue
+    const map = new Map<string, { req: Requirement; targets: Set<string>; key: string; remainingCounts: number[]; kind: 'required' | 'recommended' }>()
+    const addFrom = (reqs: Requirement[], schoolName: string, kind: 'required' | 'recommended') => {
+      for (const req of reqs) {
+        if (req.no_articulation || req.options.length <= 1) continue
         const key = requirementKey(req)
         const existing = map.get(key)
         if (existing) {
-          existing.targets.add(r.school_name)
+          existing.targets.add(schoolName)
         } else {
           const remainingCounts = req.options.map((o) => o.courses.filter((c) => !c.completed).length)
-          map.set(key, { req, targets: new Set([r.school_name]), key, remainingCounts })
+          map.set(key, { req, targets: new Set([schoolName]), key, remainingCounts, kind })
         }
       }
+    }
+    for (const r of results) {
+      addFrom(r.requirements, r.school_name, 'required')
+      addFrom(r.recommended, r.school_name, 'recommended')
     }
     return Array.from(map.values())
   }, [results])
@@ -336,7 +340,7 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
             <PickerCard
               key={m.key}
               title={m.req.receiving_name || m.req.receiving_code}
-              subtitle={`required for ${Array.from(m.targets).join(', ')}`}
+              subtitle={`${m.kind === 'recommended' ? 'recommended' : 'required'} for ${Array.from(m.targets).join(', ')}`}
               options={m.req.options}
               selected={picks[m.key]}
               onSelect={(idx) => setPicks((p) => ({ ...p, [m.key]: idx }))}

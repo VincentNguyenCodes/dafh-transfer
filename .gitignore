@@ -9,6 +9,7 @@ db.sqlite3
 *.egg-info/
 dist/
 .DS_Store
+backend/prewarm_enumeration.json
 
 frontend/node_modules/
 frontend/dist/

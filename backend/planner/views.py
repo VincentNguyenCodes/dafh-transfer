@@ -53,7 +53,11 @@ class ResultsView(APIView):
 class BestScheduleView(APIView):
     def get(self, request):
         results = compute_remaining(request.user)
-        schedule = compute_best_schedule(results)
+        prefs = {
+            p.requirement_key: p.chosen_option_index
+            for p in OptionPreference.objects.filter(user=request.user)
+        }
+        schedule = compute_best_schedule(results, user_prefs=prefs)
         return Response(schedule)
 
 

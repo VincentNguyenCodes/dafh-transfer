@@ -503,27 +503,38 @@ def _build_series(series_config: list, completed_codes: set, in_progress_codes: 
     return result
 
 
-def _pick_best_option(options):
+def _requirement_key(req):
+    codes = []
+    for o in req.get('options', []):
+        for c in o.get('courses', []):
+            codes.append(c.get('code', ''))
+    return '|'.join(sorted(codes))
+
+
+def _option_remaining_count(opt):
+    return sum(1 for c in opt.get('courses', []) if not c.get('completed'))
+
+
+def _pick_best_option(options, saved_pref_idx=None):
     if not options:
-        return None
+        return None, []
+    if saved_pref_idx is not None and 0 <= saved_pref_idx < len(options):
+        return options[saved_pref_idx], []
     if len(options) == 1:
-        return options[0]
-    best = options[0]
-    best_score = -1
-    for opt in options:
-        completed_count = sum(1 for c in opt['courses'] if c.get('completed'))
-        in_progress_count = sum(1 for c in opt['courses'] if c.get('in_progress'))
-        total = len(opt['courses'])
-        remaining = total - completed_count - in_progress_count
-        score = completed_count * 1000 + in_progress_count * 100 - remaining
-        if score > best_score:
-            best_score = score
-            best = opt
-    return best
+        return options[0], []
+    scored = [(_option_remaining_count(o), i, o) for i, o in enumerate(options)]
+    min_remaining = min(s[0] for s in scored)
+    tied = [s for s in scored if s[0] == min_remaining]
+    if len(tied) == 1:
+        return tied[0][2], []
+    return None, [t[2] for t in tied]
 
 
-def compute_best_schedule(targets_results: list) -> dict:
+def compute_best_schedule(targets_results: list, user_prefs=None) -> dict:
+    user_prefs = user_prefs or {}
     classes = {}
+    needs_choice = []
+    needs_choice_keys = set()
 
     def add_course(c, target_label, req_name, kind):
         code = c['code']
@@ -544,26 +555,37 @@ def compute_best_schedule(targets_results: list) -> dict:
         entry['needed_for'].append({'target': target_label, 'requirement': req_name})
         entry['kinds'].add(kind)
 
+    def handle_req(req, target_label, kind):
+        if req.get('no_articulation') or req.get('satisfied'):
+            return
+        options = req.get('options', [])
+        key = _requirement_key(req)
+        saved = user_prefs.get(key)
+        best, tied = _pick_best_option(options, saved_pref_idx=saved)
+        if tied:
+            if key not in needs_choice_keys:
+                needs_choice_keys.add(key)
+                needs_choice.append({
+                    'requirement_key': key,
+                    'receiving_code': req.get('receiving_code', ''),
+                    'receiving_name': req.get('receiving_name', '') or req.get('receiving_code', ''),
+                    'target': target_label,
+                    'options': tied,
+                })
+            return
+        if not best:
+            return
+        for c in best.get('courses', []):
+            add_course(c, target_label, req.get('receiving_name') or req.get('receiving_code', ''), kind)
+
     for r in targets_results:
         target_label = r.get('school_name') or r.get('target', '')
 
         for req in r.get('requirements', []):
-            if req.get('no_articulation') or req.get('satisfied'):
-                continue
-            best = _pick_best_option(req.get('options', []))
-            if not best:
-                continue
-            for c in best.get('courses', []):
-                add_course(c, target_label, req.get('receiving_name') or req.get('receiving_code', ''), 'required')
+            handle_req(req, target_label, 'required')
 
         for rec in r.get('recommended', []):
-            if rec.get('no_articulation') or rec.get('satisfied'):
-                continue
-            best = _pick_best_option(rec.get('options', []))
-            if not best:
-                continue
-            for c in best.get('courses', []):
-                add_course(c, target_label, rec.get('receiving_name') or rec.get('receiving_code', ''), 'recommended')
+            handle_req(rec, target_label, 'recommended')
 
         for group in r.get('elective_series', []):
             series_list = group.get('series', [])
@@ -589,6 +611,7 @@ def compute_best_schedule(targets_results: list) -> dict:
 
     return {
         'classes': out,
+        'needs_choice': needs_choice,
         'total': len(out),
         'in_progress': sum(1 for c in out if c['in_progress']),
     }

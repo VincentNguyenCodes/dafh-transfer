@@ -5,7 +5,7 @@ import api from '../api/client'
 function Chevron() {
   return (
     <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
-      <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <svg className="h-4 w-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
       </svg>
     </div>
@@ -145,50 +145,48 @@ export default function Schools() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-          <p className="text-gray-500 text-sm">Loading schools from ASSIST.org...</p>
+      <div className="min-h-screen bg-[#f5f5f7] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-[2.5px] border-indigo-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-gray-400 font-medium">Loading schools from ASSIST.org...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="bg-white border-b border-gray-100 px-6 py-4">
-        <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button onClick={() => navigate('/dashboard')} className="text-gray-400 hover:text-gray-600 transition-colors">
-              ←
-            </button>
-            <div className="flex items-center gap-2">
-              <img src="/src/assets/logo.png" alt="DAFH Transfer" className="w-8 h-8 object-contain" />
-              <span className="font-semibold text-gray-900">DAFH Transfer</span>
-            </div>
+    <div className="min-h-screen bg-[#f5f5f7]">
+      <header className="bg-white/80 backdrop-blur-md border-b border-gray-100 px-6 py-4 sticky top-0 z-30">
+        <div className="max-w-3xl mx-auto flex items-center gap-3">
+          <button onClick={() => navigate('/dashboard')} className="text-gray-400 hover:text-gray-700 transition-colors duration-150 p-1 rounded-lg hover:bg-gray-100">
+            ←
+          </button>
+          <div className="flex items-center gap-2.5">
+            <img src="/src/assets/logo.png" alt="DAFH Transfer" className="w-7 h-7 object-contain" />
+            <span className="font-semibold text-gray-900 tracking-tight text-sm">DAFH Transfer</span>
           </div>
-          <span className="text-sm text-gray-400">Step 2 of 3</span>
+          <span className="ml-auto text-xs text-gray-400 font-medium">Step 2 of 3</span>
         </div>
       </header>
 
       <main className="max-w-3xl mx-auto px-6 py-10">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">Transfer Targets</h1>
-          <p className="text-gray-500 text-sm">Add each school and major you want to transfer to. You can add multiple.</p>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight mb-1.5">Transfer Targets</h1>
+          <p className="text-gray-400 text-sm">Add each school and major you want to transfer to.</p>
         </div>
 
         {savedTargets.length > 0 && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-4">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Saved targets</p>
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-4">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Saved targets</p>
             <div className="space-y-2">
               {savedTargets.map((t) => (
                 <div key={t.id} className="bg-gray-50 rounded-xl px-4 py-3">
                   {editingId === t.id ? (
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium text-gray-900">{t.receiving_institution_name}</p>
+                    <div className="space-y-2.5">
+                      <p className="text-sm font-semibold text-gray-900 tracking-tight">{t.receiving_institution_name}</p>
                       <div className="relative">
                         <select
-                          className="w-full border border-gray-200 rounded-lg px-3 py-2 pr-9 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white appearance-none disabled:opacity-50"
+                          className="w-full border border-gray-200 rounded-xl px-3 py-2.5 pr-9 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 bg-white appearance-none disabled:opacity-50 transition-all duration-150"
                           value={editMajorKey}
                           disabled={majorsMap[t.receiving_institution_id] === 'loading'}
                           onChange={(e) => setEditMajorKey(e.target.value)}
@@ -202,20 +200,20 @@ export default function Schools() {
                         <Chevron />
                       </div>
                       <div className="flex gap-3">
-                        <button onClick={() => handleEdit(t)} className="text-xs text-indigo-600 hover:text-indigo-800 font-medium transition-colors">Save</button>
-                        <button onClick={cancelEdit} className="text-xs text-gray-400 hover:text-gray-600 transition-colors">Cancel</button>
+                        <button onClick={() => handleEdit(t)} className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold transition-colors duration-150">Save</button>
+                        <button onClick={cancelEdit} className="text-xs text-gray-400 hover:text-gray-600 transition-colors duration-150">Cancel</button>
                       </div>
                     </div>
                   ) : (
                     <div className="flex items-center gap-3">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">{t.receiving_institution_name}</p>
-                        <p className="text-xs text-gray-500 truncate">{t.major_name}</p>
+                        <p className="text-sm font-semibold text-gray-900 truncate tracking-tight">{t.receiving_institution_name}</p>
+                        <p className="text-xs text-gray-400 truncate mt-0.5">{t.major_name}</p>
                       </div>
-                      <button onClick={() => startEdit(t)} className="text-indigo-400 hover:text-indigo-600 text-xs shrink-0 transition-colors font-medium">
+                      <button onClick={() => startEdit(t)} className="text-xs text-indigo-500 hover:text-indigo-700 shrink-0 font-medium transition-colors duration-150">
                         Edit
                       </button>
-                      <button onClick={() => deleteTarget(t.id!)} className="text-red-400 hover:text-red-600 shrink-0 transition-colors">
+                      <button onClick={() => deleteTarget(t.id!)} className="text-gray-300 hover:text-red-400 shrink-0 transition-colors duration-150">
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
@@ -228,14 +226,14 @@ export default function Schools() {
           </div>
         )}
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-4">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Add schools</p>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-4">
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Add schools</p>
           <div className="space-y-4">
             {rows.map((row, idx) => (
               <div key={idx} className="flex items-center gap-2 flex-1">
                 <div className="relative flex-1">
                   <select
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white appearance-none"
+                    className="w-full border border-gray-200 rounded-xl px-4 py-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 bg-white appearance-none transition-all duration-150 text-gray-700"
                     value={row.receiving_institution_id ?? ''}
                     onChange={(e) => updateRow(idx, 'receiving_institution_id', Number(e.target.value))}
                   >
@@ -249,7 +247,7 @@ export default function Schools() {
 
                 <div className="relative flex-1">
                   <select
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white appearance-none disabled:opacity-50"
+                    className="w-full border border-gray-200 rounded-xl px-4 py-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 bg-white appearance-none disabled:opacity-40 transition-all duration-150 text-gray-700"
                     value={row.major_code ?? ''}
                     disabled={!row.receiving_institution_id || majorsMap[row.receiving_institution_id] === 'loading' || !majorsMap[row.receiving_institution_id]}
                     onChange={(e) => updateRow(idx, 'major_key' as keyof Row, e.target.value)}
@@ -272,8 +270,7 @@ export default function Schools() {
                 {rows.length > 1 && (
                   <button
                     onClick={() => setRows((prev) => prev.filter((_, i) => i !== idx))}
-                    className="mt-1 p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors shrink-0"
-                    title="Remove row"
+                    className="p-2 text-gray-300 hover:text-red-400 hover:bg-red-50 rounded-xl transition-all duration-150 shrink-0"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -286,24 +283,24 @@ export default function Schools() {
 
           <button
             onClick={() => setRows((prev) => [...prev, {}])}
-            className="mt-4 text-sm text-indigo-600 hover:text-indigo-800 font-medium transition-colors"
+            className="mt-4 text-sm text-indigo-500 hover:text-indigo-700 font-medium transition-colors duration-150"
           >
             + Add another school
           </button>
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-4">
-            <p className="text-red-600 text-sm">{error}</p>
+          <div className="bg-red-50 border border-red-100 rounded-xl px-4 py-3 mb-4">
+            <p className="text-red-500 text-sm">{error}</p>
           </div>
         )}
 
         <button
           onClick={handleSave}
           disabled={saving}
-          className="w-full bg-indigo-600 text-white rounded-2xl py-4 font-semibold text-sm hover:bg-indigo-700 disabled:opacity-50 transition-colors shadow-md shadow-indigo-200"
+          className="w-full bg-indigo-600 text-white rounded-2xl py-4 font-semibold text-sm hover:bg-indigo-500 hover:shadow-lg hover:shadow-indigo-500/20 disabled:opacity-40 transition-all duration-200 tracking-tight"
         >
-          {saving ? 'Saving...' : 'Save and See Results →'}
+          {saving ? 'Saving...' : 'Save and See Results'}
         </button>
       </main>
     </div>

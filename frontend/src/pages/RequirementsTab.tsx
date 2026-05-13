@@ -303,10 +303,10 @@ export default function RequirementsTab() {
     <div>
       <div className="mb-5 flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-900 mb-1">Requirements</h2>
-          <p className="text-gray-500 text-sm">All classes you still need to take across your transfer targets.</p>
+          <h2 className="text-xl font-bold text-gray-900 tracking-tight mb-1">Requirements</h2>
+          <p className="text-gray-400 text-sm">All classes you still need across your transfer targets.</p>
         </div>
-        <button onClick={load} className="text-sm text-gray-700 hover:text-gray-900 font-medium transition-colors shrink-0">
+        <button onClick={load} className="text-sm text-gray-400 hover:text-gray-700 font-medium transition-colors duration-150 px-3 py-1.5 rounded-xl hover:bg-white shrink-0">
           Refresh
         </button>
       </div>
@@ -320,8 +320,8 @@ export default function RequirementsTab() {
             <button
               key={r.target}
               onClick={() => setSelectedTarget(r.target)}
-              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                isActive ? `${color.bg} ${color.text} ring-2 ring-offset-1 ring-current` : `${color.bg} ${color.text} opacity-70 hover:opacity-100`
+              className={`px-3.5 py-1.5 rounded-full text-sm font-medium transition-all duration-150 ${
+                isActive ? `${color.bg} ${color.text} shadow-sm` : `bg-white border border-gray-100 text-gray-500 hover:border-gray-200 shadow-sm`
               }`}
             >
               {r.school_name}
@@ -330,53 +330,53 @@ export default function RequirementsTab() {
         })}
       </div>
 
-      <div className="sticky top-[44px] z-10 -mx-8 px-8 py-3 mb-6 bg-white/95 backdrop-blur border-b border-gray-100 shadow-sm">
-        <div className="flex items-center gap-5">
+      <div className="sticky top-[109px] z-10 -mx-8 px-8 py-4 mb-6 bg-[#f5f5f7]/95 backdrop-blur border-b border-gray-200/60">
+        <div className="flex items-center gap-6">
           <div className="flex-1">
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs font-semibold text-gray-700">Required Classes</span>
-              <span className="text-xs font-bold text-gray-700">
-                {satisfied.length} / {satisfied.length + unsatisfied.length} done
+              <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Required</span>
+              <span className="text-xs font-semibold text-gray-600">
+                {satisfied.length} / {satisfied.length + unsatisfied.length}
               </span>
             </div>
-            <div className="w-full bg-indigo-100 rounded-full h-1.5">
+            <div className="w-full bg-gray-200 rounded-full h-1">
               <div
-                className="bg-indigo-600 h-1.5 rounded-full transition-all"
+                className="bg-indigo-500 h-1 rounded-full transition-all duration-500"
                 style={{ width: `${satisfied.length + unsatisfied.length > 0 ? (satisfied.length / (satisfied.length + unsatisfied.length)) * 100 : 0}%` }}
               />
             </div>
           </div>
-          <div className="w-px h-8 bg-gray-200 shrink-0"></div>
+          <div className="w-px h-6 bg-gray-200 shrink-0" />
           <div className="flex-1">
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs font-semibold text-gray-700">Recommended Classes</span>
-              <span className="text-xs font-bold text-gray-700">
-                {satisfiedRec.length} / {satisfiedRec.length + unsatisfiedRec.length} done
+              <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Recommended</span>
+              <span className="text-xs font-semibold text-gray-600">
+                {satisfiedRec.length} / {satisfiedRec.length + unsatisfiedRec.length}
               </span>
             </div>
-            <div className="w-full bg-violet-100 rounded-full h-1.5">
+            <div className="w-full bg-gray-200 rounded-full h-1">
               <div
-                className="bg-violet-500 h-1.5 rounded-full transition-all"
+                className="bg-violet-500 h-1 rounded-full transition-all duration-500"
                 style={{ width: `${satisfiedRec.length + unsatisfiedRec.length > 0 ? (satisfiedRec.length / (satisfiedRec.length + unsatisfiedRec.length)) * 100 : 0}%` }}
               />
             </div>
           </div>
         </div>
-        <p className="text-xs text-gray-500 mt-2">Hover a badge to see the major. If multiple options appear, you only need one.</p>
+        <p className="text-[11px] text-gray-400 mt-2.5">Hover a badge for the major name. If multiple options appear, pick any one.</p>
       </div>
 
       {unsatisfied.length > 0 && (
-        <div className="mb-5 border border-indigo-100 rounded-2xl overflow-hidden shadow-sm">
-          <div className="px-5 py-3 bg-indigo-50 border-b border-indigo-100 flex items-center justify-between">
+        <div className="mb-4 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
             <div>
-              <p className="text-sm font-bold text-gray-900">Required Classes - Need to Take</p>
-              <p className="text-xs text-gray-500 mt-0.5">Must complete for admission</p>
+              <p className="text-sm font-semibold text-gray-900 tracking-tight">Required - Need to Take</p>
+              <p className="text-xs text-gray-400 mt-0.5">Must complete for admission</p>
             </div>
-            <span className="text-sm font-bold text-gray-700 bg-white px-2.5 py-0.5 rounded-full border border-indigo-100">
+            <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full">
               {unsatisfied.length}
             </span>
           </div>
-          <div className="p-4 space-y-2 bg-white">
+          <div className="p-4 space-y-2">
             {unsatisfied.map((req) => (
               <AggregatedRequirementRow key={req.key} req={req} />
             ))}
@@ -385,13 +385,13 @@ export default function RequirementsTab() {
       )}
 
       {(unsatisfiedRec.length > 0 || unsatisfiedElectiveGroups.length > 0) && (
-        <div className="mb-5 border border-violet-100 rounded-2xl overflow-hidden shadow-sm">
-          <div className="px-5 py-3 bg-violet-50 border-b border-violet-100 flex items-center justify-between">
+        <div className="mb-4 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
             <div>
-              <p className="text-sm font-bold text-gray-900">Recommended Classes - Need to Take</p>
-              <p className="text-xs text-gray-500 mt-0.5">Not required for admission, but saves units after transfer</p>
+              <p className="text-sm font-semibold text-gray-900 tracking-tight">Recommended - Need to Take</p>
+              <p className="text-xs text-gray-400 mt-0.5">Not required, but saves units after transfer</p>
             </div>
-            <span className="text-sm font-bold text-gray-700 bg-white px-2.5 py-0.5 rounded-full border border-violet-100">
+            <span className="text-xs font-bold text-violet-600 bg-violet-50 px-2.5 py-1 rounded-full">
               {unsatisfiedRec.length + unsatisfiedElectiveGroups.reduce((n, g) => n + g.series.length, 0)}
             </span>
           </div>
@@ -435,17 +435,17 @@ export default function RequirementsTab() {
       )}
 
       {satisfied.length > 0 && (
-        <div className="mb-5 border border-green-100 rounded-2xl overflow-hidden shadow-sm">
-          <div className="px-5 py-3 bg-green-50 border-b border-green-100 flex items-center justify-between">
+        <div className="mb-4 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
             <div>
-              <p className="text-sm font-bold text-gray-900">Completed Required Classes</p>
-              <p className="text-xs text-gray-500 mt-0.5">Required courses you have already finished</p>
+              <p className="text-sm font-semibold text-gray-900 tracking-tight">Completed Required</p>
+              <p className="text-xs text-gray-400 mt-0.5">Required courses you have already finished</p>
             </div>
-            <span className="text-sm font-bold text-gray-700 bg-white px-2.5 py-0.5 rounded-full border border-green-100">
+            <span className="text-xs font-bold text-green-600 bg-green-50 px-2.5 py-1 rounded-full">
               {satisfied.length}
             </span>
           </div>
-          <div className="p-4 space-y-2 bg-white">
+          <div className="p-4 space-y-2">
             {satisfied.map((req) => (
               <AggregatedRequirementRow key={req.key} req={req} />
             ))}
@@ -454,17 +454,17 @@ export default function RequirementsTab() {
       )}
 
       {(satisfiedRec.length > 0 || satisfiedElectiveGroups.length > 0) && (
-        <div className="mb-5 border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-          <div className="px-5 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+        <div className="mb-4 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
             <div>
-              <p className="text-sm font-bold text-gray-700">Completed Recommended Classes</p>
+              <p className="text-sm font-semibold text-gray-900 tracking-tight">Completed Recommended</p>
               <p className="text-xs text-gray-400 mt-0.5">Recommended courses you have already finished</p>
             </div>
-            <span className="text-sm font-bold text-gray-500 bg-white px-2.5 py-0.5 rounded-full border border-gray-200">
+            <span className="text-xs font-bold text-gray-500 bg-gray-50 px-2.5 py-1 rounded-full">
               {satisfiedRec.length + satisfiedElectiveGroups.length}
             </span>
           </div>
-          <div className="p-4 space-y-2 bg-white">
+          <div className="p-4 space-y-2">
             {satisfiedRec.map((req) => (
               <AggregatedRequirementRow key={req.key} req={req} />
             ))}

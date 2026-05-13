@@ -51,7 +51,6 @@ export default function Transcript() {
     }
   }
 
-
   const removeParsed = (school: SchoolKey, idx: number) => {
     setParsed((p) => ({ ...p, [school]: p[school].filter((_, i) => i !== idx) }))
   }
@@ -99,54 +98,54 @@ export default function Transcript() {
   }
 
   const renderSchool = (school: SchoolKey, label: string) => (
-    <div className="bg-white rounded-2xl shadow-md p-6 mb-4">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold">{label}</h2>
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-4">
+      <div className="flex justify-between items-center mb-5">
+        <h2 className="text-base font-semibold text-gray-900 tracking-tight">{label}</h2>
         <button
           onClick={() => setSkipped((s) => ({ ...s, [school]: !s[school] }))}
-          className="text-sm text-gray-400 hover:text-gray-600"
+          className="text-xs font-medium text-gray-400 hover:text-gray-600 transition-colors duration-150 px-2.5 py-1 rounded-lg hover:bg-gray-100"
         >
           {skipped[school] ? 'Undo skip' : "Didn't attend here"}
         </button>
       </div>
 
       {skipped[school] ? (
-        <p className="text-sm text-gray-400 italic">Skipped</p>
+        <p className="text-sm text-gray-300 italic">Skipped</p>
       ) : (
         <>
           {savedEntries.filter((e) => e.school === school).length > 0 && (
-            <div className="mb-4">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Already saved</p>
+            <div className="mb-5">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Saved</p>
               <div className="space-y-1">
                 {savedEntries.filter((e) => e.school === school).map((e) => (
-                  <div key={e.id} className="flex items-center gap-2 text-sm bg-gray-50 rounded-lg px-3 py-2">
-                    <span className="font-mono font-medium w-28 shrink-0">{e.course_code}</span>
-                    <span className="flex-1 text-gray-600 truncate">{e.course_name}</span>
+                  <div key={e.id} className="flex items-center gap-2 text-sm bg-gray-50 rounded-xl px-3 py-2.5">
+                    <span className="font-mono font-semibold text-xs text-gray-700 w-24 shrink-0">{e.course_code}</span>
+                    <span className="flex-1 text-gray-500 truncate text-xs">{e.course_name}</span>
                     <span className="text-xs text-gray-400 shrink-0">{e.grade}</span>
                     {e.status === 'in_progress' && (
-                      <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full shrink-0">In Progress</span>
+                      <span className="text-[10px] bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full shrink-0 font-medium">In Progress</span>
                     )}
-                    <button onClick={() => deleteEntry(e.id!)} className="text-red-400 hover:text-red-600 text-xs shrink-0">Remove</button>
+                    <button onClick={() => deleteEntry(e.id!)} className="text-gray-300 hover:text-red-400 text-xs shrink-0 transition-colors duration-150">Remove</button>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          <div className="mb-3">
-            <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide block mb-1">
-              Paste transcript (Cmd+A, Cmd+C from the unofficial transcript page)
+          <div className="mb-4">
+            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">
+              Paste transcript
             </label>
             <textarea
-              className="w-full border border-gray-200 rounded-lg p-3 text-sm font-mono h-32 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-400"
-              placeholder={`Go to your ${label} unofficial transcript, press Cmd+A then Cmd+C, and paste here...`}
+              className="w-full border border-gray-200 rounded-xl p-3 text-sm font-mono h-28 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-all duration-150 text-gray-700 placeholder-gray-300 bg-gray-50"
+              placeholder={`Cmd+A, Cmd+C from the ${label} unofficial transcript page...`}
               value={pasteText[school]}
               onChange={(e) => setPasteText((p) => ({ ...p, [school]: e.target.value }))}
             />
             <button
               onClick={() => handleParse(school)}
               disabled={!pasteText[school].trim() || parsing[school]}
-              className="mt-2 text-sm bg-indigo-50 text-indigo-700 hover:bg-indigo-100 px-4 py-1.5 rounded-lg disabled:opacity-40 transition-colors"
+              className="mt-2 text-sm bg-indigo-50 text-indigo-600 hover:bg-indigo-100 font-medium px-4 py-2 rounded-xl disabled:opacity-40 transition-all duration-150"
             >
               {parsing[school] ? 'Parsing...' : 'Parse transcript'}
             </button>
@@ -154,68 +153,68 @@ export default function Transcript() {
 
           {parsed[school].length > 0 && (
             <div className="mb-4">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
-                Detected {parsed[school].length} courses - review before saving
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">
+                {parsed[school].length} courses detected
               </p>
               <div className="space-y-1">
                 {parsed[school].map((e, idx) => (
-                  <div key={idx} className="flex items-center gap-2 text-sm bg-indigo-50 rounded-lg px-3 py-2">
-                    <span className="font-mono font-medium w-28 shrink-0">{e.course_code}</span>
-                    <span className="flex-1 text-gray-700 truncate">{e.course_name}</span>
-                    <span className="text-xs text-gray-500 shrink-0">{e.grade} | {e.units} units</span>
+                  <div key={idx} className="flex items-center gap-2 text-sm bg-indigo-50 rounded-xl px-3 py-2.5">
+                    <span className="font-mono font-semibold text-xs text-indigo-700 w-24 shrink-0">{e.course_code}</span>
+                    <span className="flex-1 text-gray-600 truncate text-xs">{e.course_name}</span>
+                    <span className="text-xs text-gray-400 shrink-0">{e.grade}</span>
                     {e.status === 'in_progress' && (
-                      <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full shrink-0">In Progress</span>
+                      <span className="text-[10px] bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full shrink-0 font-medium">In Progress</span>
                     )}
-                    <button onClick={() => removeParsed(school, idx)} className="text-red-400 hover:text-red-600 text-xs shrink-0">Remove</button>
+                    <button onClick={() => removeParsed(school, idx)} className="text-gray-300 hover:text-red-400 text-xs shrink-0 transition-colors duration-150">Remove</button>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {manualEntries.filter((e) => e.school === school).map((entry, _) => {
+          {manualEntries.filter((e) => e.school === school).map((entry) => {
             const globalIdx = manualEntries.indexOf(entry)
             return (
               <div key={globalIdx} className="grid grid-cols-12 gap-2 mb-2 text-sm">
                 <input
-                  className="col-span-3 border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-400"
-                  placeholder="Code (e.g. CIS D022A)"
+                  className="col-span-3 border border-gray-200 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-all duration-150"
+                  placeholder="CIS D022A"
                   value={entry.course_code}
                   onChange={(e) => updateManual(globalIdx, 'course_code', e.target.value)}
                 />
                 <input
-                  className="col-span-4 border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                  className="col-span-4 border border-gray-200 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-all duration-150"
                   placeholder="Course name"
                   value={entry.course_name}
                   onChange={(e) => updateManual(globalIdx, 'course_name', e.target.value)}
                 />
                 <input
-                  className="col-span-1 border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                  className="col-span-1 border border-gray-200 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-all duration-150"
                   placeholder="Units"
                   value={entry.units}
                   onChange={(e) => updateManual(globalIdx, 'units', e.target.value)}
                 />
                 <input
-                  className="col-span-1 border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                  className="col-span-1 border border-gray-200 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-all duration-150"
                   placeholder="Grade"
                   value={entry.grade}
                   onChange={(e) => updateManual(globalIdx, 'grade', e.target.value)}
                 />
                 <select
-                  className="col-span-2 border border-gray-200 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                  className="col-span-2 border border-gray-200 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 transition-all duration-150"
                   value={entry.status}
                   onChange={(e) => updateManual(globalIdx, 'status', e.target.value)}
                 >
                   <option value="completed">Done</option>
                   <option value="in_progress">In Progress</option>
                 </select>
-                <button onClick={() => removeManual(globalIdx)} className="col-span-1 text-red-400 hover:text-red-600 text-xs">Remove</button>
+                <button onClick={() => removeManual(globalIdx)} className="col-span-1 text-gray-300 hover:text-red-400 text-xs transition-colors duration-150">Remove</button>
               </div>
             )
           })}
 
-          <button onClick={() => addManual(school)} className="text-sm text-indigo-600 hover:text-indigo-800 mt-1">
-            + Add course manually
+          <button onClick={() => addManual(school)} className="text-sm text-indigo-500 hover:text-indigo-700 font-medium mt-1 transition-colors duration-150">
+            + Add manually
           </button>
         </>
       )}
@@ -223,29 +222,45 @@ export default function Transcript() {
   )
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-3xl mx-auto">
-        <button onClick={() => navigate('/dashboard')} className="text-sm text-gray-400 hover:text-gray-600 mb-4">
-          Back to dashboard
-        </button>
-        <h1 className="text-2xl font-bold mb-1">Your Transcripts</h1>
-        <p className="text-sm text-gray-500 mb-6">
-          Go to your unofficial transcript page, press Cmd+A then Cmd+C, and paste below. Do this for each school you attended.
-        </p>
+    <div className="min-h-screen bg-[#f5f5f7]">
+      <header className="bg-white/80 backdrop-blur-md border-b border-gray-100 px-6 py-4 sticky top-0 z-30">
+        <div className="max-w-3xl mx-auto flex items-center gap-3">
+          <button onClick={() => navigate('/dashboard')} className="text-gray-400 hover:text-gray-700 transition-colors duration-150 p-1 rounded-lg hover:bg-gray-100">
+            ←
+          </button>
+          <div className="flex items-center gap-2.5">
+            <img src="/src/assets/logo.png" alt="DAFH Transfer" className="w-7 h-7 object-contain" />
+            <span className="font-semibold text-gray-900 tracking-tight text-sm">DAFH Transfer</span>
+          </div>
+          <span className="ml-auto text-xs text-gray-400 font-medium">Step 1 of 3</span>
+        </div>
+      </header>
+
+      <main className="max-w-3xl mx-auto px-6 py-10">
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight mb-1.5">Your Transcripts</h1>
+          <p className="text-sm text-gray-400 leading-relaxed">
+            Go to your unofficial transcript, press Cmd+A then Cmd+C, and paste below.
+          </p>
+        </div>
 
         {renderSchool('deanza', 'De Anza College')}
         {renderSchool('foothill', 'Foothill College')}
 
-{error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+        {error && (
+          <div className="bg-red-50 border border-red-100 rounded-xl px-4 py-3 mb-4">
+            <p className="text-red-500 text-sm">{error}</p>
+          </div>
+        )}
 
         <button
           onClick={handleSave}
           disabled={saving}
-          className="w-full bg-indigo-600 text-white rounded-xl py-3 font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+          className="w-full bg-indigo-600 text-white rounded-2xl py-4 font-semibold text-sm hover:bg-indigo-500 hover:shadow-lg hover:shadow-indigo-500/20 disabled:opacity-40 transition-all duration-200 tracking-tight"
         >
           {saving ? 'Saving...' : 'Save and Continue'}
         </button>
-      </div>
+      </main>
     </div>
   )
 }

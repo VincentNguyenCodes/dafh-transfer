@@ -72,12 +72,12 @@ type AggregatedReq = {
 }
 
 const BADGE_COLORS = [
-  { bg: 'bg-indigo-100', text: 'text-indigo-700' },
-  { bg: 'bg-violet-100', text: 'text-violet-700' },
-  { bg: 'bg-emerald-100', text: 'text-emerald-700' },
-  { bg: 'bg-amber-100', text: 'text-amber-700' },
-  { bg: 'bg-rose-100', text: 'text-rose-700' },
-  { bg: 'bg-cyan-100', text: 'text-cyan-700' },
+  { bg: 'bg-indigo-100', text: 'text-gray-700' },
+  { bg: 'bg-violet-100', text: 'text-gray-700' },
+  { bg: 'bg-emerald-100', text: 'text-gray-700' },
+  { bg: 'bg-amber-100', text: 'text-gray-700' },
+  { bg: 'bg-rose-100', text: 'text-gray-700' },
+  { bg: 'bg-cyan-100', text: 'text-gray-700' },
 ]
 
 function buildAggregated(
@@ -148,7 +148,7 @@ function AggregatedRequirementRow({ req }: { req: AggregatedReq }) {
 
       {!req.no_articulation && req.satisfied && (() => {
         const completedOpt = req.options.find((o) => o.satisfied)
-        if (!completedOpt) return <p className="text-xs text-green-600">Already satisfied</p>
+        if (!completedOpt) return <p className="text-xs text-gray-600">Already satisfied</p>
         return (
           <div className="space-y-1">
             {completedOpt.courses.map((c, ci) => (
@@ -156,9 +156,9 @@ function AggregatedRequirementRow({ req }: { req: AggregatedReq }) {
                 <span className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center shrink-0">
                   <span className="text-white text-xs font-bold">✓</span>
                 </span>
-                <span className="font-mono text-sm font-semibold text-green-700">{c.code}</span>
+                <span className="font-mono text-sm font-semibold text-gray-500 line-through">{c.code}</span>
                 <span className="text-xs text-gray-500 truncate">{c.name}</span>
-                {c.units && <span className="text-xs text-gray-300 shrink-0 ml-auto">{c.units}u</span>}
+                {c.units && <span className="text-xs text-gray-400 shrink-0 ml-auto">{c.units}u</span>}
               </div>
             ))}
           </div>
@@ -173,24 +173,24 @@ function AggregatedRequirementRow({ req }: { req: AggregatedReq }) {
           {remaining.map((opt, oi) => (
             <div key={oi} className={`rounded-xl px-3 py-2 ${remaining.length > 1 ? 'bg-gray-50 border border-gray-100' : ''}`}>
               {remaining.length > 1 && (
-                <p className="text-xs font-semibold text-indigo-500 mb-1">Option {oi + 1}</p>
+                <p className="text-xs font-semibold text-gray-600 mb-1">Option {oi + 1}</p>
               )}
               <div className="space-y-1">
                 {opt.courses.map((c, ci) => (
                   <div key={ci} className="flex items-center gap-2">
                     {opt.courses.length > 1 && ci > 0 && (
-                      <span className="text-xs text-gray-300 w-6 text-center">+</span>
+                      <span className="text-xs text-gray-400 w-6 text-center">+</span>
                     )}
                     {opt.courses.length === 1 && <span className="w-6" />}
-                    <span className={`font-mono text-sm font-semibold ${c.completed ? 'text-green-600 line-through' : 'text-indigo-700'}`}>
+                    <span className={`font-mono text-sm font-semibold ${c.completed ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
                       {c.code}
                     </span>
                     <span className="text-xs text-gray-500 truncate">{c.name}</span>
                     {c.in_progress && (
-                      <span className="text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full shrink-0">In Progress</span>
+                      <span className="text-xs bg-yellow-100 text-gray-700 px-1.5 py-0.5 rounded-full shrink-0">In Progress</span>
                     )}
                     {c.units && (
-                      <span className="text-xs text-gray-300 shrink-0 ml-auto">{c.units}u</span>
+                      <span className="text-xs text-gray-400 shrink-0 ml-auto">{c.units}u</span>
                     )}
                   </div>
                 ))}
@@ -198,7 +198,7 @@ function AggregatedRequirementRow({ req }: { req: AggregatedReq }) {
             </div>
           ))}
           {remaining.length > 1 && (
-            <p className="text-xs text-gray-300 pl-1">Options are equivalent, choose whichever fits your schedule.</p>
+            <p className="text-xs text-gray-500 pl-1">Options are equivalent, choose whichever fits your schedule.</p>
           )}
         </div>
       )}
@@ -239,8 +239,8 @@ export default function RequirementsTab() {
   if (error) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-2xl px-5 py-4">
-        <p className="text-red-700 font-medium text-sm mb-1">Could not load results</p>
-        <p className="text-red-500 text-xs">{error}</p>
+        <p className="text-gray-900 font-medium text-sm mb-1">Could not load results</p>
+        <p className="text-gray-600 text-xs">{error}</p>
       </div>
     )
   }
@@ -296,7 +296,7 @@ export default function RequirementsTab() {
           <h2 className="text-xl font-bold text-gray-900 mb-1">Requirements</h2>
           <p className="text-gray-500 text-sm">All classes you still need to take across your transfer targets.</p>
         </div>
-        <button onClick={load} className="text-sm text-indigo-600 hover:text-indigo-800 font-medium transition-colors shrink-0">
+        <button onClick={load} className="text-sm text-gray-700 hover:text-gray-900 font-medium transition-colors shrink-0">
           Refresh
         </button>
       </div>
@@ -334,7 +334,7 @@ export default function RequirementsTab() {
         <div className="flex items-center gap-5">
           <div className="flex-1">
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs font-semibold text-indigo-600">Required Classes</span>
+              <span className="text-xs font-semibold text-gray-700">Required Classes</span>
               <span className="text-xs font-bold text-gray-700">
                 {satisfied.length} / {satisfied.length + unsatisfied.length} done
               </span>
@@ -349,7 +349,7 @@ export default function RequirementsTab() {
           <div className="w-px h-8 bg-gray-200 shrink-0"></div>
           <div className="flex-1">
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs font-semibold text-violet-600">Recommended Classes</span>
+              <span className="text-xs font-semibold text-gray-700">Recommended Classes</span>
               <span className="text-xs font-bold text-gray-700">
                 {satisfiedRec.length} / {satisfiedRec.length + unsatisfiedRec.length} done
               </span>
@@ -362,17 +362,17 @@ export default function RequirementsTab() {
             </div>
           </div>
         </div>
-        <p className="text-xs text-gray-400 mt-2">Hover a badge to see the major. If multiple options appear, you only need one.</p>
+        <p className="text-xs text-gray-500 mt-2">Hover a badge to see the major. If multiple options appear, you only need one.</p>
       </div>
 
       {unsatisfied.length > 0 && (
         <div className="mb-5 border border-indigo-100 rounded-2xl overflow-hidden shadow-sm">
           <div className="px-5 py-3 bg-indigo-50 border-b border-indigo-100 flex items-center justify-between">
             <div>
-              <p className="text-sm font-bold text-indigo-800">Required Classes - Need to Take</p>
-              <p className="text-xs text-indigo-400 mt-0.5">Must complete for admission</p>
+              <p className="text-sm font-bold text-gray-900">Required Classes - Need to Take</p>
+              <p className="text-xs text-gray-500 mt-0.5">Must complete for admission</p>
             </div>
-            <span className="text-sm font-bold text-indigo-600 bg-white px-2.5 py-0.5 rounded-full border border-indigo-100">
+            <span className="text-sm font-bold text-gray-700 bg-white px-2.5 py-0.5 rounded-full border border-indigo-100">
               {unsatisfied.length}
             </span>
           </div>
@@ -388,10 +388,10 @@ export default function RequirementsTab() {
         <div className="mb-5 border border-violet-100 rounded-2xl overflow-hidden shadow-sm">
           <div className="px-5 py-3 bg-violet-50 border-b border-violet-100 flex items-center justify-between">
             <div>
-              <p className="text-sm font-bold text-violet-800">Recommended Classes - Need to Take</p>
-              <p className="text-xs text-violet-400 mt-0.5">Not required for admission, but saves units after transfer</p>
+              <p className="text-sm font-bold text-gray-900">Recommended Classes - Need to Take</p>
+              <p className="text-xs text-gray-500 mt-0.5">Not required for admission, but saves units after transfer</p>
             </div>
-            <span className="text-sm font-bold text-violet-600 bg-white px-2.5 py-0.5 rounded-full border border-violet-100">
+            <span className="text-sm font-bold text-gray-700 bg-white px-2.5 py-0.5 rounded-full border border-violet-100">
               {unsatisfiedRec.length + unsatisfiedElectiveGroups.reduce((n, g) => n + g.series.length, 0)}
             </span>
           </div>
@@ -401,13 +401,13 @@ export default function RequirementsTab() {
             ))}
             {unsatisfiedElectiveGroups.map((group) => (
               <div key={group.label} className="rounded-2xl border border-violet-100 overflow-hidden">
-                <p className="text-xs font-semibold text-violet-500 uppercase tracking-wide px-4 pt-3 pb-1">{group.label}</p>
+                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide px-4 pt-3 pb-1">{group.label}</p>
                 <div className="p-3 space-y-2">
                   {group.series.map((s) => (
                     <div key={s.name} className={`rounded-xl border px-4 py-3 ${s.satisfied ? 'bg-green-50 border-green-100' : 'bg-gray-50 border-gray-100'}`}>
                       <div className="flex items-center justify-between mb-2">
-                        <p className="text-sm font-semibold text-gray-700">{s.name}</p>
-                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${s.satisfied ? 'bg-green-100 text-green-700' : 'bg-white text-gray-400 border border-gray-200'}`}>
+                        <p className="text-sm font-semibold text-gray-900">{s.name}</p>
+                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${s.satisfied ? 'bg-green-100 text-gray-700' : 'bg-white text-gray-500 border border-gray-200'}`}>
                           {s.completed_count}/{s.total} done
                         </span>
                       </div>
@@ -418,9 +418,9 @@ export default function RequirementsTab() {
                               ? <span className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center shrink-0"><span className="text-white text-xs font-bold">✓</span></span>
                               : <span className="w-5 h-5 rounded-full border-2 border-gray-200 shrink-0" />
                             }
-                            <span className={`font-mono text-sm font-semibold ${c.completed ? 'text-green-600 line-through' : 'text-indigo-700'}`}>{c.code}</span>
+                            <span className={`font-mono text-sm font-semibold ${c.completed ? 'text-gray-500 line-through' : 'text-gray-900'}`}>{c.code}</span>
                             {c.in_progress && (
-                              <span className="text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full">In Progress</span>
+                              <span className="text-xs bg-yellow-100 text-gray-700 px-1.5 py-0.5 rounded-full">In Progress</span>
                             )}
                           </div>
                         ))}
@@ -438,10 +438,10 @@ export default function RequirementsTab() {
         <div className="mb-5 border border-green-100 rounded-2xl overflow-hidden shadow-sm">
           <div className="px-5 py-3 bg-green-50 border-b border-green-100 flex items-center justify-between">
             <div>
-              <p className="text-sm font-bold text-green-800">Completed Required Classes</p>
-              <p className="text-xs text-green-400 mt-0.5">Required courses you have already finished</p>
+              <p className="text-sm font-bold text-gray-900">Completed Required Classes</p>
+              <p className="text-xs text-gray-500 mt-0.5">Required courses you have already finished</p>
             </div>
-            <span className="text-sm font-bold text-green-600 bg-white px-2.5 py-0.5 rounded-full border border-green-100">
+            <span className="text-sm font-bold text-gray-700 bg-white px-2.5 py-0.5 rounded-full border border-green-100">
               {satisfied.length}
             </span>
           </div>
@@ -470,14 +470,14 @@ export default function RequirementsTab() {
             ))}
             {satisfiedElectiveGroups.map((group) => (
               <div key={group.label} className="rounded-xl border border-green-100 bg-green-50 px-4 py-3">
-                <p className="text-xs font-semibold text-green-600 uppercase tracking-wide mb-2">{group.label}</p>
+                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">{group.label}</p>
                 {group.series.filter((s) => s.satisfied).map((s) => (
                   <div key={s.name} className="space-y-1">
-                    <p className="text-sm font-semibold text-green-700 mb-1">{s.name} — completed</p>
+                    <p className="text-sm font-semibold text-gray-700 mb-1">{s.name} — completed</p>
                     {s.courses.map((c, ci) => (
                       <div key={ci} className="flex items-center gap-2">
                         <span className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center shrink-0"><span className="text-white text-xs font-bold">✓</span></span>
-                        <span className="font-mono text-sm font-semibold text-green-600 line-through">{c.code}</span>
+                        <span className="font-mono text-sm font-semibold text-gray-500 line-through">{c.code}</span>
                       </div>
                     ))}
                   </div>
@@ -490,7 +490,7 @@ export default function RequirementsTab() {
 
       {unsatisfied.length === 0 && satisfied.length === 0 && unsatisfiedRec.length === 0 && satisfiedRec.length === 0 && (
         <div className="bg-green-50 border border-green-100 rounded-2xl p-5 text-center">
-          <p className="text-green-700 font-semibold">All requirements satisfied!</p>
+          <p className="text-gray-900 font-semibold">All requirements satisfied!</p>
         </div>
       )}
 

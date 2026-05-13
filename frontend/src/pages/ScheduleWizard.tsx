@@ -261,10 +261,10 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
     const pickOption = (req: Requirement) => {
       if (req.options.length <= 1) return req.options[0]
       const k = requirementKey(req)
-      const idx = picks[k] ?? (scheduleType === 'optimal'
-        ? req.options.map((o) => o.courses.filter((c) => !c.completed).length).indexOf(Math.min(...req.options.map((o) => o.courses.filter((c) => !c.completed).length)))
-        : 0)
-      return req.options[idx] || req.options[0]
+      if (picks[k] !== undefined) return req.options[picks[k]] || req.options[0]
+      const remainingCounts = req.options.map((o) => o.courses.filter((c) => !c.completed).length)
+      const minRem = Math.min(...remainingCounts)
+      return req.options[remainingCounts.indexOf(minRem)] || req.options[0]
     }
     for (const r of results) {
       for (const req of r.requirements) {

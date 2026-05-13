@@ -153,18 +153,88 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
 
   useEffect(() => {
     if (!results) return
-    const auto: Record<string, number> = {}
-    for (const m of multiOptionReqs) {
-      const min = Math.min(...m.remainingCounts)
-      const tied = m.remainingCounts.map((c, i) => c === min ? i : -1).filter((i) => i >= 0)
-      if (scheduleType === 'optimal') {
-        if (tied.length === 1) auto[m.key] = tied[0]
-      } else {
-        auto[m.key] = tied[0]
+
+    const baseCovered = new Set<string>(completedCodes)
+    for (const r of results) {
+      for (const req of r.requirements) {
+        if (req.no_articulation) continue
+        if (req.options.length === 1) {
+          for (const c of req.options[0].courses) {
+            baseCovered.add(c.code)
+            baseCovered.add(normalizeCode(c.code))
+          }
+        }
       }
     }
-    setPicks((p) => ({ ...auto, ...p }))
-  }, [scheduleType, results, multiOptionReqs])
+
+    const reqsByKey = new Map<string, Requirement>()
+    for (const m of multiOptionReqs) reqsByKey.set(m.key, m.req)
+
+    const initialPicks: Record<string, number> = {}
+    for (const m of multiOptionReqs) {
+      let bestIdx = 0
+      let bestCost = Infinity
+      for (let i = 0; i < m.req.options.length; i++) {
+        const cost = m.req.options[i].courses.filter(
+          (c) => !baseCovered.has(c.code) && !baseCovered.has(normalizeCode(c.code))
+        ).length
+        if (cost < bestCost) {
+          bestCost = cost
+          bestIdx = i
+        }
+      }
+      initialPicks[m.key] = bestIdx
+    }
+
+    let current = initialPicks
+    for (let iter = 0; iter < 8; iter++) {
+      let changed = false
+      const next: Record<string, number> = { ...current }
+      for (const m of multiOptionReqs) {
+        const coveredWithoutMe = new Set<string>(baseCovered)
+        for (const m2 of multiOptionReqs) {
+          if (m2.key === m.key) continue
+          const idx = next[m2.key] ?? 0
+          for (const c of m2.req.options[idx].courses) {
+            coveredWithoutMe.add(c.code)
+            coveredWithoutMe.add(normalizeCode(c.code))
+          }
+        }
+        let bestIdx = next[m.key]
+        let bestCost = m.req.options[bestIdx].courses.filter(
+          (c) => !coveredWithoutMe.has(c.code) && !coveredWithoutMe.has(normalizeCode(c.code))
+        ).length
+        for (let i = 0; i < m.req.options.length; i++) {
+          if (i === bestIdx) continue
+          const cost = m.req.options[i].courses.filter(
+            (c) => !coveredWithoutMe.has(c.code) && !coveredWithoutMe.has(normalizeCode(c.code))
+          ).length
+          if (cost < bestCost) {
+            bestCost = cost
+            bestIdx = i
+          }
+        }
+        if (bestIdx !== next[m.key]) {
+          next[m.key] = bestIdx
+          changed = true
+        }
+      }
+      current = next
+      if (!changed) break
+    }
+
+    if (scheduleType === 'optimal') {
+      const auto: Record<string, number> = {}
+      for (const m of multiOptionReqs) {
+        const min = Math.min(...m.remainingCounts)
+        const tied = m.remainingCounts.map((c, i) => (c === min ? i : -1)).filter((i) => i >= 0)
+        if (tied.length === 1) auto[m.key] = current[m.key]
+      }
+      setPicks((p) => ({ ...auto, ...p }))
+    } else {
+      setPicks((p) => ({ ...current, ...p }))
+    }
+  }, [scheduleType, results, multiOptionReqs, completedCodes])
 
   const allPicked =
     visibleReqs.every((m) => picks[m.key] !== undefined) &&

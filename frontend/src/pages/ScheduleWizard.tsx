@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import api from '../api/client'
 import ScheduleBuilder, { type ClassItem, type Quarter } from './ScheduleBuilder'
 
@@ -527,6 +527,8 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
                 selected={picks[m.key]}
                 onSelect={(idx) => setPicks((p) => ({ ...p, [m.key]: idx }))}
                 badge={badge}
+                prereqMap={results?.[0]?.prereq_map || {}}
+                isTaken={isTaken}
               />
             )
           })}
@@ -542,6 +544,8 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
               }))}
               selected={electivePicks[e.key]}
               onSelect={(idx) => setElectivePicks((p) => ({ ...p, [e.key]: idx }))}
+              prereqMap={results?.[0]?.prereq_map || {}}
+              isTaken={isTaken}
             />
           ))}
         </div>
@@ -570,6 +574,8 @@ function PickerCard({
   selected,
   onSelect,
   badge,
+  prereqMap,
+  isTaken,
 }: {
   title: string
   subtitle: string
@@ -577,7 +583,27 @@ function PickerCard({
   selected: number | undefined
   onSelect: (idx: number) => void
   badge?: string
+  prereqMap?: Record<string, string[]>
+  isTaken?: (code: string) => boolean
 }) {
+  const computeMissingPrereqs = (codes: string[]) => {
+    if (!prereqMap) return []
+    const missing = new Set<string>()
+    const visited = new Set(codes)
+    const queue = [...codes]
+    while (queue.length > 0) {
+      const code = queue.shift()!
+      const prereqs = prereqMap[code] || prereqMap[normalizeCode(code)] || []
+      for (const p of prereqs) {
+        if (visited.has(p)) continue
+        if (isTaken && isTaken(p)) continue
+        visited.add(p)
+        missing.add(p)
+        queue.push(p)
+      }
+    }
+    return Array.from(missing).sort()
+  }
   return (
     <div className="rounded-xl border border-gray-100 px-4 py-3 bg-white shadow-sm">
       <div className="mb-2">
@@ -593,12 +619,18 @@ function PickerCard({
       </div>
       <div className="space-y-1">
         {(() => {
-          const remainingCounts = options.map((opt) => opt.courses.filter((c) => !c.completed).length)
+          const missingPrereqsPerOpt = options.map((opt) =>
+            computeMissingPrereqs(opt.courses.filter((c) => !c.completed).map((c) => c.code))
+          )
+          const remainingCounts = options.map((opt, i) =>
+            opt.courses.filter((c) => !c.completed).length + missingPrereqsPerOpt[i].length
+          )
           const minRemaining = Math.min(...remainingCounts)
           return options.map((opt, oi) => {
             const isSelected = oi === selected
             const remaining = remainingCounts[oi]
             const isOptimal = remaining === minRemaining
+            const missingPrereqs = missingPrereqsPerOpt[oi]
             return (
               <label
                 key={oi}
@@ -622,6 +654,17 @@ function PickerCard({
                     </span>
                   </div>
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
+                    {missingPrereqs.length > 0 && (
+                      <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-blue-50/60 border border-blue-200">
+                        {missingPrereqs.map((p, pi) => (
+                          <Fragment key={pi}>
+                            {pi > 0 && <span className="text-xs text-blue-400">→</span>}
+                            <span className="font-mono text-sm font-semibold text-blue-900">{p}</span>
+                          </Fragment>
+                        ))}
+                        <span className="text-xs text-blue-400">→</span>
+                      </span>
+                    )}
                     {opt.courses.map((c, ci) => (
                       <span key={ci} className="flex items-center gap-1.5">
                         {ci > 0 && <span className="text-xs text-gray-400">+</span>}
@@ -630,6 +673,11 @@ function PickerCard({
                       </span>
                     ))}
                   </div>
+                  {missingPrereqs.length > 0 && (
+                    <p className="text-[10px] text-blue-600 mt-1">
+                      Includes {missingPrereqs.length} prereq{missingPrereqs.length === 1 ? '' : 's'}
+                    </p>
+                  )}
                 </div>
               </label>
             )

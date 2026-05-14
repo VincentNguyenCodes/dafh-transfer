@@ -10,6 +10,11 @@ IGETC_AREAS = {
         'deanza': ['EWRT 1A', 'EWRT 1AH'],
         'foothill': ['ENGL 1A', 'ENGL 1AH'],
     },
+    '1B': {
+        'name': 'Critical Thinking and English Composition',
+        'deanza': ['EWRT 2', 'EWRT 2H'],
+        'foothill': ['ENGL 1B', 'ENGL 1C'],
+    },
 }
 
 CSU_GE_AREAS = {

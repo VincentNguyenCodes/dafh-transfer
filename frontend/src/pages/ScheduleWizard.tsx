@@ -275,18 +275,25 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
       const minRem = Math.min(...remainingCounts)
       return req.options[remainingCounts.indexOf(minRem)] || req.options[0]
     }
+    const labelFor = (req: Requirement, schoolName: string) => {
+      if (req.receiving_code.startsWith('IGETC_')) return 'IGETC'
+      if (req.receiving_code.startsWith('CSU_GE_')) return 'CSU GE'
+      return schoolName
+    }
     for (const r of results) {
       for (const req of r.requirements) {
         if (req.no_articulation) continue
         const opt = pickOption(req, r.school_name)
         if (!opt) continue
-        for (const c of opt.courses) add(c.code, c.name, c.units, r.school_name, 'required')
+        const label = labelFor(req, r.school_name)
+        for (const c of opt.courses) add(c.code, c.name, c.units, label, 'required')
       }
       for (const rec of r.recommended) {
         if (rec.no_articulation) continue
         const opt = pickOption(rec, r.school_name)
         if (!opt) continue
-        for (const c of opt.courses) add(c.code, c.name, c.units, r.school_name, 'recommended')
+        const label = labelFor(rec, r.school_name)
+        for (const c of opt.courses) add(c.code, c.name, c.units, label, 'recommended')
       }
       for (const group of r.elective_series) {
         const k = electiveGroupKey(group)

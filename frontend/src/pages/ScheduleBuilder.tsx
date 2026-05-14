@@ -300,6 +300,7 @@ function QuarterCard({
 }
 
 function abbreviateSchool(name: string): string {
+  if (name === 'IGETC' || name === 'CSU GE') return name
   const lower = name.toLowerCase()
   if (lower.includes('berkeley')) return 'UCB'
   if (lower.includes('los angeles')) return 'UCLA'

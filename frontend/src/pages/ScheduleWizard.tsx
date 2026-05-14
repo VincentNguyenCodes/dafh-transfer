@@ -386,7 +386,7 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
             className="w-full text-left rounded-2xl border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/40 px-5 py-4 transition-colors"
           >
             <p className="text-sm font-semibold text-gray-900 mb-1">Yes</p>
-            <p className="text-xs text-gray-500">IGETC (Intersegmental General Education Transfer Curriculum) covers GE for both UCs and CSUs, so we won't add any extra GE requirements.</p>
+            <p className="text-xs text-gray-500">IGETC (Intersegmental General Education Transfer Curriculum) covers GE for both UCs and CSUs. We'll add picker cards for IGETC areas (1A through 6) your major doesn't already cover.</p>
           </button>
           <button
             onClick={() => { setGePath('csu'); loadResults('csu'); setStage('picking') }}

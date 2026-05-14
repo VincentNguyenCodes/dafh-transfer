@@ -82,23 +82,29 @@ type TranscriptEntry = {
 export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Props) {
   const [results, setResults] = useState<TargetResult[] | null>(null)
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [picks, setPicks] = useState<Record<string, number>>({})
   const [electivePicks, setElectivePicks] = useState<Record<string, number>>({})
-  const [stage, setStage] = useState<'picking' | 'building'>('picking')
+  const [stage, setStage] = useState<'ge-path' | 'picking' | 'building'>('ge-path')
+  const [gePath, setGePath] = useState<'igetc' | 'csu' | ''>('')
   const [saving, setSaving] = useState(false)
   const [name, setName] = useState('')
 
-  useEffect(() => {
-    Promise.all([api.get('/results/'), api.get('/transcript/')])
+  const loadResults = (path: 'igetc' | 'csu') => {
+    setLoading(true)
+    setError('')
+    Promise.all([
+      api.get(`/results/?ge_path=${path}`),
+      api.get('/transcript/'),
+    ])
       .then(([r, t]) => {
         setResults(r.data)
         setTranscript(t.data)
       })
       .catch(() => setError('Failed to load your requirements.'))
       .finally(() => setLoading(false))
-  }, [])
+  }
 
   const multiOptionReqs = useMemo(() => {
     if (!results) return []
@@ -333,6 +339,7 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
       await api.post('/schedules/', {
         name,
         schedule_type: scheduleType,
+        ge_path: gePath,
         quarters,
         class_bank: remainingBank,
       })
@@ -359,6 +366,36 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
         <p className="text-gray-900 font-medium text-sm mb-1">Could not load</p>
         <p className="text-gray-600 text-xs">{error}</p>
         <button onClick={onCancel} className="mt-3 text-sm text-gray-700 hover:text-gray-900 font-medium">Back to schedules</button>
+      </div>
+    )
+  }
+
+  if (stage === 'ge-path') {
+    return (
+      <div>
+        <div className="mb-5 flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-bold text-gray-900 mb-1">General Education</h2>
+            <p className="text-gray-500 text-sm">First, tell us how you plan to complete general education requirements before transfer.</p>
+          </div>
+          <button onClick={onCancel} className="text-sm text-gray-500 hover:text-gray-700">Cancel</button>
+        </div>
+        <div className="space-y-3 max-w-2xl">
+          <button
+            onClick={() => { setGePath('igetc'); loadResults('igetc'); setStage('picking') }}
+            className="w-full text-left rounded-2xl border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/40 px-5 py-4 transition-colors"
+          >
+            <p className="text-sm font-semibold text-gray-900 mb-1">Yes — I'm doing IGETC</p>
+            <p className="text-xs text-gray-500">Intersegmental General Education Transfer Curriculum. Covers GE for both UCs and CSUs in one cert.</p>
+          </button>
+          <button
+            onClick={() => { setGePath('csu'); loadResults('csu'); setStage('picking') }}
+            className="w-full text-left rounded-2xl border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/40 px-5 py-4 transition-colors"
+          >
+            <p className="text-sm font-semibold text-gray-900 mb-1">No — I'm doing CSU GE Breadth</p>
+            <p className="text-xs text-gray-500">For CSU transfer only. We'll add the Golden Four (Oral Comm, Written Comm, Critical Thinking, College Math) to your schedule for CSU targets if your major doesn't already cover them.</p>
+          </button>
+        </div>
       </div>
     )
   }

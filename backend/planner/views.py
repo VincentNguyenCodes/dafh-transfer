@@ -46,7 +46,8 @@ class TransferTargetDetailView(APIView):
 
 class ResultsView(APIView):
     def get(self, request):
-        results = compute_remaining(request.user)
+        ge_path = request.query_params.get('ge_path', '')
+        results = compute_remaining(request.user, ge_path=ge_path)
         return Response(results)
 
 
@@ -100,6 +101,7 @@ def _serialize_schedule(s: Schedule) -> dict:
         'id': s.id,
         'name': s.name,
         'schedule_type': s.schedule_type,
+        'ge_path': s.ge_path,
         'quarters': s.quarters,
         'class_bank': s.class_bank,
         'created_at': s.created_at.isoformat(),
@@ -122,6 +124,7 @@ class ScheduleListView(APIView):
             user=request.user,
             name=name or f"Untitled schedule {Schedule.objects.filter(user=request.user).count() + 1}",
             schedule_type=schedule_type,
+            ge_path=request.data.get('ge_path', ''),
             quarters=request.data.get('quarters', []),
             class_bank=request.data.get('class_bank', []),
         )

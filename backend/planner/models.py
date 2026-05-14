@@ -38,10 +38,13 @@ class OptionPreference(models.Model):
 class Schedule(models.Model):
     TYPE_CUSTOM = 'custom'
     TYPE_OPTIMAL = 'optimal'
+    GE_IGETC = 'igetc'
+    GE_CSU = 'csu'
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='schedules')
     name = models.CharField(max_length=120)
     schedule_type = models.CharField(max_length=20)
+    ge_path = models.CharField(max_length=10, blank=True, default='')
     quarters = models.JSONField(default=list)
     class_bank = models.JSONField(default=list)
     created_at = models.DateTimeField(auto_now_add=True)

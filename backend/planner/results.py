@@ -666,7 +666,7 @@ def compute_best_schedule(targets_results: list, user_prefs=None) -> dict:
     }
 
 
-def compute_remaining(user) -> list:
+def compute_remaining(user, ge_path: str = '') -> list:
     from transcripts.models import TranscriptEntry
     from .models import TransferTarget
     from .series_config import get_series_config
@@ -756,6 +756,30 @@ def compute_remaining(user) -> list:
                         for opt in rec['options'] for c in opt['courses']
                     )
                 ]
+
+        if ge_path != 'igetc':
+            from .ge_requirements import build_csu_ge_requirements, CSU_INSTITUTION_IDS
+            if target.receiving_institution_id in CSU_INSTITUTION_IDS:
+                committed = set()
+                for req in all_requirements:
+                    if req.get('no_articulation') or not req.get('options'):
+                        continue
+                    for c in req['options'][0]['courses']:
+                        committed.add(c['code'])
+                        committed.add(normalize_course_code(c['code']))
+                for group in elective_series:
+                    series_list = group.get('series', [])
+                    if not series_list:
+                        continue
+                    best = next((s for s in series_list if s.get('satisfied')), None) or series_list[0]
+                    for c in best.get('courses', []):
+                        committed.add(c['code'])
+                        committed.add(normalize_course_code(c['code']))
+                ge_reqs = build_csu_ge_requirements(
+                    target.receiving_institution_id,
+                    completed_codes, in_progress_codes, committed,
+                )
+                all_requirements.extend(ge_reqs)
 
         results.append({
             'target': f"{target.receiving_institution_name} — {target.major_name}",

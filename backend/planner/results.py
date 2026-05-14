@@ -780,6 +780,7 @@ def compute_remaining(user, ge_path: str = '') -> list:
         if ge_path == 'igetc':
             if target.receiving_institution_id in IGETC_APPLIES_TO:
                 all_requirements.extend(build_igetc_requirements(
+                    target.receiving_institution_id,
                     completed_codes, in_progress_codes, committed,
                 ))
         else:

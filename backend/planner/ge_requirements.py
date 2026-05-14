@@ -162,9 +162,17 @@ def _approved_set(area):
     return s
 
 
-def build_igetc_requirements(completed_codes, in_progress_codes, committed_codes):
+def build_igetc_requirements(receiving_id, completed_codes, in_progress_codes, committed_codes):
+    is_uc = receiving_id in UC_INSTITUTION_IDS
+    is_csu = receiving_id in CSU_INSTITUTION_IDS
+
     reqs = []
     for area_code, area in IGETC_AREAS.items():
+        if area_code in IGETC_UC_ONLY_AREAS and not is_uc:
+            continue
+        if area_code in IGETC_CSU_ONLY_AREAS and not is_csu:
+            continue
+
         approved = _approved_set(area)
         if approved & (completed_codes | committed_codes):
             continue

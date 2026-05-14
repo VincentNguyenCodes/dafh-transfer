@@ -49,8 +49,9 @@ type Props = {
   onSaved: () => void
 }
 
-function requirementKey(req: Requirement): string {
-  return req.options.flatMap((o) => o.courses.map((c) => c.code)).sort().join('|')
+function requirementKey(req: Requirement, schoolName?: string): string {
+  const code = req.receiving_code || req.options.flatMap((o) => o.courses.map((c) => c.code)).sort().join('|')
+  return schoolName ? `${schoolName}:${code}` : code
 }
 
 function normalizeCode(code: string): string {
@@ -108,7 +109,7 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
         const remainingCounts = req.options.map((o) => o.courses.filter((c) => !c.completed).length)
         const minRem = Math.min(...remainingCounts)
         if (minRem === 0) continue
-        const key = requirementKey(req)
+        const key = requirementKey(req, schoolName)
         const existing = map.get(key)
         if (existing) {
           existing.targets.add(schoolName)
@@ -258,9 +259,9 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
         bank.set(code, { code, name, units, needed_for: new Set(target ? [target] : []), kind })
       }
     }
-    const pickOption = (req: Requirement) => {
+    const pickOption = (req: Requirement, schoolName: string) => {
       if (req.options.length <= 1) return req.options[0]
-      const k = requirementKey(req)
+      const k = requirementKey(req, schoolName)
       if (picks[k] !== undefined) return req.options[picks[k]] || req.options[0]
       const remainingCounts = req.options.map((o) => o.courses.filter((c) => !c.completed).length)
       const minRem = Math.min(...remainingCounts)
@@ -269,13 +270,13 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
     for (const r of results) {
       for (const req of r.requirements) {
         if (req.no_articulation) continue
-        const opt = pickOption(req)
+        const opt = pickOption(req, r.school_name)
         if (!opt) continue
         for (const c of opt.courses) add(c.code, c.name, c.units, r.school_name, 'required')
       }
       for (const rec of r.recommended) {
         if (rec.no_articulation) continue
-        const opt = pickOption(rec)
+        const opt = pickOption(rec, r.school_name)
         if (!opt) continue
         for (const c of opt.courses) add(c.code, c.name, c.units, r.school_name, 'recommended')
       }

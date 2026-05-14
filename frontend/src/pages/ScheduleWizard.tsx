@@ -36,6 +36,8 @@ type TargetResult = {
   target: string
   school_name: string
   major_name: string
+  ge_path?: string
+  ge_approved_codes?: string[]
   requirements: Requirement[]
   recommended: Requirement[]
   elective_series: ElectiveGroup[]
@@ -303,8 +305,20 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
         for (const c of series.courses) add(c.code, c.code, null, r.school_name, 'recommended')
       }
     }
+    const geApproved = new Set<string>()
+    for (const r of results) {
+      for (const code of (r.ge_approved_codes || [])) geApproved.add(code)
+    }
+    const geLabel = gePath === 'igetc' ? 'IGETC' : gePath === 'csu' ? 'CSU GE' : ''
+    if (geLabel) {
+      for (const item of bank.values()) {
+        if (geApproved.has(item.code) || geApproved.has(normalizeCode(item.code))) {
+          item.needed_for.add(geLabel)
+        }
+      }
+    }
     return Array.from(bank.values()).map((c) => ({ ...c, needed_for: Array.from(c.needed_for) }))
-  }, [results, picks, electivePicks, scheduleType, completedCodes])
+  }, [results, picks, electivePicks, scheduleType, completedCodes, gePath])
 
   const initialQuarters: Quarter[] = useMemo(() => {
     const byTerm: Record<string, string[]> = {}

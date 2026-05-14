@@ -210,6 +210,19 @@ def build_igetc_requirements(receiving_id, completed_codes, in_progress_codes, c
     return reqs
 
 
+def get_ge_approved_codes(ge_path):
+    if ge_path == 'igetc':
+        areas = IGETC_AREAS
+    elif ge_path == 'csu':
+        areas = CSU_GE_AREAS
+    else:
+        return []
+    s = set()
+    for area in areas.values():
+        s |= _approved_set(area)
+    return sorted(s)
+
+
 def build_csu_ge_requirements(receiving_id, completed_codes, in_progress_codes, committed_codes):
     if receiving_id not in CSU_INSTITUTION_IDS:
         return []

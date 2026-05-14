@@ -1,6 +1,6 @@
 import { DndContext, DragOverlay, PointerSensor, useDraggable, useDroppable, useSensor, useSensors } from '@dnd-kit/core'
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core'
-import { useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 
 export type ClassItem = {
   code: string
@@ -222,8 +222,41 @@ export default function ScheduleBuilder({ classBank, prePlaced = [], initialQuar
   )
 }
 
+function buildPrereqGroups(items: ClassItem[]): ClassItem[][] {
+  const byCode = new Map(items.map((c) => [c.code, c]))
+  const childrenOf = new Map<string, ClassItem[]>()
+  const standalone: ClassItem[] = []
+  for (const c of items) {
+    if (c.kind === 'prereq' && c.prereq_for && byCode.has(c.prereq_for)) {
+      const arr = childrenOf.get(c.prereq_for) || []
+      arr.push(c)
+      childrenOf.set(c.prereq_for, arr)
+    } else {
+      standalone.push(c)
+    }
+  }
+  return standalone.map((parent) => {
+    const chain: ClassItem[] = []
+    const stack = [parent.code]
+    const visited = new Set<string>()
+    while (stack.length) {
+      const cur = stack.pop()!
+      if (visited.has(cur)) continue
+      visited.add(cur)
+      const kids = (childrenOf.get(cur) || []).slice().sort((a, b) => a.code.localeCompare(b.code))
+      for (const k of kids) {
+        chain.push(k)
+        stack.push(k.code)
+      }
+    }
+    chain.sort((a, b) => a.code.localeCompare(b.code))
+    return [...chain, parent]
+  })
+}
+
 function ClassBank({ items }: { items: ClassItem[] }) {
   const { setNodeRef, isOver } = useDroppable({ id: BANK_ID })
+  const groups = useMemo(() => buildPrereqGroups(items), [items])
   return (
     <div
       ref={setNodeRef}
@@ -241,7 +274,18 @@ function ClassBank({ items }: { items: ClassItem[] }) {
           <p className="text-sm text-gray-400 text-center py-6">All classes have been placed.</p>
         ) : (
           <div className="flex flex-wrap gap-2">
-            {items.map((c) => <ClassChip key={c.code} c={c} />)}
+            {groups.map((g) => g.length === 1 ? (
+              <ClassChip key={g[0].code} c={g[0]} />
+            ) : (
+              <div key={g[g.length - 1].code} className="flex items-center gap-1 px-1.5 py-1 rounded-xl bg-blue-50/40 border border-blue-200">
+                {g.map((c, i) => (
+                  <Fragment key={c.code}>
+                    {i > 0 && <span className="text-blue-400 text-xs font-bold">→</span>}
+                    <ClassChip c={c} />
+                  </Fragment>
+                ))}
+              </div>
+            ))}
           </div>
         )}
       </div>

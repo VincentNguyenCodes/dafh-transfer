@@ -1,6 +1,6 @@
 from transcripts.parser import normalize_course_code
 
-CSU_INSTITUTION_IDS = {11}
+CSU_INSTITUTION_IDS = {11, 21, 36, 60, 66, 75, 81, 84, 85, 88, 102, 110, 122, 131}
 
 UC_INSTITUTION_IDS = {7, 79, 117, 120, 128, 132, 135, 137}
 

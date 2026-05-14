@@ -791,12 +791,14 @@ def compute_remaining(user, ge_path: str = '') -> list:
                 ))
 
         from .ge_requirements import get_ge_approved_codes
+        from .prerequisites import PREREQS
         results.append({
             'target': f"{target.receiving_institution_name} — {target.major_name}",
             'school_name': target.receiving_institution_name,
             'major_name': target.major_name,
             'ge_path': ge_path,
             'ge_approved_codes': get_ge_approved_codes(ge_path),
+            'prereq_map': PREREQS,
             'requirements': all_requirements,
             'recommended': all_recommended,
             'elective_series': elective_series,

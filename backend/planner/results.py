@@ -80,7 +80,16 @@ def _extract_codes_from_items(items: list, valid_ucsd_codes: set) -> tuple:
     return _extract_codes_from_html(''.join(f'<li>{i}</li>' for i in items), valid_ucsd_codes)
 
 
-def _parse_advisory(template: list, valid_ucsd_codes: set, agreement_key: str = ''):
+def _parse_advisory(template: list, valid_ucsd_codes: set, agreement_key: str = '', receiving_id: int = None, major_name: str = ''):
+    if receiving_id == 11 and major_name:
+        try:
+            from .calpoly_scraper import fetch_calpoly_requirements
+            result = fetch_calpoly_requirements(major_name, valid_ucsd_codes)
+            if result and (result['required'] or result['recommended'] or result['choose_one_groups'] or result['series_groups']):
+                return result
+        except Exception:
+            pass
+
     if agreement_key:
         advisory_html = '\n'.join(
             g.get('content', '') for g in template
@@ -163,7 +172,7 @@ def _ccc_course(ci: dict, completed_codes: set, in_progress_codes: set, school: 
     }
 
 
-def _parse_requirements(articulation_json: dict, completed_codes: set, in_progress_codes: set, school: str, agreement_key: str = '') -> tuple:
+def _parse_requirements(articulation_json: dict, completed_codes: set, in_progress_codes: set, school: str, agreement_key: str = '', receiving_id: int = None, major_name: str = '') -> tuple:
     requirements = []
     recommended = []
     claude_series_groups = []
@@ -190,7 +199,7 @@ def _parse_requirements(articulation_json: dict, completed_codes: set, in_progre
                             }
 
         valid_ucsd_codes = {v['code'] for v in template_cells.values()}
-        advisory = _parse_advisory(template, valid_ucsd_codes, agreement_key)
+        advisory = _parse_advisory(template, valid_ucsd_codes, agreement_key, receiving_id=receiving_id, major_name=major_name)
 
         cell_to_art = {a['templateCellId']: a for a in articulations}
 
@@ -694,7 +703,12 @@ def compute_remaining(user) -> list:
                     art = fetch_or_cache_articulation(key)
                 except Exception:
                     continue
-                reqs, recs, claude_series, flags = _parse_requirements(art, completed_codes, in_progress_codes, school, agreement_key=key)
+                reqs, recs, claude_series, flags = _parse_requirements(
+                    art, completed_codes, in_progress_codes, school,
+                    agreement_key=key,
+                    receiving_id=target.receiving_institution_id,
+                    major_name=target.major_name,
+                )
                 for req in reqs:
                     rkey = req.get('dedup_key', req['receiving_code'])
                     if rkey not in seen_recv:

@@ -10,7 +10,9 @@ from django.utils import timezone
 from assist.models import AssistCache
 
 CALPOLY_BASE = 'https://www.calpoly.edu/admissions'
+CALPOLY_DIRECTORY = 'https://www.calpoly.edu/admissions/transfer-student/selection-criteria/major-specific-transfer-criteria'
 CACHE_TTL_DAYS = 7
+SLUG_MAP_TTL_DAYS = 30
 CALPOLY_INSTITUTION_ID = 11
 
 SYSTEM_PROMPT = (
@@ -55,16 +57,71 @@ Return ONLY this JSON (no markdown):
 }}"""
 
 
-def major_to_slug(major_name: str) -> str:
-    s = major_name.lower()
+def _normalize_for_match(s: str) -> str:
+    s = s.lower()
     s = re.sub(r',?\s*b\.?[as]\.?\s*$', '', s)
-    s = re.sub(r'[^a-z0-9\s-]', '', s)
-    s = re.sub(r'\s+', '-', s.strip())
+    s = re.sub(r'[^a-z0-9\s]', ' ', s)
+    s = re.sub(r'\s+', ' ', s).strip()
     return s
 
 
+def major_to_slug(major_name: str) -> str:
+    s = _normalize_for_match(major_name)
+    return s.replace(' ', '-')
+
+
+def _get_slug_map() -> dict:
+    try:
+        cached = AssistCache.objects.get(
+            receiving_institution_id=-2, sending_institution_id=-2,
+            academic_year_id=-2, major_code='calpoly:slug-map',
+        )
+        if cached.cached_at >= timezone.now() - timedelta(days=SLUG_MAP_TTL_DAYS):
+            return cached.raw_json
+        cached.delete()
+    except AssistCache.DoesNotExist:
+        pass
+
+    try:
+        resp = requests.get(CALPOLY_DIRECTORY, timeout=15)
+        if resp.status_code != 200:
+            return {}
+        matches = re.findall(r'<option value="/admissions/([a-z][a-z0-9-]+)">([^<]+)</option>', resp.text)
+    except Exception:
+        return {}
+
+    slug_map = {name.strip(): slug for slug, name in matches}
+    AssistCache.objects.create(
+        receiving_institution_id=-2, sending_institution_id=-2,
+        academic_year_id=-2, major_code='calpoly:slug-map', raw_json=slug_map,
+    )
+    return slug_map
+
+
+def _resolve_slug(major_name: str) -> str:
+    slug_map = _get_slug_map()
+    if not slug_map:
+        return major_to_slug(major_name)
+
+    name = _normalize_for_match(major_name)
+
+    for entry_name, slug in slug_map.items():
+        if _normalize_for_match(entry_name) == name:
+            return slug
+
+    name_tokens = name.split()
+    if name_tokens and len(name_tokens[0]) >= 5:
+        prefix = name_tokens[0][:5]
+        for entry_name, slug in slug_map.items():
+            en_tokens = _normalize_for_match(entry_name).split()
+            if en_tokens and en_tokens[0].startswith(prefix):
+                return slug
+
+    return major_to_slug(major_name)
+
+
 def fetch_calpoly_requirements(major_name: str, valid_codes: set):
-    slug = major_to_slug(major_name)
+    slug = _resolve_slug(major_name)
     cache_key = f'calpoly:{slug}'
 
     try:

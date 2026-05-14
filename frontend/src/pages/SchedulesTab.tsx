@@ -6,6 +6,7 @@ type Schedule = {
   id: number
   name: string
   schedule_type: 'custom' | 'optimal'
+  ge_path: 'igetc' | 'csu' | ''
   quarters: unknown[]
   class_bank: unknown[]
   created_at: string
@@ -115,6 +116,12 @@ export default function SchedulesTab() {
                 {(s.quarters as unknown[]).length} quarter{(s.quarters as unknown[]).length === 1 ? '' : 's'}
                 {' · '}
                 {(s.class_bank as unknown[]).length} unplaced
+                {s.ge_path && (
+                  <>
+                    {' · '}
+                    <span className="text-emerald-700">{s.ge_path === 'igetc' ? 'IGETC' : 'CSU GE'}</span>
+                  </>
+                )}
               </div>
             </div>
           ))}

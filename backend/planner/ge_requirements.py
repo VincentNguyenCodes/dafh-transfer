@@ -20,6 +20,20 @@ IGETC_AREAS = {
         'deanza': ['COMM 1', 'COMM 1H', 'COMM 10', 'COMM 10H'],
         'foothill': ['COMM 1', 'COMM 1H'],
     },
+    '2A': {
+        'name': 'Mathematical Concepts and Quantitative Reasoning',
+        'deanza': [
+            'MATH 1A', 'MATH 1AH', 'MATH 1B', 'MATH 1BH', 'MATH 1C', 'MATH 1CH',
+            'MATH 1D', 'MATH 1DH', 'MATH 2A', 'MATH 2AH', 'MATH 2B', 'MATH 2BH',
+            'MATH 10', 'MATH 10H', 'MATH 11', 'MATH 11H', 'MATH 17', 'MATH 22',
+            'MATH 23', 'MATH 31', 'MATH 32', 'MATH 41', 'MATH 42', 'MATH 43',
+            'MATH 44', 'MATH 46',
+        ],
+        'foothill': [
+            'MATH 1A', 'MATH 1AH', 'MATH 1B', 'MATH 1BH', 'MATH 1C', 'MATH 1CH',
+            'MATH 1D', 'MATH 1DH', 'MATH 10', 'MATH 11', 'MATH 22', 'MATH 31',
+        ],
+    },
 }
 
 CSU_GE_AREAS = {

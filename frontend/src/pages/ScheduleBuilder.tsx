@@ -7,7 +7,8 @@ export type ClassItem = {
   name: string
   units: number | null
   needed_for: string[]
-  kind?: 'required' | 'recommended'
+  kind?: 'required' | 'recommended' | 'prereq'
+  prereq_for?: string
 }
 
 export type Quarter = {
@@ -321,11 +322,14 @@ function ClassChip({ c, dragging }: { c: ClassItem; dragging?: boolean }) {
   const hidden = isDragging && !dragging
   const isRequired = c.kind === 'required'
   const isRecommended = c.kind === 'recommended'
+  const isPrereq = c.kind === 'prereq'
   const colorClass = isRequired
     ? 'border-red-200 bg-red-50'
     : isRecommended
       ? 'border-yellow-200 bg-yellow-50'
-      : 'border-gray-200 bg-white'
+      : isPrereq
+        ? 'border-blue-200 bg-blue-50'
+        : 'border-gray-200 bg-white'
   const schoolAbbrevs = (c.needed_for || []).filter(Boolean).map(abbreviateSchool)
   const uniqueSchools = Array.from(new Set(schoolAbbrevs))
   return (

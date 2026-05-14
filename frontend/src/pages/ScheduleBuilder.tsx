@@ -310,6 +310,7 @@ function abbreviateSchool(name: string): string {
   if (lower.includes('santa cruz')) return 'UCSC'
   if (lower.includes('riverside')) return 'UCR'
   if (lower.includes('merced')) return 'UCM'
+  if (lower.includes('san luis obispo') || lower.includes('polytechnic')) return 'CP SLO'
   const words = name.split(/[\s,]+/).filter(Boolean)
   return words.map((w) => w[0]).join('').slice(0, 4).toUpperCase()
 }

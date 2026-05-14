@@ -38,6 +38,7 @@ type TargetResult = {
   major_name: string
   ge_path?: string
   ge_approved_codes?: string[]
+  prereq_map?: Record<string, string[]>
   requirements: Requirement[]
   recommended: Requirement[]
   elective_series: ElectiveGroup[]
@@ -256,7 +257,8 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
 
   const classBank: ClassBankItem[] = useMemo(() => {
     if (!results) return []
-    const bank = new Map<string, { code: string; name: string; units: number | null; needed_for: Set<string>; kind: 'required' | 'recommended' }>()
+    type BankEntry = { code: string; name: string; units: number | null; needed_for: Set<string>; kind: 'required' | 'recommended' | 'prereq'; prereq_for?: string }
+    const bank = new Map<string, BankEntry>()
     const add = (code: string, name: string, units: number | null, target: string, kind: 'required' | 'recommended') => {
       if (isTaken(code)) return
       const existing = bank.get(code)
@@ -265,6 +267,7 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
         if (!existing.units && units != null) existing.units = units
         if ((!existing.name || existing.name === existing.code) && name && name !== code) existing.name = name
         if (kind === 'required') existing.kind = 'required'
+        else if (kind === 'recommended' && existing.kind === 'prereq') existing.kind = 'recommended'
       } else {
         bank.set(code, { code, name, units, needed_for: new Set(target ? [target] : []), kind })
       }
@@ -315,6 +318,30 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
         if (geApproved.has(item.code) || geApproved.has(normalizeCode(item.code))) {
           item.needed_for.add(geLabel)
         }
+      }
+    }
+    const prereqMap = (results[0]?.prereq_map) || {}
+    const queue = Array.from(bank.keys())
+    while (queue.length > 0) {
+      const code = queue.shift()!
+      const prereqs = prereqMap[code] || prereqMap[normalizeCode(code)] || []
+      for (const p of prereqs) {
+        if (isTaken(p)) continue
+        const existing = bank.get(p)
+        if (existing) {
+          existing.needed_for.add(`prereq for ${code}`)
+          if (!existing.prereq_for) existing.prereq_for = code
+          continue
+        }
+        bank.set(p, {
+          code: p,
+          name: p,
+          units: null,
+          needed_for: new Set([`prereq for ${code}`]),
+          kind: 'prereq',
+          prereq_for: code,
+        })
+        queue.push(p)
       }
     }
     return Array.from(bank.values()).map((c) => ({ ...c, needed_for: Array.from(c.needed_for) }))

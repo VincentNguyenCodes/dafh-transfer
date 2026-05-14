@@ -441,16 +441,22 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
         </div>
       ) : (
         <div className="space-y-3 mb-6">
-          {visibleReqs.map((m) => (
-            <PickerCard
-              key={m.key}
-              title={m.req.receiving_name || m.req.receiving_code}
-              subtitle={`${m.kind === 'recommended' ? 'recommended' : 'required'} for ${Array.from(m.targets).join(', ')}`}
-              options={m.req.options}
-              selected={picks[m.key]}
-              onSelect={(idx) => setPicks((p) => ({ ...p, [m.key]: idx }))}
-            />
-          ))}
+          {visibleReqs.map((m) => {
+            const isIgetc = m.req.receiving_code.startsWith('IGETC_')
+            const isCsuGe = m.req.receiving_code.startsWith('CSU_GE_')
+            const badge = isIgetc ? 'IGETC' : isCsuGe ? 'CSU GE' : undefined
+            return (
+              <PickerCard
+                key={m.key}
+                title={m.req.receiving_name || m.req.receiving_code}
+                subtitle={`${m.kind === 'recommended' ? 'recommended' : 'required'} for ${Array.from(m.targets).join(', ')}`}
+                options={m.req.options}
+                selected={picks[m.key]}
+                onSelect={(idx) => setPicks((p) => ({ ...p, [m.key]: idx }))}
+                badge={badge}
+              />
+            )
+          })}
           {visibleElectives.map((e) => (
             <PickerCard
               key={e.key}
@@ -490,17 +496,26 @@ function PickerCard({
   options,
   selected,
   onSelect,
+  badge,
 }: {
   title: string
   subtitle: string
   options: (Option & { seriesName?: string })[]
   selected: number | undefined
   onSelect: (idx: number) => void
+  badge?: string
 }) {
   return (
     <div className="rounded-xl border border-gray-100 px-4 py-3 bg-white shadow-sm">
       <div className="mb-2">
-        <p className="text-sm font-semibold text-gray-900">{title}</p>
+        <div className="flex items-center gap-2 mb-0.5">
+          <p className="text-sm font-semibold text-gray-900">{title}</p>
+          {badge && (
+            <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+              {badge}
+            </span>
+          )}
+        </div>
         <p className="text-xs text-gray-500">{subtitle}</p>
       </div>
       <div className="space-y-1">

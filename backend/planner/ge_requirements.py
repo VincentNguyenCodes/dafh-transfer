@@ -15,6 +15,11 @@ IGETC_AREAS = {
         'deanza': ['EWRT 2', 'EWRT 2H'],
         'foothill': ['ENGL 1B', 'ENGL 1C'],
     },
+    '1C': {
+        'name': 'Oral Communication (CSU only)',
+        'deanza': ['COMM 1', 'COMM 1H', 'COMM 10', 'COMM 10H'],
+        'foothill': ['COMM 1', 'COMM 1H'],
+    },
 }
 
 CSU_GE_AREAS = {

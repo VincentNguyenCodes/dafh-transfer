@@ -383,16 +383,24 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
         <div className="space-y-3 max-w-2xl">
           <button
             onClick={() => { setGePath('igetc'); loadResults('igetc'); setStage('picking') }}
-            className="w-full text-left rounded-2xl border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/40 px-5 py-4 transition-colors"
+            className={`w-full text-left rounded-2xl border px-5 py-4 transition-colors ${
+              gePath === 'igetc'
+                ? 'border-indigo-400 bg-indigo-50/60'
+                : 'border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/40'
+            }`}
           >
-            <p className="text-sm font-semibold text-gray-900 mb-1">Yes</p>
+            <p className="text-sm font-semibold text-gray-900 mb-1">Yes{gePath === 'igetc' && ' (current)'}</p>
             <p className="text-xs text-gray-500">IGETC (Intersegmental General Education Transfer Curriculum) covers GE for both UCs and CSUs. We'll add picker cards for IGETC areas (1A through 6) your major doesn't already cover.</p>
           </button>
           <button
             onClick={() => { setGePath('csu'); loadResults('csu'); setStage('picking') }}
-            className="w-full text-left rounded-2xl border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/40 px-5 py-4 transition-colors"
+            className={`w-full text-left rounded-2xl border px-5 py-4 transition-colors ${
+              gePath === 'csu'
+                ? 'border-indigo-400 bg-indigo-50/60'
+                : 'border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/40'
+            }`}
           >
-            <p className="text-sm font-semibold text-gray-900 mb-1">No</p>
+            <p className="text-sm font-semibold text-gray-900 mb-1">No{gePath === 'csu' && ' (current)'}</p>
             <p className="text-xs text-gray-500">If you have any CSU target, we'll add the CSU Golden Four (Oral Comm, Written Comm, Critical Thinking, College Math). Only the areas your major doesn't already cover. UC-only schedules get no extra GE.</p>
           </button>
         </div>

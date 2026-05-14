@@ -249,4 +249,5 @@ def _filter_to_valid(data: dict, valid_codes: set) -> dict:
         'choose_one_groups': choose_one,
         'series_groups': series_groups,
         'flags': flags,
+        'comprehensive': True,
     }

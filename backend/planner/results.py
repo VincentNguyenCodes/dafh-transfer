@@ -291,31 +291,31 @@ def _parse_requirements(articulation_json: dict, completed_codes: set, in_progre
                     'dedup_key': advisory_key,
                 })
 
-            # Collect recommended: has articulation but not in the advisory required list
-            advisory_codes = required_codes | all_choose_one | advisory_rec_codes | series_codes_set
-            for art_row in articulations:
-                cell_id = art_row.get('templateCellId')
-                recv_info = template_cells.get(cell_id, {})
-                recv_code = recv_info.get('code', '')
-                if not recv_code or recv_code in advisory_codes:
-                    continue
-                sending = art_row.get('articulation', {}).get('sendingArticulation', {})
-                if sending.get('noArticulationReason'):
-                    continue
-                recv_name = recv_info.get('name', '')
-                options = _build_options(sending, completed_codes, in_progress_codes, school)
-                if not options:
-                    continue
-                satisfied = any(opt['satisfied'] for opt in options)
-                recommended.append({
-                    'receiving_code': recv_code,
-                    'receiving_name': recv_name,
-                    'no_articulation': False,
-                    'satisfied': satisfied,
-                    'options': options,
-                    'school': school,
-                    'is_choose_one': False,
-                })
+            if not advisory.get('comprehensive'):
+                advisory_codes = required_codes | all_choose_one | advisory_rec_codes | series_codes_set
+                for art_row in articulations:
+                    cell_id = art_row.get('templateCellId')
+                    recv_info = template_cells.get(cell_id, {})
+                    recv_code = recv_info.get('code', '')
+                    if not recv_code or recv_code in advisory_codes:
+                        continue
+                    sending = art_row.get('articulation', {}).get('sendingArticulation', {})
+                    if sending.get('noArticulationReason'):
+                        continue
+                    recv_name = recv_info.get('name', '')
+                    options = _build_options(sending, completed_codes, in_progress_codes, school)
+                    if not options:
+                        continue
+                    satisfied = any(opt['satisfied'] for opt in options)
+                    recommended.append({
+                        'receiving_code': recv_code,
+                        'receiving_name': recv_name,
+                        'no_articulation': False,
+                        'satisfied': satisfied,
+                        'options': options,
+                        'school': school,
+                        'is_choose_one': False,
+                    })
 
         else:
             for art_row in articulations:

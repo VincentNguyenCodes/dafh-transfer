@@ -30,7 +30,7 @@ Page text:
 Carefully extract every Cal Poly course code mentioned and categorize each into ONE of:
 
 1. **required**: a single course code unconditionally required (no "or" alternative)
-2. **choose_one_groups**: when the page says "A or B" / "either A or B" for a single requirement, output [["A", "B"]]. Look hard for these — they typically appear in Math sections (e.g. "MATH 244 or MATH 206") or under a single bullet that lists two course codes joined by "or"
+2. **choose_one_groups**: when the page says "A or B" / "either A or B" for a single requirement, output [["A", "B"]]. Look hard for these. They typically appear in Math sections (e.g. "MATH 244 or MATH 206") or under a single bullet that lists two course codes joined by "or"
 3. **series_groups**: when the page offers two or more parallel multi-course sequences (e.g. "Physics: PHYS 141, 142, 143 OR Chemistry: CHEM 124, 125, 126"), output as a series_group with each sequence as an option. Look for headings like "Physics OR Chemistry" or "Lab Science (choose one)"
 4. **recommended**: under a "Recommended" / "Desired" heading
 
@@ -40,7 +40,7 @@ Examples of patterns to detect:
 
 Rules:
 - Normalize all codes to no-space format (CSC101, not "CSC 101")
-- Skip generic graduation requirements (Oral Comm, English Composition, Critical Thinking, GE) — only major-specific science/math/CS/engineering courses
+- Skip generic graduation requirements (Oral Comm, English Composition, Critical Thinking, GE). Only major-specific science/math/CS/engineering courses
 - If a code appears in choose_one_groups or series_groups, do NOT also put it in required/recommended
 - Flag if you couldn't find any required section or if the page is ambiguous
 

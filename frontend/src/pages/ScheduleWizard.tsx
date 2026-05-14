@@ -393,7 +393,7 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
             className="w-full text-left rounded-2xl border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/40 px-5 py-4 transition-colors"
           >
             <p className="text-sm font-semibold text-gray-900 mb-1">No</p>
-            <p className="text-xs text-gray-500">If you have any CSU target, we'll add the CSU Golden Four (Oral Comm, Written Comm, Critical Thinking, College Math) — only the ones your major doesn't already cover. UC-only schedules get no extra GE.</p>
+            <p className="text-xs text-gray-500">If you have any CSU target, we'll add the CSU Golden Four (Oral Comm, Written Comm, Critical Thinking, College Math). Only the areas your major doesn't already cover. UC-only schedules get no extra GE.</p>
           </button>
         </div>
       </div>

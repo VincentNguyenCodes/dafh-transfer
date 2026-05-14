@@ -59,6 +59,19 @@ IGETC_AREAS = {
             'PHIL 1', 'PHIL 2', 'PHIL 8', 'PHIL 10', 'PHIL 23',
         ],
     },
+    '4': {
+        'name': 'Social and Behavioral Sciences',
+        'deanza': [
+            'ANTH 1', 'ANTH 2', 'ANTH 3', 'ECON 1', 'ECON 2', 'GEO 10', 'HIST 1',
+            'HIST 2', 'HIST 10', 'HIST 17A', 'HIST 17B', 'POLI 1', 'POLI 2',
+            'POLI 3', 'POLI 15', 'PSYC 1', 'PSYC 14', 'PSYC 16', 'PSYC 22',
+            'SOC 1', 'SOC 5', 'SOC 20',
+        ],
+        'foothill': [
+            'ANTH 1', 'ANTH 2', 'ANTH 3', 'ECON 1A', 'ECON 1B', 'GEOG 1', 'HIST 1',
+            'HIST 2', 'POLI 1', 'PSYC 1', 'PSYC 10', 'SOC 1', 'SOC 5',
+        ],
+    },
 }
 
 CSU_GE_AREAS = {

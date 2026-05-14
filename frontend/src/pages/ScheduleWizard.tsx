@@ -376,7 +376,7 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
         <div className="mb-5 flex items-center justify-between">
           <div>
             <h2 className="text-xl font-bold text-gray-900 mb-1">General Education</h2>
-            <p className="text-gray-500 text-sm">First, tell us how you plan to complete general education requirements before transfer.</p>
+            <p className="text-gray-500 text-sm">Are you planning to complete IGETC before transfer?</p>
           </div>
           <button onClick={onCancel} className="text-sm text-gray-500 hover:text-gray-700">Cancel</button>
         </div>
@@ -385,15 +385,15 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
             onClick={() => { setGePath('igetc'); loadResults('igetc'); setStage('picking') }}
             className="w-full text-left rounded-2xl border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/40 px-5 py-4 transition-colors"
           >
-            <p className="text-sm font-semibold text-gray-900 mb-1">Yes — I'm doing IGETC</p>
-            <p className="text-xs text-gray-500">Intersegmental General Education Transfer Curriculum. Covers GE for both UCs and CSUs in one cert.</p>
+            <p className="text-sm font-semibold text-gray-900 mb-1">Yes</p>
+            <p className="text-xs text-gray-500">IGETC (Intersegmental General Education Transfer Curriculum) covers GE for both UCs and CSUs, so we won't add any extra GE requirements.</p>
           </button>
           <button
             onClick={() => { setGePath('csu'); loadResults('csu'); setStage('picking') }}
             className="w-full text-left rounded-2xl border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/40 px-5 py-4 transition-colors"
           >
-            <p className="text-sm font-semibold text-gray-900 mb-1">No — I'm doing CSU GE Breadth</p>
-            <p className="text-xs text-gray-500">For CSU transfer only. We'll add the Golden Four (Oral Comm, Written Comm, Critical Thinking, College Math) to your schedule for CSU targets if your major doesn't already cover them.</p>
+            <p className="text-sm font-semibold text-gray-900 mb-1">No</p>
+            <p className="text-xs text-gray-500">If you have any CSU target, we'll add the CSU Golden Four (Oral Comm, Written Comm, Critical Thinking, College Math) — only the ones your major doesn't already cover. UC-only schedules get no extra GE.</p>
           </button>
         </div>
       </div>

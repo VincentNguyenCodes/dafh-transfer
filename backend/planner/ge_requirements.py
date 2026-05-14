@@ -2,7 +2,13 @@ from transcripts.parser import normalize_course_code
 
 CSU_INSTITUTION_IDS = {11}
 
-IGETC_APPLIES_TO = {7, 79, 11, 117, 120, 128}
+UC_INSTITUTION_IDS = {7, 79, 117, 120, 128, 132, 135, 137}
+
+IGETC_APPLIES_TO = CSU_INSTITUTION_IDS | UC_INSTITUTION_IDS
+
+IGETC_CSU_ONLY_AREAS = {'1C'}
+
+IGETC_UC_ONLY_AREAS = {'6'}
 
 IGETC_AREAS = {
     '1A': {

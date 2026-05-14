@@ -34,6 +34,31 @@ IGETC_AREAS = {
             'MATH 1D', 'MATH 1DH', 'MATH 10', 'MATH 11', 'MATH 22', 'MATH 31',
         ],
     },
+    '3A': {
+        'name': 'Arts',
+        'deanza': [
+            'ARTS 1', 'ARTS 2A', 'ARTS 2B', 'ARTS 3', 'ARTS 4', 'DANC 1', 'F/TV 1',
+            'F/TV 2A', 'F/TV 2B', 'F/TV 2C', 'MUSI 1A', 'MUSI 1B', 'MUSI 1C',
+            'PHTG 1', 'THEA 1', 'THEA 30',
+        ],
+        'foothill': [
+            'ART 2A', 'ART 2B', 'ART 2C', 'ART 2D', 'MUS 8', 'MUS 9A', 'MUS 9B',
+            'PHOT 7', 'PHOT 8', 'THTR 1',
+        ],
+    },
+    '3B': {
+        'name': 'Humanities',
+        'deanza': [
+            'EWRT 30', 'EWRT 31', 'EWRT 46', 'EWRT 66', 'HIST 4A', 'HIST 4B',
+            'HIST 5A', 'HIST 5B', 'HUMI 1', 'HUMI 10', 'HUMI 16', 'PHIL 1',
+            'PHIL 2', 'PHIL 4', 'PHIL 5', 'PHIL 8', 'PHIL 9', 'PHIL 10',
+            'PHIL 20A', 'PHIL 20B',
+        ],
+        'foothill': [
+            'ENGL 1B', 'ENGL 1C', 'HIST 4A', 'HIST 4B', 'HIST 17A', 'HIST 17B',
+            'PHIL 1', 'PHIL 2', 'PHIL 8', 'PHIL 10', 'PHIL 23',
+        ],
+    },
 }
 
 CSU_GE_AREAS = {

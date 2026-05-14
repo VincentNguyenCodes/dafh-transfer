@@ -648,6 +648,33 @@ def compute_best_schedule(targets_results: list, user_prefs=None) -> dict:
                     ],
                 })
 
+    from .prerequisites import chain
+    completed_codes = set()
+    for r in targets_results:
+        for req in list(r.get('requirements', [])) + list(r.get('recommended', [])):
+            for opt in req.get('options', []):
+                for c in opt.get('courses', []):
+                    if c.get('completed'):
+                        completed_codes.add(c['code'])
+
+    picked_codes = set(classes.keys())
+    for code in list(classes.keys()):
+        for p in chain(code, completed_codes | picked_codes):
+            if p in classes:
+                classes[p]['needed_for'].append({'target': '', 'requirement': f'prereq for {code}'})
+                classes[p]['kinds'].add('prereq')
+                continue
+            classes[p] = {
+                'code': p,
+                'name': p,
+                'units': None,
+                'school': '',
+                'in_progress': False,
+                'needed_for': [{'target': '', 'requirement': f'prereq for {code}'}],
+                'kinds': {'prereq'},
+            }
+            picked_codes.add(p)
+
     out = []
     for c in classes.values():
         c['kinds'] = sorted(c['kinds'])

@@ -105,6 +105,19 @@ IGETC_AREAS = {
             'BIOL 24C', 'BIOL 30', 'BIOL 31', 'PSYC 10',
         ],
     },
+    '6': {
+        'name': 'Language Other Than English (UC only)',
+        'deanza': [
+            'ASL 2', 'ASL 3', 'ASL 4', 'CHIN 2', 'CHIN 3', 'CHIN 4',
+            'FREN 2', 'FREN 3', 'FREN 4', 'GERM 2', 'GERM 3', 'GERM 4',
+            'JAPN 2', 'JAPN 3', 'JAPN 4', 'KORE 2', 'KORE 3', 'KORE 4',
+            'SPAN 2', 'SPAN 3', 'SPAN 4', 'VIET 2', 'VIET 3',
+        ],
+        'foothill': [
+            'CHIN 2', 'CHIN 3', 'FREN 2', 'FREN 3', 'GERM 2', 'GERM 3',
+            'ITAL 2', 'ITAL 3', 'JAPN 2', 'JAPN 3', 'SPAN 2', 'SPAN 3',
+        ],
+    },
 }
 
 CSU_GE_AREAS = {

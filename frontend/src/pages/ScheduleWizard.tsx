@@ -432,6 +432,21 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
         <button onClick={onCancel} className="text-sm text-gray-500 hover:text-gray-700">Cancel</button>
       </div>
 
+      {gePath && (
+        <div className="mb-4 flex items-center gap-2 text-xs text-gray-600">
+          <span className="font-medium">GE path:</span>
+          <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+            {gePath === 'igetc' ? 'IGETC' : 'CSU GE Breadth'}
+          </span>
+          <button
+            onClick={() => { setStage('ge-path'); setResults(null); setPicks({}); setElectivePicks({}) }}
+            className="text-indigo-600 hover:text-indigo-800 underline-offset-2 hover:underline"
+          >
+            Change
+          </button>
+        </div>
+      )}
+
       {visibleReqs.length === 0 && visibleElectives.length === 0 ? (
         <div className="bg-gray-50 border border-gray-200 rounded-2xl p-8 text-center mb-6">
           <p className="text-gray-700 font-semibold mb-1">Nothing to pick</p>

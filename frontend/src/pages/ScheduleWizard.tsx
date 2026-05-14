@@ -51,6 +51,8 @@ type Props = {
 
 function requirementKey(req: Requirement, schoolName?: string): string {
   const code = req.receiving_code || req.options.flatMap((o) => o.courses.map((c) => c.code)).sort().join('|')
+  const isGeArea = code.startsWith('IGETC_') || code.startsWith('CSU_GE_')
+  if (isGeArea) return code
   return schoolName ? `${schoolName}:${code}` : code
 }
 

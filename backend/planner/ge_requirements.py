@@ -72,6 +72,33 @@ IGETC_AREAS = {
             'HIST 2', 'POLI 1', 'PSYC 1', 'PSYC 10', 'SOC 1', 'SOC 5',
         ],
     },
+    '5A': {
+        'name': 'Physical Science',
+        'deanza': [
+            'ASTR 4', 'ASTR 10', 'ASTR 25', 'CHEM 1A', 'CHEM 1AH', 'CHEM 1B',
+            'CHEM 1BH', 'CHEM 1C', 'CHEM 1CH', 'CHEM 10', 'CHEM 12A', 'CHEM 12B',
+            'CHEM 12C', 'CHEM 25', 'CHEM 30A', 'CHEM 30B', 'GEO 1', 'GEO 2',
+            'GEO 4', 'METR 10', 'PHYS 2A', 'PHYS 2B', 'PHYS 4A', 'PHYS 4B',
+            'PHYS 4C', 'PHYS 4D', 'PHYS 10',
+        ],
+        'foothill': [
+            'ASTR 10', 'CHEM 1A', 'CHEM 1B', 'CHEM 1C', 'CHEM 25', 'CHEM 30A',
+            'CHEM 30B', 'GEOL 10', 'PHYS 2A', 'PHYS 2B', 'PHYS 4A', 'PHYS 4B',
+            'PHYS 4C',
+        ],
+    },
+    '5B': {
+        'name': 'Biological Science',
+        'deanza': [
+            'ANTH 1', 'BIOL 6A', 'BIOL 6B', 'BIOL 6C', 'BIOL 10', 'BIOL 11',
+            'BIOL 14', 'BIOL 30', 'BIOL 40A', 'BIOL 40B', 'BIOL 40C',
+            'ENVS 1', 'PSYC 30',
+        ],
+        'foothill': [
+            'BIOL 10', 'BIOL 11', 'BIOL 12', 'BIOL 13', 'BIOL 24A', 'BIOL 24B',
+            'BIOL 24C', 'BIOL 30', 'BIOL 31', 'PSYC 10',
+        ],
+    },
 }
 
 CSU_GE_AREAS = {

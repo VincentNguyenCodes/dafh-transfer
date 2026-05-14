@@ -4,7 +4,13 @@ CSU_INSTITUTION_IDS = {11}
 
 IGETC_APPLIES_TO = {7, 79, 11, 117, 120, 128}
 
-IGETC_AREAS = {}
+IGETC_AREAS = {
+    '1A': {
+        'name': 'English Composition',
+        'deanza': ['EWRT 1A', 'EWRT 1AH'],
+        'foothill': ['ENGL 1A', 'ENGL 1AH'],
+    },
+}
 
 CSU_GE_AREAS = {
     'A1': {

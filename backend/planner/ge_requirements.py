@@ -143,6 +143,42 @@ def _approved_set(area):
     return s
 
 
+def build_igetc_requirements(completed_codes, in_progress_codes, committed_codes):
+    reqs = []
+    for area_code, area in IGETC_AREAS.items():
+        approved = _approved_set(area)
+        if approved & (completed_codes | committed_codes):
+            continue
+
+        options = []
+        for school in ('deanza', 'foothill'):
+            for code in area.get(school, []):
+                norm = normalize_course_code(code)
+                completed = code in completed_codes or norm in completed_codes
+                in_prog = (not completed) and (code in in_progress_codes or norm in in_progress_codes)
+                options.append({
+                    'courses': [{
+                        'code': code,
+                        'name': '',
+                        'units': None,
+                        'school': school,
+                        'completed': completed,
+                        'in_progress': in_prog,
+                    }],
+                    'satisfied': completed,
+                })
+        reqs.append({
+            'receiving_code': f'IGETC_{area_code}',
+            'receiving_name': f"{area['name']} (IGETC Area {area_code})",
+            'no_articulation': False,
+            'satisfied': False,
+            'options': options,
+            'school': 'deanza',
+            'is_choose_one': True,
+        })
+    return reqs
+
+
 def build_csu_ge_requirements(receiving_id, completed_codes, in_progress_codes, committed_codes):
     if receiving_id not in CSU_INSTITUTION_IDS:
         return []

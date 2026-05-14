@@ -162,6 +162,35 @@ def _approved_set(area):
     return s
 
 
+def _build_area_requirement(area_code, area, code_prefix, label_prefix, completed_codes, in_progress_codes):
+    options = []
+    for school in ('deanza', 'foothill'):
+        for code in area.get(school, []):
+            norm = normalize_course_code(code)
+            completed = code in completed_codes or norm in completed_codes
+            in_prog = (not completed) and (code in in_progress_codes or norm in in_progress_codes)
+            options.append({
+                'courses': [{
+                    'code': code,
+                    'name': '',
+                    'units': None,
+                    'school': school,
+                    'completed': completed,
+                    'in_progress': in_prog,
+                }],
+                'satisfied': completed,
+            })
+    return {
+        'receiving_code': f'{code_prefix}_{area_code}',
+        'receiving_name': f"{area['name']} ({label_prefix} {area_code})",
+        'no_articulation': False,
+        'satisfied': False,
+        'options': options,
+        'school': 'deanza',
+        'is_choose_one': True,
+    }
+
+
 def build_igetc_requirements(receiving_id, completed_codes, in_progress_codes, committed_codes):
     is_uc = receiving_id in UC_INSTITUTION_IDS
     is_csu = receiving_id in CSU_INSTITUTION_IDS
@@ -172,37 +201,12 @@ def build_igetc_requirements(receiving_id, completed_codes, in_progress_codes, c
             continue
         if area_code in IGETC_CSU_ONLY_AREAS and not is_csu:
             continue
-
-        approved = _approved_set(area)
-        if approved & (completed_codes | committed_codes):
+        if _approved_set(area) & (completed_codes | committed_codes):
             continue
-
-        options = []
-        for school in ('deanza', 'foothill'):
-            for code in area.get(school, []):
-                norm = normalize_course_code(code)
-                completed = code in completed_codes or norm in completed_codes
-                in_prog = (not completed) and (code in in_progress_codes or norm in in_progress_codes)
-                options.append({
-                    'courses': [{
-                        'code': code,
-                        'name': '',
-                        'units': None,
-                        'school': school,
-                        'completed': completed,
-                        'in_progress': in_prog,
-                    }],
-                    'satisfied': completed,
-                })
-        reqs.append({
-            'receiving_code': f'IGETC_{area_code}',
-            'receiving_name': f"{area['name']} (IGETC Area {area_code})",
-            'no_articulation': False,
-            'satisfied': False,
-            'options': options,
-            'school': 'deanza',
-            'is_choose_one': True,
-        })
+        reqs.append(_build_area_requirement(
+            area_code, area, 'IGETC', 'IGETC Area',
+            completed_codes, in_progress_codes,
+        ))
     return reqs
 
 
@@ -212,35 +216,10 @@ def build_csu_ge_requirements(receiving_id, completed_codes, in_progress_codes, 
 
     reqs = []
     for area_code, area in CSU_GE_AREAS.items():
-        approved = _approved_set(area)
-
-        if approved & (completed_codes | committed_codes):
+        if _approved_set(area) & (completed_codes | committed_codes):
             continue
-
-        options = []
-        for school in ('deanza', 'foothill'):
-            for code in area.get(school, []):
-                norm = normalize_course_code(code)
-                completed = code in completed_codes or norm in completed_codes
-                in_prog = (not completed) and (code in in_progress_codes or norm in in_progress_codes)
-                options.append({
-                    'courses': [{
-                        'code': code,
-                        'name': '',
-                        'units': None,
-                        'school': school,
-                        'completed': completed,
-                        'in_progress': in_prog,
-                    }],
-                    'satisfied': completed,
-                })
-        reqs.append({
-            'receiving_code': f'CSU_GE_{area_code}',
-            'receiving_name': f"{area['name']} (CSU GE Area {area_code})",
-            'no_articulation': False,
-            'satisfied': False,
-            'options': options,
-            'school': 'deanza',
-            'is_choose_one': True,
-        })
+        reqs.append(_build_area_requirement(
+            area_code, area, 'CSU_GE', 'CSU GE Area',
+            completed_codes, in_progress_codes,
+        ))
     return reqs

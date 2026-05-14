@@ -330,7 +330,7 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
         const existing = bank.get(p)
         if (existing) {
           existing.needed_for.add(`prereq for ${code}`)
-          if (!existing.prereq_for) existing.prereq_for = code
+          if (!existing.prereq_for && existing.kind === 'prereq') existing.prereq_for = code
           continue
         }
         bank.set(p, {

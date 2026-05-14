@@ -2,6 +2,10 @@ from transcripts.parser import normalize_course_code
 
 CSU_INSTITUTION_IDS = {11}
 
+IGETC_APPLIES_TO = {7, 79, 11, 117, 120, 128}
+
+IGETC_AREAS = {}
+
 CSU_GE_AREAS = {
     'A1': {
         'name': 'Oral Communication',

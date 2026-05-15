@@ -693,7 +693,7 @@ function PickerCard({
                         <span className="text-xs text-blue-400">→</span>
                       </span>
                     )}
-                    {opt.courses.map((c, ci) => (
+                    {[...opt.courses].sort((a, b) => a.code.localeCompare(b.code)).map((c, ci) => (
                       <span key={ci} className="flex items-center gap-1.5">
                         {ci > 0 && <span className="text-xs text-gray-400">+</span>}
                         <span className={`font-mono text-sm font-semibold ${c.completed ? 'text-gray-500 line-through' : 'text-gray-900'}`}>{c.code}</span>

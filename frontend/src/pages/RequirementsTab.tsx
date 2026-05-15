@@ -159,7 +159,7 @@ function AggregatedRequirementRow({ req }: { req: AggregatedReq }) {
         if (!completedOpt) return <p className="text-xs text-gray-600">Already satisfied</p>
         return (
           <div className="space-y-1">
-            {completedOpt.courses.map((c, ci) => (
+            {[...completedOpt.courses].sort((a, b) => a.code.localeCompare(b.code)).map((c, ci) => (
               <div key={ci} className="flex items-center gap-2">
                 <span className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center shrink-0">
                   <span className="text-white text-xs font-bold">✓</span>
@@ -184,7 +184,7 @@ function AggregatedRequirementRow({ req }: { req: AggregatedReq }) {
                 <p className="text-xs font-semibold text-gray-600 mb-1">Option {oi + 1}</p>
               )}
               <div className="space-y-1">
-                {opt.courses.map((c, ci) => (
+                {[...opt.courses].sort((a, b) => a.code.localeCompare(b.code)).map((c, ci) => (
                   <div key={ci} className="flex items-center gap-2">
                     {opt.courses.length > 1 && ci > 0 && (
                       <span className="text-xs text-gray-400 w-6 text-center">+</span>
@@ -412,7 +412,7 @@ export default function RequirementsTab() {
                         </span>
                       </div>
                       <div className="space-y-1">
-                        {s.courses.map((c, ci) => (
+                        {[...s.courses].sort((a, b) => a.code.localeCompare(b.code)).map((c, ci) => (
                           <div key={ci} className="flex items-center gap-2">
                             {c.completed
                               ? <span className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center shrink-0"><span className="text-white text-xs font-bold">✓</span></span>
@@ -474,7 +474,7 @@ export default function RequirementsTab() {
                 {group.series.filter((s) => s.satisfied).map((s) => (
                   <div key={s.name} className="space-y-1">
                     <p className="text-sm font-semibold text-gray-700 mb-1">{s.name} — completed</p>
-                    {s.courses.map((c, ci) => (
+                    {[...s.courses].sort((a, b) => a.code.localeCompare(b.code)).map((c, ci) => (
                       <div key={ci} className="flex items-center gap-2">
                         <span className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center shrink-0"><span className="text-white text-xs font-bold">✓</span></span>
                         <span className="font-mono text-sm font-semibold text-gray-500 line-through">{c.code}</span>

@@ -90,6 +90,15 @@ def _parse_advisory(template: list, valid_ucsd_codes: set, agreement_key: str = 
         except Exception:
             pass
 
+    if receiving_id == 75 and major_name:
+        try:
+            from .cpp_scraper import fetch_cpp_requirements
+            result = fetch_cpp_requirements(major_name, valid_ucsd_codes)
+            if result and (result['required'] or result['recommended'] or result['choose_one_groups'] or result['series_groups'] or result.get('flags')):
+                return result
+        except Exception:
+            pass
+
     if agreement_key:
         advisory_html = '\n'.join(
             g.get('content', '') for g in template

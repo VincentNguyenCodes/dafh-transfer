@@ -137,14 +137,7 @@ def fetch_csula_requirements(major_name: str, valid_codes: set):
                 break
 
     if not matched:
-        return {
-            'required': set(),
-            'recommended': set(),
-            'choose_one_groups': [],
-            'series_groups': [],
-            'flags': ['override: Cal State LA major has no specific transfer requirements; using CSU minimums'],
-            'comprehensive': True,
-        }
+        return None
 
     return _filter_to_valid(matched, valid_codes)
 

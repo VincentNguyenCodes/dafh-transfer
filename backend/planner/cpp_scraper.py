@@ -134,14 +134,7 @@ def fetch_cpp_requirements(major_name: str, valid_codes: set):
                 break
 
     if not matched:
-        return {
-            'required': set(),
-            'recommended': set(),
-            'choose_one_groups': [],
-            'series_groups': [],
-            'flags': ['override: Cal Poly Pomona is non-impacted for this major; using CSU minimums'],
-            'comprehensive': True,
-        }
+        return None
 
     return _filter_to_valid(matched, valid_codes)
 

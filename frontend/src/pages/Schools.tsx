@@ -1,16 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../api/client'
-
-function Chevron() {
-  return (
-    <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
-      <svg className="h-4 w-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-      </svg>
-    </div>
-  )
-}
+import Select from '../components/Select'
 
 type Institution = { id: number; name: string }
 type Major = { label: string; key: string }
@@ -145,11 +136,8 @@ export default function Schools() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#f5f5f7] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-[2.5px] border-indigo-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-gray-400 font-medium">Loading schools from ASSIST.org...</p>
-        </div>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <p className="text-xs font-mono text-gray-300 uppercase tracking-widest">Loading schools...</p>
       </div>
     )
   }
@@ -176,7 +164,7 @@ export default function Schools() {
         </div>
 
         {savedTargets.length > 0 && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-4">
+          <div className="bg-white rounded-2xl border border-gray-100 p-5 mb-4">
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Saved targets</p>
             <div className="space-y-2">
               {savedTargets.map((t) => (
@@ -184,21 +172,15 @@ export default function Schools() {
                   {editingId === t.id ? (
                     <div className="space-y-2.5">
                       <p className="text-sm font-semibold text-gray-900 tracking-tight">{t.receiving_institution_name}</p>
-                      <div className="relative">
-                        <select
-                          className="w-full border border-gray-200 rounded-xl px-3 py-2.5 pr-9 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 bg-white appearance-none disabled:opacity-50 transition-all duration-150"
-                          value={editMajorKey}
-                          disabled={majorsMap[t.receiving_institution_id] === 'loading'}
-                          onChange={(e) => setEditMajorKey(e.target.value)}
-                        >
-                          {majorsMap[t.receiving_institution_id] === 'loading' && <option>Loading majors...</option>}
-                          {Array.isArray(majorsMap[t.receiving_institution_id]) &&
-                            (majorsMap[t.receiving_institution_id] as Major[]).map((m) => (
-                              <option key={m.key} value={m.key}>{m.label}</option>
-                            ))}
-                        </select>
-                        <Chevron />
-                      </div>
+                      <Select
+                        value={editMajorKey}
+                        disabled={majorsMap[t.receiving_institution_id] === 'loading'}
+                        onChange={(v) => setEditMajorKey(String(v))}
+                        placeholder={majorsMap[t.receiving_institution_id] === 'loading' ? 'Loading majors...' : 'Select a major...'}
+                        options={Array.isArray(majorsMap[t.receiving_institution_id])
+                          ? (majorsMap[t.receiving_institution_id] as Major[]).map((m) => ({ value: m.key, label: m.label }))
+                          : []}
+                      />
                       <div className="flex gap-3">
                         <button onClick={() => handleEdit(t)} className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold transition-colors duration-150">Save</button>
                         <button onClick={cancelEdit} className="text-xs text-gray-400 hover:text-gray-600 transition-colors duration-150">Cancel</button>
@@ -226,46 +208,35 @@ export default function Schools() {
           </div>
         )}
 
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-4">
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-4">
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Add schools</p>
           <div className="space-y-4">
             {rows.map((row, idx) => (
               <div key={idx} className="flex items-center gap-2 flex-1">
-                <div className="relative flex-1">
-                  <select
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 bg-white appearance-none transition-all duration-150 text-gray-700"
-                    value={row.receiving_institution_id ?? ''}
-                    onChange={(e) => updateRow(idx, 'receiving_institution_id', Number(e.target.value))}
-                  >
-                    <option value="">Select a school...</option>
-                    {institutions.map((inst) => (
-                      <option key={inst.id} value={inst.id}>{inst.name}</option>
-                    ))}
-                  </select>
-                  <Chevron />
-                </div>
+                <Select
+                  className="flex-1"
+                  placeholder="Select a school..."
+                  value={row.receiving_institution_id ?? ''}
+                  onChange={(v) => updateRow(idx, 'receiving_institution_id', Number(v))}
+                  options={institutions.map((inst) => ({ value: inst.id, label: inst.name }))}
+                />
 
-                <div className="relative flex-1">
-                  <select
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-400 bg-white appearance-none disabled:opacity-40 transition-all duration-150 text-gray-700"
-                    value={row.major_code ?? ''}
-                    disabled={!row.receiving_institution_id || majorsMap[row.receiving_institution_id] === 'loading' || !majorsMap[row.receiving_institution_id]}
-                    onChange={(e) => updateRow(idx, 'major_key' as keyof Row, e.target.value)}
-                  >
-                    <option value="">
-                      {!row.receiving_institution_id
-                        ? 'Select a school first...'
-                        : majorsMap[row.receiving_institution_id] === 'loading'
-                        ? 'Loading majors...'
-                        : 'Select a major...'}
-                    </option>
-                    {Array.isArray(majorsMap[row.receiving_institution_id!]) &&
-                      (majorsMap[row.receiving_institution_id!] as Major[]).map((m) => (
-                        <option key={m.key} value={m.key}>{m.label}</option>
-                      ))}
-                  </select>
-                  <Chevron />
-                </div>
+                <Select
+                  className="flex-1"
+                  placeholder={
+                    !row.receiving_institution_id
+                      ? 'Select a school first...'
+                      : majorsMap[row.receiving_institution_id] === 'loading'
+                      ? 'Loading majors...'
+                      : 'Select a major...'
+                  }
+                  value={row.major_code ?? ''}
+                  disabled={!row.receiving_institution_id || majorsMap[row.receiving_institution_id] === 'loading' || !majorsMap[row.receiving_institution_id]}
+                  onChange={(v) => updateRow(idx, 'major_key' as keyof Row, v)}
+                  options={Array.isArray(majorsMap[row.receiving_institution_id!])
+                    ? (majorsMap[row.receiving_institution_id!] as Major[]).map((m) => ({ value: m.key, label: m.label }))
+                    : []}
+                />
 
                 {rows.length > 1 && (
                   <button

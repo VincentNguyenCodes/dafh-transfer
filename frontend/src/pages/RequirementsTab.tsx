@@ -134,7 +134,7 @@ function AggregatedRequirementRow({ req }: { req: AggregatedReq }) {
   const remaining = req.options.filter((o) => !o.satisfied)
 
   return (
-    <div className={`rounded-2xl border px-5 py-4 ${req.satisfied ? 'bg-green-50 border-green-100' : 'bg-white border-gray-100 shadow-sm'}`}>
+    <div className={`rounded-xl border px-4 py-3.5 ${req.satisfied ? 'bg-green-50 border-green-100' : 'bg-white border-gray-100'}`}>
       <div className="flex gap-1.5 mb-3 flex-wrap">
         {req.badges.map((b, i) => {
           const color = BADGE_COLORS[b.colorIdx]
@@ -238,28 +238,36 @@ export default function RequirementsTab() {
 
   if (loading) {
     return (
-      <div className="text-center py-16">
-        <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-        <p className="text-gray-500 text-sm">Fetching requirements from ASSIST.org...</p>
-        <p className="text-gray-400 text-xs mt-1">This may take a few seconds.</p>
+      <div className="space-y-3">
+        <p className="text-[11px] font-mono text-gray-400 uppercase tracking-widest mb-4">Fetching from ASSIST.org...</p>
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="rounded-xl border border-gray-200 overflow-hidden">
+            <div className="skeleton h-11 w-full" />
+            <div className="p-4 space-y-2">
+              {[...Array(i === 1 ? 3 : i === 2 ? 2 : 1)].map((_, j) => (
+                <div key={j} className="skeleton h-10 rounded-lg w-full" />
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-2xl px-5 py-4">
-        <p className="text-gray-900 font-medium text-sm mb-1">Could not load results</p>
-        <p className="text-gray-600 text-xs">{error}</p>
+      <div className="border-l-2 border-red-400 pl-5 py-4">
+        <p className="text-sm font-semibold text-gray-900 mb-0.5">Could not load results</p>
+        <p className="text-xs text-gray-400">{error}</p>
       </div>
     )
   }
 
   if (!results || results.length === 0) {
     return (
-      <div className="bg-gray-50 border border-gray-200 rounded-2xl p-8 text-center">
-        <p className="text-gray-600 font-semibold mb-1">No transfer targets set</p>
-        <p className="text-gray-400 text-sm">Add schools and majors in the Transfer Targets tab.</p>
+      <div className="border-l-2 border-gray-200 pl-5 py-4">
+        <p className="text-sm font-semibold text-gray-900 mb-0.5">No transfer targets set</p>
+        <p className="text-xs text-gray-400">Add schools and majors in the Transfer Targets tab.</p>
       </div>
     )
   }
@@ -321,7 +329,7 @@ export default function RequirementsTab() {
               key={r.target}
               onClick={() => setSelectedTarget(r.target)}
               className={`px-3.5 py-1.5 rounded-full text-sm font-medium transition-all duration-150 ${
-                isActive ? `${color.bg} ${color.text} shadow-sm` : `bg-white border border-gray-100 text-gray-500 hover:border-gray-200 shadow-sm`
+                isActive ? `${color.bg} ${color.text}` : `bg-white border border-gray-100 text-gray-500 hover:border-gray-200`
               }`}
             >
               {r.school_name}
@@ -366,7 +374,7 @@ export default function RequirementsTab() {
       </div>
 
       {unsatisfied.length > 0 && (
-        <div className="mb-4 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="mb-4 bg-white rounded-2xl border border-gray-100 overflow-hidden animate-fade-up stagger-1">
           <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
             <div>
               <p className="text-sm font-semibold text-gray-900 tracking-tight">Required - Have Not Completed</p>
@@ -385,7 +393,7 @@ export default function RequirementsTab() {
       )}
 
       {(unsatisfiedRec.length > 0 || unsatisfiedElectiveGroups.length > 0) && (
-        <div className="mb-4 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="mb-4 bg-white rounded-2xl border border-gray-100 overflow-hidden animate-fade-up stagger-2">
           <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
             <div>
               <p className="text-sm font-semibold text-gray-900 tracking-tight">Recommended - Have Not Completed</p>
@@ -435,7 +443,7 @@ export default function RequirementsTab() {
       )}
 
       {satisfied.length > 0 && (
-        <div className="mb-4 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="mb-4 bg-white rounded-2xl border border-gray-100 overflow-hidden">
           <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
             <div>
               <p className="text-sm font-semibold text-gray-900 tracking-tight">Completed Required</p>
@@ -454,7 +462,7 @@ export default function RequirementsTab() {
       )}
 
       {(satisfiedRec.length > 0 || satisfiedElectiveGroups.length > 0) && (
-        <div className="mb-4 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="mb-4 bg-white rounded-2xl border border-gray-100 overflow-hidden">
           <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
             <div>
               <p className="text-sm font-semibold text-gray-900 tracking-tight">Completed Recommended</p>

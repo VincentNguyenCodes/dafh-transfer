@@ -1,15 +1,6 @@
 import { useEffect, useState } from 'react'
 import api from '../api/client'
-
-function Chevron() {
-  return (
-    <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
-      <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-      </svg>
-    </div>
-  )
-}
+import Select from '../components/Select'
 
 type Institution = { id: number; name: string }
 type Major = { label: string; key: string }
@@ -162,7 +153,7 @@ export default function TransferTargetsTab() {
       </div>
 
       {savedTargets.length > 0 && (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-4">
+        <div className="bg-white rounded-2xl border border-gray-100 p-5 mb-4">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Saved targets</p>
           <div className="space-y-2">
             {savedTargets.map((t) => (
@@ -170,23 +161,15 @@ export default function TransferTargetsTab() {
                 {editingId === t.id ? (
                   <div className="space-y-2">
                     <p className="text-sm font-medium text-gray-900">{t.receiving_institution_name}</p>
-                    <div className="relative">
-                      <select
-                        className="w-full border border-gray-200 rounded-lg px-3 py-2 pr-9 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white appearance-none disabled:opacity-50"
-                        value={editMajorKey}
-                        disabled={majorsMap[t.receiving_institution_id] === 'loading'}
-                        onChange={(e) => setEditMajorKey(e.target.value)}
-                      >
-                        {majorsMap[t.receiving_institution_id] === 'loading' && (
-                          <option>Loading majors...</option>
-                        )}
-                        {Array.isArray(majorsMap[t.receiving_institution_id]) &&
-                          (majorsMap[t.receiving_institution_id] as Major[]).map((m) => (
-                            <option key={m.key} value={m.key}>{m.label}</option>
-                          ))}
-                      </select>
-                      <Chevron />
-                    </div>
+                    <Select
+                      value={editMajorKey}
+                      disabled={majorsMap[t.receiving_institution_id] === 'loading'}
+                      onChange={(v) => setEditMajorKey(String(v))}
+                      placeholder={majorsMap[t.receiving_institution_id] === 'loading' ? 'Loading majors...' : 'Select a major...'}
+                      options={Array.isArray(majorsMap[t.receiving_institution_id])
+                        ? (majorsMap[t.receiving_institution_id] as Major[]).map((m) => ({ value: m.key, label: m.label }))
+                        : []}
+                    />
                     <div className="flex gap-3">
                       <button
                         onClick={() => handleEdit(t)}
@@ -228,43 +211,28 @@ export default function TransferTargetsTab() {
         </div>
       )}
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-4">
+      <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-4">
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Add target</p>
         <div className="space-y-4">
           {rows.map((row, idx) => (
             <div key={idx} className="space-y-3">
-              <div className="relative">
-                <select
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white appearance-none"
-                  value={row.receiving_institution_id ?? ''}
-                  onChange={(e) => updateRow(idx, 'receiving_institution_id', Number(e.target.value))}
-                >
-                  <option value="">Select a school...</option>
-                  {institutions.map((inst) => (
-                    <option key={inst.id} value={inst.id}>{inst.name}</option>
-                  ))}
-                </select>
-                <Chevron />
-              </div>
+              <Select
+                placeholder="Select a school..."
+                value={row.receiving_institution_id ?? ''}
+                onChange={(v) => updateRow(idx, 'receiving_institution_id', Number(v))}
+                options={institutions.map((inst) => ({ value: inst.id, label: inst.name }))}
+              />
 
               {row.receiving_institution_id && (
-                <div className="relative">
-                  <select
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white appearance-none disabled:opacity-50"
-                    value={row.major_code ?? ''}
-                    disabled={majorsMap[row.receiving_institution_id] === 'loading' || !majorsMap[row.receiving_institution_id]}
-                    onChange={(e) => updateRow(idx, 'major_key' as keyof Row, e.target.value)}
-                  >
-                    <option value="">
-                      {majorsMap[row.receiving_institution_id] === 'loading' ? 'Loading majors...' : 'Select a major...'}
-                    </option>
-                    {Array.isArray(majorsMap[row.receiving_institution_id]) &&
-                      (majorsMap[row.receiving_institution_id] as Major[]).map((m) => (
-                        <option key={m.key} value={m.key}>{m.label}</option>
-                      ))}
-                  </select>
-                  <Chevron />
-                </div>
+                <Select
+                  placeholder={majorsMap[row.receiving_institution_id] === 'loading' ? 'Loading majors...' : 'Select a major...'}
+                  value={row.major_code ?? ''}
+                  disabled={majorsMap[row.receiving_institution_id] === 'loading' || !majorsMap[row.receiving_institution_id]}
+                  onChange={(v) => updateRow(idx, 'major_key' as keyof Row, v)}
+                  options={Array.isArray(majorsMap[row.receiving_institution_id])
+                    ? (majorsMap[row.receiving_institution_id] as Major[]).map((m) => ({ value: m.key, label: m.label }))
+                    : []}
+                />
               )}
 
               {rows.length > 1 && (
@@ -299,7 +267,7 @@ export default function TransferTargetsTab() {
       <button
         onClick={handleSave}
         disabled={saving}
-        className="w-full bg-indigo-600 text-white rounded-2xl py-4 font-semibold text-sm hover:bg-indigo-700 disabled:opacity-50 transition-colors shadow-md shadow-indigo-200"
+        className="w-full bg-indigo-600 text-white rounded-2xl py-4 font-semibold text-sm hover:bg-indigo-700 disabled:opacity-50 transition-colors shadow-indigo-200"
       >
         {saving ? 'Saving...' : 'Save Target'}
       </button>

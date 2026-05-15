@@ -99,7 +99,7 @@ export default function ClassesTab() {
   }
 
   const renderSchool = (school: SchoolKey, label: string) => (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-4">
+    <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-4">
       <div className="flex justify-between items-center mb-5">
         <h3 className="text-base font-semibold text-gray-900 tracking-tight">{label}</h3>
         <button

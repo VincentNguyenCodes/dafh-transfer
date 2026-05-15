@@ -9,6 +9,8 @@ type CourseItem = {
   school: string
   completed: boolean
   in_progress: boolean
+  subarea?: string
+  subarea_name?: string
 }
 
 type Option = { courses: CourseItem[]; satisfied: boolean }
@@ -20,6 +22,9 @@ type Requirement = {
   satisfied: boolean
   options: Option[]
   school: string
+  pick_count?: number
+  rule?: string
+  pre_satisfied_codes?: string[]
 }
 
 type ElectiveSeries = {
@@ -89,7 +94,7 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [picks, setPicks] = useState<Record<string, number>>({})
+  const [picks, setPicks] = useState<Record<string, number | number[]>>({})
   const [electivePicks, setElectivePicks] = useState<Record<string, number>>({})
   const [stage, setStage] = useState<'ge-path' | 'picking' | 'building'>('ge-path')
   const [gePath, setGePath] = useState<'igetc' | 'csu' | ''>('')
@@ -117,9 +122,12 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
     const addFrom = (reqs: Requirement[], schoolName: string, kind: 'required' | 'recommended') => {
       for (const req of reqs) {
         if (req.no_articulation || req.options.length <= 1) continue
+        const pc = req.pick_count || 1
         const remainingCounts = req.options.map((o) => o.courses.filter((c) => !c.completed).length)
-        const minRem = Math.min(...remainingCounts)
-        if (minRem === 0) continue
+        if (pc <= 1) {
+          const minRem = Math.min(...remainingCounts)
+          if (minRem === 0) continue
+        }
         const key = requirementKey(req, schoolName)
         const existing = map.get(key)
         if (existing) {
@@ -196,8 +204,25 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
     const reqsByKey = new Map<string, Requirement>()
     for (const m of multiOptionReqs) reqsByKey.set(m.key, m.req)
 
-    const initialPicks: Record<string, number> = {}
+    const initialPicks: Record<string, number | number[]> = {}
+    const multiPickInits: Record<string, number[]> = {}
     for (const m of multiOptionReqs) {
+      const pc = m.req.pick_count || 1
+      if (pc > 1) {
+        const preSat = new Set(m.req.pre_satisfied_codes || [])
+        const preSelected: number[] = []
+        for (let i = 0; i < m.req.options.length; i++) {
+          for (const c of m.req.options[i].courses) {
+            if (preSat.has(c.code) || preSat.has(normalizeCode(c.code)) || c.completed) {
+              preSelected.push(i)
+              break
+            }
+          }
+        }
+        multiPickInits[m.key] = preSelected
+        initialPicks[m.key] = preSelected
+        continue
+      }
       let bestIdx = 0
       let bestCost = Infinity
       for (let i = 0; i < m.req.options.length; i++) {
@@ -212,22 +237,25 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
       initialPicks[m.key] = bestIdx
     }
 
-    let current = initialPicks
+    const singlePickReqs = multiOptionReqs.filter((m) => (m.req.pick_count || 1) <= 1)
+    let current: Record<string, number | number[]> = { ...initialPicks }
     for (let iter = 0; iter < 8; iter++) {
       let changed = false
-      const next: Record<string, number> = { ...current }
-      for (const m of multiOptionReqs) {
+      const next: Record<string, number | number[]> = { ...current }
+      for (const m of singlePickReqs) {
         const coveredWithoutMe = new Set<string>(baseCovered)
-        for (const m2 of multiOptionReqs) {
+        for (const m2 of singlePickReqs) {
           if (m2.key === m.key) continue
-          const idx = next[m2.key] ?? 0
+          const v = next[m2.key]
+          const idx = typeof v === 'number' ? v : 0
           for (const c of m2.req.options[idx].courses) {
             coveredWithoutMe.add(c.code)
             coveredWithoutMe.add(normalizeCode(c.code))
           }
         }
-        let bestIdx = next[m.key]
-        let bestCost = m.req.options[bestIdx].courses.filter(
+        const currentIdx = typeof next[m.key] === 'number' ? next[m.key] as number : 0
+        let bestIdx = currentIdx
+        let bestCost = m.req.options[currentIdx].courses.filter(
           (c) => !coveredWithoutMe.has(c.code) && !coveredWithoutMe.has(normalizeCode(c.code))
         ).length
         for (let i = 0; i < m.req.options.length; i++) {
@@ -240,7 +268,7 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
             bestIdx = i
           }
         }
-        if (bestIdx !== next[m.key]) {
+        if (bestIdx !== currentIdx) {
           next[m.key] = bestIdx
           changed = true
         }
@@ -252,8 +280,27 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
     setPicks((p) => ({ ...current, ...p }))
   }, [scheduleType, results, multiOptionReqs, completedCodes])
 
+  const multiPickValid = (req: Requirement, value: number | number[] | undefined): boolean => {
+    const pc = req.pick_count || 1
+    if (pc <= 1) return value !== undefined
+    if (!Array.isArray(value)) return false
+    if (value.length < pc) return false
+    const chosen = value.map((i) => req.options[i]).filter((o): o is Option => !!o)
+    if (chosen.length < pc) return false
+    if (req.rule === 'at_least_one_per_subarea') {
+      const subs = new Set(chosen.flatMap((o) => o.courses.map((c) => c.subarea).filter(Boolean) as string[]))
+      const allSubs = new Set(req.options.flatMap((o) => o.courses.map((c) => c.subarea).filter(Boolean) as string[]))
+      return Array.from(allSubs).every((s) => subs.has(s))
+    }
+    if (req.rule === 'different_disciplines') {
+      const prefixes = new Set(chosen.flatMap((o) => o.courses.map((c) => (c.code.split(/\s+/)[0] || '').toUpperCase())))
+      return prefixes.size >= 2
+    }
+    return true
+  }
+
   const allPicked =
-    visibleReqs.every((m) => picks[m.key] !== undefined) &&
+    visibleReqs.every((m) => multiPickValid(m.req, picks[m.key])) &&
     visibleElectives.every((e) => electivePicks[e.key] !== undefined)
 
   const isTaken = (code: string) => completedCodes.has(code) || completedCodes.has(normalizeCode(code))
@@ -275,13 +322,20 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
         bank.set(code, { code, name, units, needed_for: new Set(target ? [target] : []), kind })
       }
     }
-    const pickOption = (req: Requirement, schoolName: string) => {
-      if (req.options.length <= 1) return req.options[0]
+    const pickedOptions = (req: Requirement, schoolName: string): Option[] => {
       const k = requirementKey(req, schoolName)
-      if (picks[k] !== undefined) return req.options[picks[k]] || req.options[0]
+      const pc = req.pick_count || 1
+      const raw = picks[k]
+      if (pc > 1) {
+        const indices = Array.isArray(raw) ? raw : []
+        return indices.map((i) => req.options[i]).filter((o): o is Option => !!o)
+      }
+      if (req.options.length <= 1) return req.options[0] ? [req.options[0]] : []
+      if (typeof raw === 'number') return req.options[raw] ? [req.options[raw]] : [req.options[0]]
       const remainingCounts = req.options.map((o) => o.courses.filter((c) => !c.completed).length)
       const minRem = Math.min(...remainingCounts)
-      return req.options[remainingCounts.indexOf(minRem)] || req.options[0]
+      const fallback = req.options[remainingCounts.indexOf(minRem)] || req.options[0]
+      return fallback ? [fallback] : []
     }
     const labelFor = (req: Requirement, schoolName: string) => {
       if (req.receiving_code.startsWith('IGETC_')) return 'IGETC'
@@ -291,17 +345,19 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
     for (const r of results) {
       for (const req of r.requirements) {
         if (req.no_articulation) continue
-        const opt = pickOption(req, r.school_name)
-        if (!opt) continue
+        const opts = pickedOptions(req, r.school_name)
         const label = labelFor(req, r.school_name)
-        for (const c of opt.courses) add(c.code, c.name, c.units, label, 'required')
+        for (const opt of opts) {
+          for (const c of opt.courses) add(c.code, c.name, c.units, label, 'required')
+        }
       }
       for (const rec of r.recommended) {
         if (rec.no_articulation) continue
-        const opt = pickOption(rec, r.school_name)
-        if (!opt) continue
+        const opts = pickedOptions(rec, r.school_name)
         const label = labelFor(rec, r.school_name)
-        for (const c of opt.courses) add(c.code, c.name, c.units, label, 'recommended')
+        for (const opt of opts) {
+          for (const c of opt.courses) add(c.code, c.name, c.units, label, 'recommended')
+        }
       }
       for (const group of r.elective_series) {
         const k = electiveGroupKey(group)
@@ -542,10 +598,12 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
                 subtitle={`${m.kind === 'recommended' ? 'recommended' : 'required'} for ${Array.from(m.targets).join(', ')}`}
                 options={m.req.options}
                 selected={picks[m.key]}
-                onSelect={(idx) => setPicks((p) => ({ ...p, [m.key]: idx }))}
+                onSelect={(value) => setPicks((p) => ({ ...p, [m.key]: value }))}
                 badge={badge}
                 prereqMap={results?.[0]?.prereq_map || {}}
                 isTaken={isTaken}
+                pickCount={m.req.pick_count || 1}
+                rule={m.req.rule}
               />
             )
           })}
@@ -570,7 +628,7 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
 
       <div className="sticky bottom-0 -mx-8 px-8 py-3 bg-white border-t border-gray-100 flex items-center justify-between">
         <p className="text-xs text-gray-500">
-          {allPicked ? 'All picked, ready to continue' : `${visibleReqs.filter((m) => picks[m.key] !== undefined).length + visibleElectives.filter((e) => electivePicks[e.key] !== undefined).length} of ${visibleReqs.length + visibleElectives.length} picked`}
+          {allPicked ? 'All picked, ready to continue' : `${visibleReqs.filter((m) => multiPickValid(m.req, picks[m.key])).length + visibleElectives.filter((e) => electivePicks[e.key] !== undefined).length} of ${visibleReqs.length + visibleElectives.length} picked`}
         </p>
         <button
           onClick={() => setStage('building')}
@@ -593,16 +651,36 @@ function PickerCard({
   badge,
   prereqMap,
   isTaken,
+  pickCount = 1,
+  rule,
 }: {
   title: string
   subtitle: string
   options: (Option & { seriesName?: string })[]
-  selected: number | undefined
-  onSelect: (idx: number) => void
+  selected: number | number[] | undefined
+  onSelect: (value: number | number[]) => void
   badge?: string
   prereqMap?: Record<string, string[]>
   isTaken?: (code: string) => boolean
+  pickCount?: number
+  rule?: string
 }) {
+  if (pickCount > 1) {
+    return (
+      <MultiPickCard
+        title={title}
+        subtitle={subtitle}
+        options={options}
+        selected={Array.isArray(selected) ? selected : []}
+        onSelect={onSelect}
+        badge={badge}
+        pickCount={pickCount}
+        rule={rule}
+      />
+    )
+  }
+  const singleSelected = typeof selected === 'number' ? selected : undefined
+  const handleSelect = (idx: number) => onSelect(idx)
   const directPrereqs = (code: string) => {
     if (!prereqMap) return []
     if (prereqMap[code]) return prereqMap[code]
@@ -654,7 +732,7 @@ function PickerCard({
           )
           const minRemaining = Math.min(...remainingCounts)
           return options.map((opt, oi) => {
-            const isSelected = oi === selected
+            const isSelected = oi === singleSelected
             const remaining = remainingCounts[oi]
             const isOptimal = remaining === minRemaining
             const missingPrereqs = missingPrereqsPerOpt[oi]
@@ -669,7 +747,7 @@ function PickerCard({
                 <input
                   type="radio"
                   checked={isSelected}
-                  onChange={() => onSelect(oi)}
+                  onChange={() => handleSelect(oi)}
                   className="accent-indigo-600 mt-0.5"
                 />
                 <div className="flex-1">
@@ -711,6 +789,128 @@ function PickerCard({
             )
           })
         })()}
+      </div>
+    </div>
+  )
+}
+
+function MultiPickCard({
+  title,
+  subtitle,
+  options,
+  selected,
+  onSelect,
+  badge,
+  pickCount,
+  rule,
+}: {
+  title: string
+  subtitle: string
+  options: Option[]
+  selected: number[]
+  onSelect: (value: number[]) => void
+  badge?: string
+  pickCount: number
+  rule?: string
+}) {
+  const toggle = (idx: number) => {
+    const set = new Set(selected)
+    if (set.has(idx)) set.delete(idx)
+    else set.add(idx)
+    onSelect(Array.from(set).sort((a, b) => a - b))
+  }
+
+  const grouped = useMemo(() => {
+    const groups = new Map<string, { name: string; entries: { idx: number; opt: Option }[] }>()
+    for (let i = 0; i < options.length; i++) {
+      const opt = options[i]
+      const c = opt.courses[0]
+      const key = c?.subarea || c?.code.split(/\s+/)[0] || 'Other'
+      const name = c?.subarea_name || key
+      const g = groups.get(key) || { name, entries: [] }
+      g.entries.push({ idx: i, opt })
+      groups.set(key, g)
+    }
+    for (const g of groups.values()) {
+      g.entries.sort((a, b) => a.opt.courses[0].code.localeCompare(b.opt.courses[0].code))
+    }
+    return Array.from(groups.entries()).sort(([a], [b]) => a.localeCompare(b))
+  }, [options])
+
+  const chosen = selected.map((i) => options[i]).filter((o): o is Option => !!o)
+  const subareasCovered = new Set(chosen.flatMap((o) => o.courses.map((c) => c.subarea).filter(Boolean) as string[]))
+  const allSubareas = new Set(options.flatMap((o) => o.courses.map((c) => c.subarea).filter(Boolean) as string[]))
+  const prefixesCovered = new Set(chosen.flatMap((o) => o.courses.map((c) => (c.code.split(/\s+/)[0] || '').toUpperCase())))
+
+  let validationMessage = ''
+  if (selected.length < pickCount) {
+    validationMessage = `Pick ${pickCount - selected.length} more course${pickCount - selected.length === 1 ? '' : 's'}.`
+  } else if (rule === 'at_least_one_per_subarea') {
+    const missing = Array.from(allSubareas).filter((s) => !subareasCovered.has(s))
+    if (missing.length > 0) validationMessage = `Still need at least one from ${missing.join(', ')}.`
+  } else if (rule === 'different_disciplines' && prefixesCovered.size < 2) {
+    validationMessage = 'Need courses from 2 different subject prefixes.'
+  }
+
+  let ruleHelp = ''
+  if (rule === 'at_least_one_per_subarea') {
+    ruleHelp = `Pick ${pickCount} courses, at least one from each subarea.`
+  } else if (rule === 'different_disciplines') {
+    ruleHelp = `Pick ${pickCount} courses from ${pickCount} different subject prefixes.`
+  } else {
+    ruleHelp = `Pick ${pickCount} courses.`
+  }
+
+  return (
+    <div className="rounded-xl border border-gray-100 px-4 py-3 bg-white shadow-sm">
+      <div className="mb-2">
+        <div className="flex items-center gap-2 mb-0.5">
+          <p className="text-sm font-semibold text-gray-900">{title}</p>
+          {badge && (
+            <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+              {badge}
+            </span>
+          )}
+        </div>
+        <p className="text-xs text-gray-500">{subtitle}</p>
+        <p className="text-xs text-indigo-600 mt-1">{ruleHelp}</p>
+        {validationMessage ? (
+          <p className="text-xs text-amber-600 mt-0.5">{validationMessage}</p>
+        ) : (
+          <p className="text-xs text-emerald-600 mt-0.5">All set ({selected.length} of {pickCount} picked)</p>
+        )}
+      </div>
+      <div className="space-y-3">
+        {grouped.map(([key, group]) => (
+          <div key={key}>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400 mb-1">{group.name}</p>
+            <div className="grid grid-cols-2 gap-1">
+              {group.entries.map(({ idx, opt }) => {
+                const c = opt.courses[0]
+                const isChecked = selected.includes(idx)
+                return (
+                  <label
+                    key={idx}
+                    className={`flex items-start gap-2 px-2 py-1.5 rounded-md cursor-pointer transition-colors ${
+                      isChecked ? 'bg-indigo-50 border border-indigo-200' : 'hover:bg-gray-50 border border-transparent'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => toggle(idx)}
+                      className="accent-indigo-600 mt-0.5"
+                    />
+                    <span className={`font-mono text-xs font-semibold ${c.completed ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
+                      {c.code}
+                    </span>
+                    {c.completed && <span className="text-[10px] text-emerald-600">done</span>}
+                  </label>
+                )
+              })}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   )

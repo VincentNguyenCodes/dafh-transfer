@@ -227,7 +227,7 @@ function buildPrereqGroups(items: ClassItem[]): ClassItem[][] {
   const childrenOf = new Map<string, ClassItem[]>()
   const standalone: ClassItem[] = []
   for (const c of items) {
-    if (c.kind === 'prereq' && c.prereq_for && byCode.has(c.prereq_for)) {
+    if (c.prereq_for && byCode.has(c.prereq_for)) {
       const arr = childrenOf.get(c.prereq_for) || []
       arr.push(c)
       childrenOf.set(c.prereq_for, arr)

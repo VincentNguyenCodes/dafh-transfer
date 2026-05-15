@@ -182,7 +182,7 @@ export default function ScheduleBuilder({ classBank, prePlaced = [], initialQuar
               <QuarterCard
                 key={q.id}
                 quarter={q}
-                classes={q.class_codes.map((code) => classByCode.get(code)).filter((c): c is ClassItem => !!c)}
+                classes={q.class_codes.map((code) => classByCode.get(code) || { code, name: code, units: null, needed_for: [] })}
                 onChange={(patch) => updateQuarter(q.id, patch)}
                 onRemove={() => removeQuarter(q.id)}
               />

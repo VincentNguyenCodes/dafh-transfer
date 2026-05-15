@@ -196,10 +196,13 @@ function ScheduleViewer({ schedule, onClose }: { schedule: Schedule; onClose: ()
     setSaving(true)
     setError('')
     try {
+      const fullBank = new Map<string, ClassItem>()
+      for (const c of remainingBank) fullBank.set(c.code, c)
+      for (const c of schedule.class_bank) if (!fullBank.has(c.code)) fullBank.set(c.code, c)
       await api.patch(`/schedules/${schedule.id}/`, {
         name,
         quarters,
-        class_bank: remainingBank,
+        class_bank: Array.from(fullBank.values()),
       })
       onClose()
     } catch (err: unknown) {

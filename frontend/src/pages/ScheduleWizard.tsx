@@ -399,12 +399,16 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
     setSaving(true)
     setError('')
     try {
+      const fullBank = new Map<string, ClassItem>()
+      for (const c of remainingBank) fullBank.set(c.code, c)
+      for (const c of classBank) if (!fullBank.has(c.code)) fullBank.set(c.code, c)
+      for (const c of taken) if (!fullBank.has(c.code)) fullBank.set(c.code, c)
       await api.post('/schedules/', {
         name,
         schedule_type: scheduleType,
         ge_path: gePath,
         quarters,
-        class_bank: remainingBank,
+        class_bank: Array.from(fullBank.values()),
       })
       onSaved()
     } catch (err: unknown) {

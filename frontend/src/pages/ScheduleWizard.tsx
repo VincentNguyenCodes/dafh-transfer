@@ -162,10 +162,22 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
   }, [results])
 
   const visibleReqs = useMemo(() => {
-    if (scheduleType === 'custom') return multiOptionReqs
-    return multiOptionReqs.filter((m) => {
-      const min = Math.min(...m.remainingCounts)
-      return m.remainingCounts.filter((c) => c === min).length > 1
+    const filtered = scheduleType === 'custom'
+      ? multiOptionReqs
+      : multiOptionReqs.filter((m) => {
+          const min = Math.min(...m.remainingCounts)
+          return m.remainingCounts.filter((c) => c === min).length > 1
+        })
+    const rank = (code: string) => {
+      if (code.startsWith('IGETC_')) return 0
+      if (code.startsWith('CSU_GE_')) return 1
+      return 2
+    }
+    return [...filtered].sort((a, b) => {
+      const ra = rank(a.req.receiving_code)
+      const rb = rank(b.req.receiving_code)
+      if (ra !== rb) return ra - rb
+      return a.req.receiving_code.localeCompare(b.req.receiving_code, undefined, { numeric: true })
     })
   }, [scheduleType, multiOptionReqs])
 

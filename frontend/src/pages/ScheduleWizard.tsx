@@ -161,7 +161,10 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
     })
   }, [scheduleType, multiOptionReqs])
 
-  const visibleElectives = useMemo(() => electiveGroups, [electiveGroups])
+  const visibleElectives = useMemo(
+    () => electiveGroups.filter((e) => !e.group.series.some((s) => s.satisfied)),
+    [electiveGroups],
+  )
 
   const completedCodes = useMemo(() => {
     const s = new Set<string>()
@@ -631,6 +634,7 @@ function PickerCard({
             const remaining = remainingCounts[oi]
             const isOptimal = remaining === minRemaining
             const missingPrereqs = missingPrereqsPerOpt[oi]
+            if (remaining === 0) return null
             return (
               <label
                 key={oi}

@@ -28,11 +28,19 @@ PREREQS = {
 }
 
 
+def direct_prereqs(code):
+    if code in PREREQS:
+        return PREREQS[code]
+    if code.endswith('H'):
+        return PREREQS.get(code[:-1], [])
+    return []
+
+
 def chain(code, completed):
     out, seen, stack = [], set(), [code]
     while stack:
         cur = stack.pop()
-        for p in PREREQS.get(cur, []):
+        for p in direct_prereqs(cur):
             if p in seen or p in completed:
                 continue
             seen.add(p)

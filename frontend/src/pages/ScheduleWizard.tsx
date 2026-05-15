@@ -324,10 +324,20 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
       }
     }
     const prereqMap = (results[0]?.prereq_map) || {}
+    const lookupPrereqs = (code: string): string[] => {
+      if (prereqMap[code]) return prereqMap[code]
+      const norm = normalizeCode(code)
+      if (prereqMap[norm]) return prereqMap[norm]
+      if (code.endsWith('H')) {
+        const stripped = code.slice(0, -1)
+        return prereqMap[stripped] || prereqMap[normalizeCode(stripped)] || []
+      }
+      return []
+    }
     const queue = Array.from(bank.keys())
     while (queue.length > 0) {
       const code = queue.shift()!
-      const prereqs = prereqMap[code] || prereqMap[normalizeCode(code)] || []
+      const prereqs = lookupPrereqs(code)
       for (const p of prereqs) {
         if (isTaken(p)) continue
         const existing = bank.get(p)
@@ -589,6 +599,17 @@ function PickerCard({
   prereqMap?: Record<string, string[]>
   isTaken?: (code: string) => boolean
 }) {
+  const directPrereqs = (code: string) => {
+    if (!prereqMap) return []
+    if (prereqMap[code]) return prereqMap[code]
+    const norm = normalizeCode(code)
+    if (prereqMap[norm]) return prereqMap[norm]
+    if (code.endsWith('H')) {
+      const stripped = code.slice(0, -1)
+      return prereqMap[stripped] || prereqMap[normalizeCode(stripped)] || []
+    }
+    return []
+  }
   const computeMissingPrereqs = (codes: string[]) => {
     if (!prereqMap) return []
     const missing = new Set<string>()
@@ -596,8 +617,7 @@ function PickerCard({
     const queue = [...codes]
     while (queue.length > 0) {
       const code = queue.shift()!
-      const prereqs = prereqMap[code] || prereqMap[normalizeCode(code)] || []
-      for (const p of prereqs) {
+      for (const p of directPrereqs(code)) {
         if (visited.has(p)) continue
         if (isTaken && isTaken(p)) continue
         visited.add(p)

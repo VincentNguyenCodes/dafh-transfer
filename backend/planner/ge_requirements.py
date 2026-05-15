@@ -177,24 +177,24 @@ def _approved_set(area):
     return s
 
 
-def _build_area_requirement(area_code, area, code_prefix, label_prefix, completed_codes, in_progress_codes):
+def _build_area_requirement(area_code, area, code_prefix, label_prefix, completed_codes, in_progress_codes, subarea=None):
     options = []
     for school in ('deanza', 'foothill'):
         for code in area.get(school, []):
             norm = normalize_course_code(code)
             completed = code in completed_codes or norm in completed_codes
             in_prog = (not completed) and (code in in_progress_codes or norm in in_progress_codes)
-            options.append({
-                'courses': [{
-                    'code': code,
-                    'name': '',
-                    'units': None,
-                    'school': school,
-                    'completed': completed,
-                    'in_progress': in_prog,
-                }],
-                'satisfied': completed,
-            })
+            course = {
+                'code': code,
+                'name': '',
+                'units': None,
+                'school': school,
+                'completed': completed,
+                'in_progress': in_prog,
+            }
+            if subarea:
+                course['subarea'] = subarea
+            options.append({'courses': [course], 'satisfied': completed})
     return {
         'receiving_code': f'{code_prefix}_{area_code}',
         'receiving_name': f"{area['name']} ({label_prefix} {area_code})",
@@ -206,12 +206,87 @@ def _build_area_requirement(area_code, area, code_prefix, label_prefix, complete
     }
 
 
+def _build_multi_pick_requirement(group_code, group_meta, completed_codes, in_progress_codes, committed_codes):
+    options = []
+    approved = set()
+    for sub_code in group_meta['subareas']:
+        sub_area = IGETC_AREAS.get(sub_code)
+        if not sub_area:
+            continue
+        for school in ('deanza', 'foothill'):
+            for code in sub_area.get(school, []):
+                norm = normalize_course_code(code)
+                completed = code in completed_codes or norm in completed_codes
+                in_prog = (not completed) and (code in in_progress_codes or norm in in_progress_codes)
+                approved.add(code)
+                approved.add(norm)
+                options.append({
+                    'courses': [{
+                        'code': code,
+                        'name': '',
+                        'units': None,
+                        'school': school,
+                        'completed': completed,
+                        'in_progress': in_prog,
+                        'subarea': sub_code,
+                        'subarea_name': sub_area['name'],
+                    }],
+                    'satisfied': completed,
+                })
+
+    pre_satisfied = sorted(approved & (completed_codes | committed_codes))
+
+    return {
+        'receiving_code': f'IGETC_{group_code}',
+        'receiving_name': f"{group_meta['name']} (IGETC Area {group_code})",
+        'no_articulation': False,
+        'satisfied': False,
+        'options': options,
+        'school': 'deanza',
+        'is_choose_one': False,
+        'pick_count': group_meta['pick_count'],
+        'rule': group_meta['rule'],
+        'pre_satisfied_codes': pre_satisfied,
+    }
+
+
+def _is_multi_pick_satisfied(group_meta, completed_codes, committed_codes):
+    covered = set()
+    by_subarea = {}
+    for sub_code in group_meta['subareas']:
+        sub_area = IGETC_AREAS.get(sub_code)
+        if not sub_area:
+            continue
+        approved = set()
+        for school in ('deanza', 'foothill'):
+            for code in sub_area.get(school, []):
+                approved.add(code)
+                approved.add(normalize_course_code(code))
+        sat = approved & (completed_codes | committed_codes)
+        if sat:
+            by_subarea[sub_code] = sat
+            covered |= sat
+
+    if len(covered) < group_meta['pick_count']:
+        return False
+    if group_meta['rule'] == 'at_least_one_per_subarea':
+        return all(by_subarea.get(s) for s in group_meta['subareas'])
+    if group_meta['rule'] == 'different_disciplines':
+        prefixes = {c.split(' ')[0] for c in covered if ' ' in c}
+        return len(prefixes) >= 2
+    return True
+
+
 def build_igetc_requirements(receiving_id, completed_codes, in_progress_codes, committed_codes):
     is_uc = receiving_id in UC_INSTITUTION_IDS
     is_csu = receiving_id in CSU_INSTITUTION_IDS
 
+    multi_pick_subareas = {s for meta in IGETC_MULTI_PICK.values() for s in meta['subareas']}
+
     reqs = []
     for area_code, area in IGETC_AREAS.items():
+        if area_code in multi_pick_subareas:
+            continue
         if area_code in IGETC_UC_ONLY_AREAS and not is_uc:
             continue
         if area_code in IGETC_CSU_ONLY_AREAS and not is_csu:
@@ -222,6 +297,14 @@ def build_igetc_requirements(receiving_id, completed_codes, in_progress_codes, c
             area_code, area, 'IGETC', 'IGETC Area',
             completed_codes, in_progress_codes,
         ))
+
+    for group_code, group_meta in IGETC_MULTI_PICK.items():
+        if _is_multi_pick_satisfied(group_meta, completed_codes, committed_codes):
+            continue
+        reqs.append(_build_multi_pick_requirement(
+            group_code, group_meta, completed_codes, in_progress_codes, committed_codes,
+        ))
+
     return reqs
 
 

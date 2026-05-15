@@ -9,7 +9,7 @@ from django.utils import timezone
 
 from assist.models import AssistCache
 
-CSULA_YEAR = '2025-2026'
+CSULA_YEAR = '2026-2027'
 CSULA_URL = f'https://www.calstatela.edu/admissions/major-specific-criteria-{CSULA_YEAR}'
 CACHE_TTL_DAYS = 7
 CSULA_INSTITUTION_ID = 76
@@ -21,24 +21,25 @@ SYSTEM_PROMPT = (
 )
 
 USER_TEMPLATE = """\
-This text is from Cal State LA's "Major-Specific Criteria (MSC)" page for {year}. It lists each major with admission requirements, often with two paths: ADT (Associate Degree for Transfer) applicants vs non-ADT applicants.
+This text is from Cal State LA's "Major-Specific Criteria (MSC)" page for {year}. It lists each major with admission requirements, often with two paths: ADT (Associate Degree for Transfer) applicants vs non-ADT applicants. There is typically a section "Major Specific Criteria (MSC) by Program" containing 6-10 majors, followed by "ALL OTHER MAJORS NOT LISTED ABOVE" which means standard CSU minimums.
 
 Page text:
 {html}
 
-Extract a dict where each key is a major name and each value is an object describing the NON-ADT path (the stricter path for students without an ADT):
+Walk through EVERY major listed under "Major Specific Criteria (MSC) by Program". For each, extract a dict entry describing the NON-ADT path (the stricter path for students without an ADT):
 
 - required: course codes listed under "Required major preparation courses"
 - recommended: course codes listed under "Additional recommended major preparation courses"
 - choose_one_groups: when a section says "One of the following X courses" with multiple alternatives, output [["CODE1", "CODE2", "CODE3"]]
 - series_groups: if any parallel multi-course sequences are required, list them
 
-Rules:
-- Normalize all codes to no-space format (CS2011 not "CS 2011").
+CRITICAL RULES:
+- ONLY use real Cal State LA course codes that appear LITERALLY in the page text (e.g. "CS 2011", "MATH 2110", "CRIM 1010"). NEVER invent codes.
+- If a major's requirements only say things like "Fire Protection Systems; or equivalent" or "Principles of Emergency Services; or equivalent" without a real CSULA course code (prefix + number), include the major in the output BUT leave required/recommended/choose_one_groups EMPTY. Add a placeholder note to the major's required list ONLY if a real CSULA code is given.
+- Normalize codes to no-space format: "CS 2011" -> "CS2011".
 - Skip GE references like "English Composition", "Oral Communication", "Critical Thinking", "Mathematical Concepts" — these are CSU GE, not specific course codes.
-- Use the major name as printed (e.g. "Computer Science", "Criminal Justice", "Nursing - Basic Pre-Licensure BSN").
-- For each major, ONLY include if at least one specific course code is listed. Skip majors that only require GE.
-- If a major appears with both ADT and non-ADT paths, use the non-ADT requirements.
+- Use the major name exactly as the page prints it.
+- Include EVERY major that has a section, even if it only has empty arrays. This lets us flag "this major exists but requires only GE / supplemental application".
 
 Return ONLY this JSON shape (no markdown):
 {{

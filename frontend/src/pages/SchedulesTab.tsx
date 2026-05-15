@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react'
 import api from '../api/client'
 import ScheduleWizard from './ScheduleWizard'
+import ScheduleBuilder, { type ClassItem, type Quarter } from './ScheduleBuilder'
 
 type Schedule = {
   id: number
   name: string
   schedule_type: 'custom' | 'optimal'
   ge_path: 'igetc' | 'csu' | ''
-  quarters: unknown[]
-  class_bank: unknown[]
+  quarters: Quarter[]
+  class_bank: ClassItem[]
   created_at: string
   updated_at: string
 }
@@ -20,6 +21,7 @@ export default function SchedulesTab() {
   const [creating, setCreating] = useState(false)
   const [wizardType, setWizardType] = useState<'custom' | 'optimal' | null>(null)
   const [busy, setBusy] = useState<number | null>(null)
+  const [viewing, setViewing] = useState<Schedule | null>(null)
 
   const load = () => {
     setLoading(true)
@@ -51,6 +53,15 @@ export default function SchedulesTab() {
         scheduleType={wizardType}
         onCancel={() => setWizardType(null)}
         onSaved={() => { setWizardType(null); load() }}
+      />
+    )
+  }
+
+  if (viewing) {
+    return (
+      <ScheduleViewer
+        schedule={viewing}
+        onClose={() => { setViewing(null); load() }}
       />
     )
   }
@@ -96,7 +107,11 @@ export default function SchedulesTab() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {schedules.map((s) => (
-            <div key={s.id} className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5 flex flex-col">
+            <button
+              key={s.id}
+              onClick={() => setViewing(s)}
+              className="text-left rounded-2xl border border-gray-100 bg-white shadow-sm p-5 flex flex-col hover:border-indigo-300 hover:shadow-md transition-all"
+            >
               <div className="flex items-start justify-between mb-3">
                 <div className="flex-1 min-w-0">
                   <p className="text-base font-semibold text-gray-900 truncate">{s.name}</p>
@@ -104,18 +119,21 @@ export default function SchedulesTab() {
                     {s.schedule_type === 'optimal' ? 'Optimal plan' : 'Custom plan'} · Updated {new Date(s.updated_at).toLocaleDateString()}
                   </p>
                 </div>
-                <button
-                  onClick={() => deleteSchedule(s.id)}
-                  disabled={busy === s.id}
-                  className="text-xs text-gray-400 hover:text-red-500 transition-colors shrink-0"
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => { e.stopPropagation(); deleteSchedule(s.id) }}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); deleteSchedule(s.id) } }}
+                  aria-disabled={busy === s.id}
+                  className="text-xs text-gray-400 hover:text-red-500 transition-colors shrink-0 cursor-pointer"
                 >
                   Delete
-                </button>
+                </span>
               </div>
               <div className="text-xs text-gray-500">
-                {(s.quarters as unknown[]).length} quarter{(s.quarters as unknown[]).length === 1 ? '' : 's'}
+                {s.quarters.length} quarter{s.quarters.length === 1 ? '' : 's'}
                 {' · '}
-                {(s.class_bank as unknown[]).length} unplaced
+                {s.class_bank.length} unplaced
                 {s.ge_path && (
                   <>
                     {' · '}
@@ -123,7 +141,7 @@ export default function SchedulesTab() {
                   </>
                 )}
               </div>
-            </div>
+            </button>
           ))}
         </div>
       )}
@@ -166,5 +184,41 @@ function CreateScheduleModal({ onClose, onPicked }: { onClose: () => void; onPic
         </div>
       </div>
     </div>
+  )
+}
+
+function ScheduleViewer({ schedule, onClose }: { schedule: Schedule; onClose: () => void }) {
+  const [name, setName] = useState(schedule.name)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  const save = async (quarters: Quarter[], remainingBank: ClassItem[]) => {
+    setSaving(true)
+    setError('')
+    try {
+      await api.patch(`/schedules/${schedule.id}/`, {
+        name,
+        quarters,
+        class_bank: remainingBank,
+      })
+      onClose()
+    } catch (err: unknown) {
+      const errAxios = err as { response?: { data?: { error?: string } } }
+      setError(errAxios?.response?.data?.error || 'Failed to save schedule.')
+      setSaving(false)
+    }
+  }
+
+  return (
+    <ScheduleBuilder
+      classBank={schedule.class_bank}
+      initialQuarters={schedule.quarters}
+      name={name}
+      onNameChange={setName}
+      onBack={onClose}
+      onSave={save}
+      saving={saving}
+      error={error}
+    />
   )
 }

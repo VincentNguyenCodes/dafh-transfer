@@ -10,6 +10,21 @@ IGETC_CSU_ONLY_AREAS = {'1C'}
 
 IGETC_UC_ONLY_AREAS = {'6'}
 
+IGETC_MULTI_PICK = {
+    '3': {
+        'name': 'Arts and Humanities',
+        'pick_count': 3,
+        'subareas': ['3A', '3B'],
+        'rule': 'at_least_one_per_subarea',
+    },
+    '4': {
+        'name': 'Social and Behavioral Sciences',
+        'pick_count': 2,
+        'subareas': ['4'],
+        'rule': 'different_disciplines',
+    },
+}
+
 IGETC_AREAS = {
     '1A': {
         'name': 'English Composition',

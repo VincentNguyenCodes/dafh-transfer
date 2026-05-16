@@ -7,7 +7,7 @@ type Schedule = {
   id: number
   name: string
   schedule_type: 'custom' | 'optimal'
-  ge_path: 'igetc' | 'csu' | ''
+  ge_path: string
   quarters: Quarter[]
   class_bank: ClassItem[]
   created_at: string
@@ -137,7 +137,7 @@ export default function SchedulesTab() {
                 {s.ge_path && (
                   <>
                     {' · '}
-                    <span className="text-emerald-700">{s.ge_path === 'igetc' ? 'IGETC' : 'CSU GE'}</span>
+                    <span className="text-emerald-700">Cal-GETC</span>
                   </>
                 )}
               </div>

@@ -59,7 +59,7 @@ type Props = {
 
 function requirementKey(req: Requirement, schoolName?: string): string {
   const code = req.receiving_code || req.options.flatMap((o) => o.courses.map((c) => c.code)).sort().join('|')
-  const isGeArea = code.startsWith('IGETC_') || code.startsWith('CSU_GE_')
+  const isGeArea = code.startsWith('CALGETC_')
   if (isGeArea) return code
   return schoolName ? `${schoolName}:${code}` : code
 }
@@ -96,16 +96,16 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
   const [error, setError] = useState('')
   const [picks, setPicks] = useState<Record<string, number | number[]>>({})
   const [electivePicks, setElectivePicks] = useState<Record<string, number>>({})
-  const [stage, setStage] = useState<'ge-path' | 'picking' | 'building'>('ge-path')
-  const [gePath, setGePath] = useState<'igetc' | 'csu' | ''>('')
+  const [stage, setStage] = useState<'picking' | 'building'>('picking')
+  const gePath = 'calgetc'
   const [saving, setSaving] = useState(false)
   const [name, setName] = useState('')
 
-  const loadResults = (path: 'igetc' | 'csu') => {
+  useEffect(() => {
     setLoading(true)
     setError('')
     Promise.all([
-      api.get(`/results/?ge_path=${path}`),
+      api.get(`/results/?ge_path=${gePath}`),
       api.get('/transcript/'),
     ])
       .then(([r, t]) => {
@@ -114,7 +114,7 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
       })
       .catch(() => setError('Failed to load your requirements.'))
       .finally(() => setLoading(false))
-  }
+  }, [])
 
   const multiOptionReqs = useMemo(() => {
     if (!results) return []
@@ -169,9 +169,8 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
           return m.remainingCounts.filter((c) => c === min).length > 1
         })
     const rank = (code: string) => {
-      if (code.startsWith('IGETC_')) return 0
-      if (code.startsWith('CSU_GE_')) return 1
-      return 2
+      if (code.startsWith('CALGETC_')) return 0
+      return 1
     }
     return [...filtered].sort((a, b) => {
       const ra = rank(a.req.receiving_code)
@@ -350,8 +349,7 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
       return fallback ? [fallback] : []
     }
     const labelFor = (req: Requirement, schoolName: string) => {
-      if (req.receiving_code.startsWith('IGETC_')) return 'IGETC'
-      if (req.receiving_code.startsWith('CSU_GE_')) return 'CSU GE'
+      if (req.receiving_code.startsWith('CALGETC_')) return 'Cal-GETC'
       return schoolName
     }
     for (const r of results) {
@@ -383,12 +381,9 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
     for (const r of results) {
       for (const code of (r.ge_approved_codes || [])) geApproved.add(code)
     }
-    const geLabel = gePath === 'igetc' ? 'IGETC' : gePath === 'csu' ? 'CSU GE' : ''
-    if (geLabel) {
-      for (const item of bank.values()) {
-        if (geApproved.has(item.code) || geApproved.has(normalizeCode(item.code))) {
-          item.needed_for.add(geLabel)
-        }
+    for (const item of bank.values()) {
+      if (geApproved.has(item.code) || geApproved.has(normalizeCode(item.code))) {
+        item.needed_for.add('Cal-GETC')
       }
     }
     const prereqMap = (results[0]?.prereq_map) || {}
@@ -505,44 +500,6 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
     )
   }
 
-  if (stage === 'ge-path') {
-    return (
-      <div>
-        <div className="mb-5 flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-bold text-gray-900 mb-1">General Education</h2>
-            <p className="text-gray-500 text-sm">Are you planning to complete IGETC before transfer?</p>
-          </div>
-          <button onClick={onCancel} className="text-sm text-gray-500 hover:text-gray-700">Cancel</button>
-        </div>
-        <div className="space-y-3 max-w-2xl">
-          <button
-            onClick={() => { setGePath('igetc'); loadResults('igetc'); setStage('picking') }}
-            className={`w-full text-left rounded-2xl border px-5 py-4 transition-colors ${
-              gePath === 'igetc'
-                ? 'border-indigo-400 bg-indigo-50/60'
-                : 'border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/40'
-            }`}
-          >
-            <p className="text-sm font-semibold text-gray-900 mb-1">Yes{gePath === 'igetc' && ' (current)'}</p>
-            <p className="text-xs text-gray-500">IGETC (Intersegmental General Education Transfer Curriculum) covers GE for both UCs and CSUs. We'll add picker cards for IGETC areas (1A through 6) your major doesn't already cover.</p>
-          </button>
-          <button
-            onClick={() => { setGePath('csu'); loadResults('csu'); setStage('picking') }}
-            className={`w-full text-left rounded-2xl border px-5 py-4 transition-colors ${
-              gePath === 'csu'
-                ? 'border-indigo-400 bg-indigo-50/60'
-                : 'border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/40'
-            }`}
-          >
-            <p className="text-sm font-semibold text-gray-900 mb-1">No{gePath === 'csu' && ' (current)'}</p>
-            <p className="text-xs text-gray-500">If you have any CSU target, we'll add the CSU Golden Four (Oral Comm, Written Comm, Critical Thinking, College Math). Only the areas your major doesn't already cover. UC-only schedules get no extra GE.</p>
-          </button>
-        </div>
-      </div>
-    )
-  }
-
   if (stage === 'building') {
     return (
       <ScheduleBuilder
@@ -575,20 +532,13 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
         <button onClick={onCancel} className="text-sm text-gray-500 hover:text-gray-700">Cancel</button>
       </div>
 
-      {gePath && (
-        <div className="mb-4 flex items-center gap-2 text-xs text-gray-600">
-          <span className="font-medium">GE path:</span>
-          <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
-            {gePath === 'igetc' ? 'IGETC' : 'CSU GE Breadth'}
-          </span>
-          <button
-            onClick={() => { setStage('ge-path'); setResults(null); setPicks({}); setElectivePicks({}) }}
-            className="text-indigo-600 hover:text-indigo-800 underline-offset-2 hover:underline"
-          >
-            Change
-          </button>
-        </div>
-      )}
+      <div className="mb-4 flex items-center gap-2 text-xs text-gray-600">
+        <span className="font-medium">GE pattern:</span>
+        <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+          Cal-GETC
+        </span>
+        <span className="text-gray-400">Required for UC and CSU transfer starting Fall 2025</span>
+      </div>
 
       {visibleReqs.length === 0 && visibleElectives.length === 0 ? (
         <div className="bg-gray-50 border border-gray-200 rounded-2xl p-8 text-center mb-6">
@@ -600,9 +550,8 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
       ) : (
         <div className="space-y-3 mb-6">
           {visibleReqs.map((m) => {
-            const isIgetc = m.req.receiving_code.startsWith('IGETC_')
-            const isCsuGe = m.req.receiving_code.startsWith('CSU_GE_')
-            const badge = isIgetc ? 'IGETC' : isCsuGe ? 'CSU GE' : undefined
+            const isCalgetc = m.req.receiving_code.startsWith('CALGETC_')
+            const badge = isCalgetc ? 'Cal-GETC' : undefined
             return (
               <PickerCard
                 key={m.key}

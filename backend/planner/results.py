@@ -829,10 +829,7 @@ def compute_remaining(user, ge_path: str = '') -> list:
                     )
                 ]
 
-        from .ge_requirements import (
-            build_csu_ge_requirements, build_igetc_requirements,
-            CSU_INSTITUTION_IDS, IGETC_APPLIES_TO,
-        )
+        from .ge_requirements import build_calgetc_requirements, CALGETC_APPLIES_TO
         committed = set()
         for req in all_requirements:
             if req.get('no_articulation') or not req.get('options'):
@@ -849,18 +846,11 @@ def compute_remaining(user, ge_path: str = '') -> list:
                 committed.add(c['code'])
                 committed.add(normalize_course_code(c['code']))
 
-        if ge_path == 'igetc':
-            if target.receiving_institution_id in IGETC_APPLIES_TO:
-                all_requirements.extend(build_igetc_requirements(
-                    target.receiving_institution_id,
-                    completed_codes, in_progress_codes, committed,
-                ))
-        else:
-            if target.receiving_institution_id in CSU_INSTITUTION_IDS:
-                all_requirements.extend(build_csu_ge_requirements(
-                    target.receiving_institution_id,
-                    completed_codes, in_progress_codes, committed,
-                ))
+        if target.receiving_institution_id in CALGETC_APPLIES_TO:
+            all_requirements.extend(build_calgetc_requirements(
+                target.receiving_institution_id,
+                completed_codes, in_progress_codes, committed,
+            ))
 
         from .ge_requirements import get_ge_approved_codes
         from .prerequisites import PREREQS

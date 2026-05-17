@@ -137,19 +137,28 @@ function buildAggregated(
 
 function CourseChip({ c, style }: { c: CourseItem; style: string }) {
   return (
-    <span className="relative group/chip">
+    <span className="relative group/chip inline-block">
       <span className={style}>{c.code}</span>
       {(c.name || c.units) && (
-        <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 opacity-0 group-hover/chip:opacity-100 transition-opacity duration-150">
+        <div className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-2 z-[300] opacity-0 group-hover/chip:opacity-100 transition-opacity duration-150">
           <div
-            className="rounded-xl px-3 py-2 text-left whitespace-nowrap shadow-lg"
-            style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.85)', boxShadow: '0 8px 24px -4px rgba(0,0,0,0.12)' }}
+            className="flex items-center gap-2.5 rounded-xl px-3 py-2 whitespace-nowrap"
+            style={{ background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 8px 28px -4px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.06)' }}
           >
-            <p className="text-xs font-bold text-gray-900 font-mono">{c.code}</p>
-            {c.name && c.name !== c.code && <p className="text-xs text-gray-600 mt-0.5 max-w-[240px] whitespace-normal leading-snug">{c.name}</p>}
-            {c.units && <p className="text-[10px] text-gray-400 mt-1 font-medium">{c.units} units</p>}
+            <span className="text-xs font-bold text-gray-900 font-mono shrink-0">{c.code}</span>
+            {c.name && c.name !== c.code && (
+              <>
+                <span className="w-px h-3 bg-gray-200 shrink-0" />
+                <span className="text-xs text-gray-600 max-w-[260px] truncate">{c.name}</span>
+              </>
+            )}
+            {c.units && (
+              <>
+                <span className="w-px h-3 bg-gray-200 shrink-0" />
+                <span className="text-[11px] font-semibold text-gray-400 shrink-0">{c.units}u</span>
+              </>
+            )}
           </div>
-          <div className="w-2 h-2 bg-white/90 rotate-45 mx-auto -mt-1 border-r border-b border-white/80" />
         </div>
       )}
     </span>

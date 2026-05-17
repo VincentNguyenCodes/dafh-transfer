@@ -35,7 +35,8 @@ export default function Landing() {
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <div className="h-[3px] gradient-brand w-full shrink-0" />
-      <div className="hidden lg:flex lg:w-5/12 flex-col flex-1 p-14 border-r border-gray-100 bg-[#faf9f7]">
+      <div className="flex flex-1">
+      <div className="hidden lg:flex lg:w-5/12 flex-col p-14 border-r border-gray-100 bg-[#faf9f7]">
         <div className="flex items-center gap-2.5">
           <img src="/src/assets/logo.png" alt="DAFH" className="w-7 h-7 object-contain" />
           <span className="text-sm font-semibold text-gray-900 tracking-tight">DAFH Transfer</span>
@@ -144,6 +145,7 @@ export default function Landing() {
             </button>
           </form>
         </div>
+      </div>
       </div>
     </div>
   )

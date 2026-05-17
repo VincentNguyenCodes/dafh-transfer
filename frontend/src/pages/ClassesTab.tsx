@@ -99,16 +99,20 @@ export default function ClassesTab() {
   }
 
   const renderSchool = (school: SchoolKey, label: string) => (
-    <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-4">
-      <div className="flex justify-between items-center mb-5">
-        <h3 className="text-base font-semibold text-gray-900 tracking-tight">{label}</h3>
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm mb-4 overflow-hidden">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-gray-50/60">
+        <div className="flex items-center gap-2.5">
+          <div className={`w-2 h-2 rounded-full ${school === 'deanza' ? 'bg-indigo-500' : 'bg-violet-400'}`} />
+          <h3 className="text-sm font-semibold text-gray-900 tracking-tight">{label}</h3>
+        </div>
         <button
           onClick={() => setSkipped((s) => ({ ...s, [school]: !s[school] }))}
-          className="text-xs font-medium text-gray-400 hover:text-gray-600 transition-colors duration-150 px-2.5 py-1 rounded-lg hover:bg-gray-100"
+          className="text-xs font-medium text-gray-400 hover:text-gray-600 transition-colors duration-150 px-2.5 py-1 rounded-lg hover:bg-white cursor-pointer"
         >
           {skipped[school] ? 'Undo skip' : "Didn't attend here"}
         </button>
       </div>
+      <div className="p-5">
 
       {skipped[school] ? (
         <p className="text-sm text-gray-300 italic">Skipped</p>
@@ -214,11 +218,12 @@ export default function ClassesTab() {
             )
           })}
 
-          <button onClick={() => addManual(school)} className="text-sm text-indigo-500 hover:text-indigo-700 font-medium mt-1 transition-colors duration-150">
+          <button onClick={() => addManual(school)} className="text-sm text-indigo-500 hover:text-indigo-700 font-medium mt-1 transition-colors duration-150 cursor-pointer">
             + Add manually
           </button>
         </>
       )}
+      </div>
     </div>
   )
 

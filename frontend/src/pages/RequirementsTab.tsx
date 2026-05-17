@@ -395,7 +395,7 @@ export default function RequirementsTab() {
         )}
       </div>
 
-      <div className="sticky top-[109px] z-10 -mx-8 px-8 py-4 mb-6 bg-[#f5f5f7]/95 backdrop-blur border-b border-gray-200/60">
+      <div className="sticky top-[109px] z-10 -mx-8 px-8 py-4 mb-6" style={{ background: 'rgba(245,245,247,0.88)', backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)', borderBottom: '1px solid rgba(255,255,255,0.6)' }}>
         <div className="flex items-center gap-6">
           <div className="flex-1">
             <div className="flex items-center justify-between mb-2">
@@ -431,11 +431,11 @@ export default function RequirementsTab() {
       </div>
 
       {unsatisfied.length > 0 && (
-        <div className="mb-4 rounded-2xl overflow-hidden shadow-sm animate-fade-up stagger-1 border border-gray-100">
+        <div className="mb-4 rounded-2xl overflow-hidden animate-fade-up stagger-1 glass">
           <div className="flex">
             <div className="w-1 bg-indigo-500 shrink-0" />
-            <div className="flex-1 bg-white">
-              <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
+            <div className="flex-1">
+              <div className="glass-header px-5 py-3.5 flex items-center justify-between">
                 <div>
                   <p className="text-sm font-semibold text-gray-900 tracking-tight">Still Needed — Required</p>
                   <p className="text-xs text-gray-400 mt-0.5">Must complete for admission</p>
@@ -455,11 +455,11 @@ export default function RequirementsTab() {
       )}
 
       {(unsatisfiedRec.length > 0 || unsatisfiedElectiveGroups.length > 0) && (
-        <div className="mb-4 rounded-2xl overflow-hidden shadow-sm animate-fade-up stagger-2 border border-gray-100">
+        <div className="mb-4 rounded-2xl overflow-hidden animate-fade-up stagger-2 glass">
           <div className="flex">
             <div className="w-1 bg-violet-400 shrink-0" />
-            <div className="flex-1 bg-white">
-          <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
+            <div className="flex-1">
+          <div className="glass-header px-5 py-3.5 flex items-center justify-between">
             <div>
               <p className="text-sm font-semibold text-gray-900 tracking-tight">Still Needed — Recommended</p>
               <p className="text-xs text-gray-400 mt-0.5">Not required, but saves units after transfer</p>
@@ -506,11 +506,11 @@ export default function RequirementsTab() {
       )}
 
       {satisfied.length > 0 && (
-        <div className="mb-4 rounded-2xl overflow-hidden border border-gray-100">
+        <div className="mb-4 rounded-2xl overflow-hidden glass">
           <div className="flex">
             <div className="w-1 bg-green-400 shrink-0" />
-            <div className="flex-1 bg-white">
-          <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
+            <div className="flex-1">
+          <div className="glass-header px-5 py-3.5 flex items-center justify-between">
             <div>
               <p className="text-sm font-semibold text-gray-900 tracking-tight">Completed — Required</p>
               <p className="text-xs text-gray-400 mt-0.5">Required courses you have already finished</p>
@@ -530,11 +530,11 @@ export default function RequirementsTab() {
       )}
 
       {(satisfiedRec.length > 0 || satisfiedElectiveGroups.length > 0) && (
-        <div className="mb-4 rounded-2xl overflow-hidden border border-gray-100">
+        <div className="mb-4 rounded-2xl overflow-hidden glass">
           <div className="flex">
             <div className="w-1 bg-gray-300 shrink-0" />
-            <div className="flex-1 bg-white">
-          <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
+            <div className="flex-1">
+          <div className="glass-header px-5 py-3.5 flex items-center justify-between">
             <div>
               <p className="text-sm font-semibold text-gray-900 tracking-tight">Completed — Recommended</p>
               <p className="text-xs text-gray-400 mt-0.5">Recommended courses you have already finished</p>

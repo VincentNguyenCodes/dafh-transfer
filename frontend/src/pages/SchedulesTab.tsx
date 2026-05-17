@@ -100,7 +100,7 @@ export default function SchedulesTab() {
       </div>
 
       {schedules.length === 0 ? (
-        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-14 text-center">
+        <div className="glass rounded-2xl p-14 text-center">
           <div className="w-14 h-14 rounded-2xl bg-indigo-50 flex items-center justify-center mx-auto mb-4">
             <svg className="w-7 h-7 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -121,7 +121,7 @@ export default function SchedulesTab() {
             <button
               key={s.id}
               onClick={() => setViewing(s)}
-              className="text-left rounded-2xl border border-gray-100 bg-white shadow-sm p-5 flex flex-col hover:shadow-md hover:border-indigo-200 transition-all duration-200 cursor-pointer group"
+              className="glass text-left rounded-2xl p-5 flex flex-col hover:shadow-lg transition-all duration-200 cursor-pointer group"
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="flex-1 min-w-0">
@@ -174,13 +174,13 @@ export default function SchedulesTab() {
 function CreateScheduleModal({ onClose, onPicked }: { onClose: () => void; onPicked: (kind: 'custom' | 'optimal') => void }) {
   return (
     <div className="fixed inset-0 bg-gray-900/40 flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
+      <div className="glass rounded-2xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
         <h3 className="text-lg font-bold text-gray-900 mb-1">Create a new schedule</h3>
         <p className="text-sm text-gray-500 mb-5">Choose how you want to build this schedule.</p>
 
         <button
           onClick={() => onPicked('custom')}
-          className="w-full text-left rounded-xl border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/40 px-4 py-4 mb-3 transition-colors"
+          className="w-full text-left rounded-xl glass-row hover:border-indigo-200 px-4 py-4 mb-3 transition-colors"
         >
           <p className="text-sm font-semibold text-gray-900 mb-0.5">Create custom</p>
           <p className="text-xs text-gray-500">Pick your option for every requirement that has alternatives.</p>
@@ -188,7 +188,7 @@ function CreateScheduleModal({ onClose, onPicked }: { onClose: () => void; onPic
 
         <button
           onClick={() => onPicked('optimal')}
-          className="w-full text-left rounded-xl border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/40 px-4 py-4 transition-colors"
+          className="w-full text-left rounded-xl glass-row hover:border-indigo-200 px-4 py-4 transition-colors"
         >
           <p className="text-sm font-semibold text-gray-900 mb-0.5">Create optimal</p>
           <p className="text-xs text-gray-500">We pick the option that requires the fewest classes. You decide on ties.</p>

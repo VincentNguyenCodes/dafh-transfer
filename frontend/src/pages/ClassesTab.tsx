@@ -99,8 +99,8 @@ export default function ClassesTab() {
   }
 
   const renderSchool = (school: SchoolKey, label: string) => (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm mb-4 overflow-hidden">
-      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-gray-50/60">
+    <div className="glass rounded-2xl mb-4 overflow-hidden">
+      <div className="glass-header flex items-center justify-between px-5 py-4">
         <div className="flex items-center gap-2.5">
           <div className={`w-2 h-2 rounded-full ${school === 'deanza' ? 'bg-indigo-500' : 'bg-violet-400'}`} />
           <h3 className="text-sm font-semibold text-gray-900 tracking-tight">{label}</h3>

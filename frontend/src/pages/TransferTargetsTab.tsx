@@ -153,11 +153,11 @@ export default function TransferTargetsTab() {
       </div>
 
       {savedTargets.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-4">
+        <div className="glass rounded-2xl p-5 mb-4">
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Saved targets</p>
           <div className="space-y-2">
             {savedTargets.map((t) => (
-              <div key={t.id} className="rounded-xl border border-gray-100 overflow-hidden">
+              <div key={t.id} className="glass-row rounded-xl overflow-hidden">
                 {editingId === t.id ? (
                   <div className="px-4 py-3 space-y-2.5">
                     <p className="text-sm font-semibold text-gray-900">{t.receiving_institution_name}</p>
@@ -191,8 +191,8 @@ export default function TransferTargetsTab() {
         </div>
       )}
 
-      <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-4">
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Add target</p>
+      <div className="glass rounded-2xl p-6 mb-4">
+        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Add target</p>
         <div className="space-y-4">
           {rows.map((row, idx) => (
             <div key={idx} className="space-y-3">

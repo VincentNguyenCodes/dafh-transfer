@@ -122,6 +122,24 @@ button:active:not(:disabled) {
 
 .gradient-brand { background: linear-gradient(90deg, #a51e35 0%, #c8922a 100%); }
 
+.glass {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  box-shadow: 0 4px 24px -4px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04);
+}
+
+.glass-header {
+  background: rgba(255, 255, 255, 0.50);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.55);
+}
+
+.glass-row {
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.70);
+}
+
 .card-elevated {
   background: #ffffff;
   border: 1px solid rgb(0 0 0 / 0.06);

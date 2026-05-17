@@ -144,16 +144,18 @@ export default function Schools() {
 
   return (
     <div className="min-h-screen bg-[#f5f5f7]">
-      <header className="bg-white/80 backdrop-blur-md border-b border-gray-100 px-6 py-4 sticky top-0 z-30">
+      <header className="bg-white/90 backdrop-blur-md border-b border-gray-100 px-6 py-3.5 sticky top-0 z-30">
         <div className="max-w-3xl mx-auto flex items-center gap-3">
-          <button onClick={() => navigate('/dashboard')} className="text-gray-400 hover:text-gray-700 transition-colors duration-150 p-1 rounded-lg hover:bg-gray-100">
-            ←
+          <button onClick={() => navigate('/dashboard')} className="text-gray-400 hover:text-gray-600 transition-colors duration-150 p-2 rounded-xl hover:bg-gray-100 cursor-pointer shrink-0">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
           </button>
           <div className="flex items-center gap-2.5">
-            <img src="/src/assets/logo.png" alt="DAFH Transfer" className="w-7 h-7 object-contain" />
+            <img src="/src/assets/logo.png" alt="DAFH Transfer" className="w-6 h-6 object-contain" />
             <span className="font-semibold text-gray-900 tracking-tight text-sm">DAFH Transfer</span>
           </div>
-          <span className="ml-auto text-xs text-gray-400 font-medium">Step 2 of 3</span>
+          <span className="ml-auto text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Step 2 of 3</span>
         </div>
       </header>
 
@@ -269,7 +271,7 @@ export default function Schools() {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="w-full bg-indigo-600 text-white rounded-2xl py-4 font-semibold text-sm hover:bg-indigo-500 hover:shadow-lg hover:shadow-indigo-500/20 disabled:opacity-40 transition-all duration-200 tracking-tight"
+          className="w-full bg-indigo-600 text-white rounded-2xl py-3.5 font-semibold text-sm hover:bg-indigo-500 hover:shadow-md hover:shadow-indigo-300/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 tracking-tight cursor-pointer"
         >
           {saving ? 'Saving...' : 'Save and See Results'}
         </button>

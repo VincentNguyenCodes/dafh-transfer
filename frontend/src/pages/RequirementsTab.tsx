@@ -135,6 +135,27 @@ function buildAggregated(
   return Array.from(map.values())
 }
 
+function CourseChip({ c, style }: { c: CourseItem; style: string }) {
+  return (
+    <span className="relative group/chip">
+      <span className={style}>{c.code}</span>
+      {(c.name || c.units) && (
+        <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 opacity-0 group-hover/chip:opacity-100 transition-opacity duration-150">
+          <div
+            className="rounded-xl px-3 py-2 text-left whitespace-nowrap shadow-lg"
+            style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.85)', boxShadow: '0 8px 24px -4px rgba(0,0,0,0.12)' }}
+          >
+            <p className="text-xs font-bold text-gray-900 font-mono">{c.code}</p>
+            {c.name && c.name !== c.code && <p className="text-xs text-gray-600 mt-0.5 max-w-[240px] whitespace-normal leading-snug">{c.name}</p>}
+            {c.units && <p className="text-[10px] text-gray-400 mt-1 font-medium">{c.units} units</p>}
+          </div>
+          <div className="w-2 h-2 bg-white/90 rotate-45 mx-auto -mt-1 border-r border-b border-white/80" />
+        </div>
+      )}
+    </span>
+  )
+}
+
 function SchoolTags({ badges }: { badges: Badge[] }) {
   return (
     <div className="flex gap-1 shrink-0 ml-2 flex-wrap justify-end">
@@ -179,7 +200,7 @@ function AggregatedRequirementRow({ req }: { req: AggregatedReq }) {
           {courses.map((c, ci) => (
             <span key={ci} className="flex items-center gap-1">
               {ci > 0 && <span className="text-[10px] text-gray-300 font-bold">+</span>}
-              <span className="font-mono text-[11px] font-bold text-gray-400 line-through">{c.code}</span>
+              <CourseChip c={c} style="font-mono text-[11px] font-bold text-gray-400 line-through cursor-default" />
               {c.units && <span className="text-[10px] text-gray-300">{c.units}u</span>}
             </span>
           ))}
@@ -208,7 +229,7 @@ function AggregatedRequirementRow({ req }: { req: AggregatedReq }) {
                 {[...opt.courses].sort((a, b) => a.code.localeCompare(b.code)).map((c, ci) => (
                   <span key={ci} className="flex items-center gap-1">
                     {ci > 0 && <span className="text-[10px] text-gray-300 font-bold">+</span>}
-                    <span className={`font-mono text-[11px] font-bold px-1.5 py-0.5 rounded ${c.completed ? 'text-gray-400 line-through' : 'bg-indigo-50 text-indigo-800'}`}>{c.code}</span>
+                    <CourseChip c={c} style={`font-mono text-[11px] font-bold px-1.5 py-0.5 rounded cursor-default ${c.completed ? 'text-gray-400 line-through' : 'bg-indigo-50 text-indigo-800'}`} />
                     {c.in_progress && <span className="text-[10px] bg-amber-100 text-amber-700 px-1 rounded">→</span>}
                   </span>
                 ))}
@@ -229,7 +250,7 @@ function AggregatedRequirementRow({ req }: { req: AggregatedReq }) {
         {courses.map((c, ci) => (
           <span key={ci} className="flex items-center gap-1.5">
             {ci > 0 && <span className="text-[10px] text-gray-400 font-bold">+</span>}
-            <span className={`font-mono text-[11px] font-bold px-1.5 py-0.5 rounded ${c.completed ? 'text-gray-400 line-through bg-gray-100' : 'bg-indigo-50 text-indigo-800'}`}>{c.code}</span>
+            <CourseChip c={c} style={`font-mono text-[11px] font-bold px-1.5 py-0.5 rounded cursor-default ${c.completed ? 'text-gray-400 line-through bg-gray-100' : 'bg-indigo-50 text-indigo-800'}`} />
             {c.in_progress && <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 rounded font-medium">In Progress</span>}
             {c.units && <span className="text-[10px] text-gray-400">{c.units}u</span>}
           </span>

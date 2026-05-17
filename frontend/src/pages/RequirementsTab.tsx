@@ -358,8 +358,8 @@ export default function RequirementsTab() {
             <button
               key={r.target}
               onClick={() => setSelectedTarget(r.target)}
-              className={`px-3.5 py-1.5 rounded-full text-sm font-medium transition-all duration-150 ${
-                isActive ? `${color.bg} ${color.text}` : `bg-white border border-gray-100 text-gray-500 hover:border-gray-200`
+              className={`px-3.5 py-1.5 rounded-full text-sm font-medium transition-all duration-150 cursor-pointer ${
+                isActive ? `${color.bg} ${color.text}` : `bg-white border border-gray-100 text-gray-500 hover:border-gray-300`
               }`}
             >
               {r.school_name}
@@ -370,8 +370,8 @@ export default function RequirementsTab() {
         {hasCalgetc && (
           <button
             onClick={() => setSelectedTarget(CALGETC_FILTER)}
-            className={`px-3.5 py-1.5 rounded-full text-sm font-medium transition-all duration-150 ${
-              isCalgetcView ? 'bg-emerald-100 text-gray-700' : 'bg-white border border-gray-100 text-gray-500 hover:border-gray-200'
+            className={`px-3.5 py-1.5 rounded-full text-sm font-medium transition-all duration-150 cursor-pointer ${
+              isCalgetcView ? 'bg-emerald-100 text-gray-700' : 'bg-white border border-gray-100 text-gray-500 hover:border-gray-300'
             }`}
           >
             Cal-GETC
@@ -380,8 +380,8 @@ export default function RequirementsTab() {
         {hasCsu && (
           <button
             onClick={() => setSelectedTarget(GOLDEN4_FILTER)}
-            className={`px-3.5 py-1.5 rounded-full text-sm font-medium transition-all duration-150 ${
-              isGolden4View ? 'bg-amber-100 text-gray-700' : 'bg-white border border-gray-100 text-gray-500 hover:border-gray-200'
+            className={`px-3.5 py-1.5 rounded-full text-sm font-medium transition-all duration-150 cursor-pointer ${
+              isGolden4View ? 'bg-amber-100 text-gray-700' : 'bg-white border border-gray-100 text-gray-500 hover:border-gray-300'
             }`}
           >
             CSU Golden 4
@@ -392,36 +392,36 @@ export default function RequirementsTab() {
       <div className="sticky top-[109px] z-10 -mx-8 px-8 py-4 mb-6 bg-[#f5f5f7]/95 backdrop-blur border-b border-gray-200/60">
         <div className="flex items-center gap-6">
           <div className="flex-1">
-            <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Required</span>
-              <span className="text-xs font-semibold text-gray-600">
+              <span className="text-xs font-bold text-indigo-600">
                 {satisfied.length} / {satisfied.length + unsatisfied.length}
               </span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-1">
+            <div className="w-full bg-gray-200/80 rounded-full h-1.5">
               <div
-                className="bg-indigo-500 h-1 rounded-full transition-all duration-500"
+                className="bg-indigo-500 h-1.5 rounded-full transition-all duration-500"
                 style={{ width: `${satisfied.length + unsatisfied.length > 0 ? (satisfied.length / (satisfied.length + unsatisfied.length)) * 100 : 0}%` }}
               />
             </div>
           </div>
           <div className="w-px h-6 bg-gray-200 shrink-0" />
           <div className="flex-1">
-            <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Recommended</span>
-              <span className="text-xs font-semibold text-gray-600">
+              <span className="text-xs font-bold text-violet-600">
                 {satisfiedRec.length} / {satisfiedRec.length + unsatisfiedRec.length}
               </span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-1">
+            <div className="w-full bg-gray-200/80 rounded-full h-1.5">
               <div
-                className="bg-violet-500 h-1 rounded-full transition-all duration-500"
+                className="bg-violet-500 h-1.5 rounded-full transition-all duration-500"
                 style={{ width: `${satisfiedRec.length + unsatisfiedRec.length > 0 ? (satisfiedRec.length / (satisfiedRec.length + unsatisfiedRec.length)) * 100 : 0}%` }}
               />
             </div>
           </div>
         </div>
-        <p className="text-[11px] text-gray-400 mt-2.5">Hover a badge for the major name. If multiple options appear, pick any one.</p>
+        <p className="text-[10px] text-gray-400 mt-3 font-medium">Hover a badge for the major name. Pick any one option if multiple appear.</p>
       </div>
 
       {unsatisfied.length > 0 && (

@@ -153,14 +153,14 @@ export default function TransferTargetsTab() {
       </div>
 
       {savedTargets.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 mb-4">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Saved targets</p>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-4">
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Saved targets</p>
           <div className="space-y-2">
             {savedTargets.map((t) => (
-              <div key={t.id} className="bg-gray-50 rounded-xl px-4 py-3">
+              <div key={t.id} className="rounded-xl border border-gray-100 overflow-hidden">
                 {editingId === t.id ? (
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium text-gray-900">{t.receiving_institution_name}</p>
+                  <div className="px-4 py-3 space-y-2.5">
+                    <p className="text-sm font-semibold text-gray-900">{t.receiving_institution_name}</p>
                     <Select
                       value={editMajorKey}
                       disabled={majorsMap[t.receiving_institution_id] === 'loading'}
@@ -171,38 +171,18 @@ export default function TransferTargetsTab() {
                         : []}
                     />
                     <div className="flex gap-3">
-                      <button
-                        onClick={() => handleEdit(t)}
-                        className="text-xs text-indigo-600 hover:text-indigo-800 font-medium transition-colors"
-                      >
-                        Save
-                      </button>
-                      <button
-                        onClick={cancelEdit}
-                        className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
-                      >
-                        Cancel
-                      </button>
+                      <button onClick={() => handleEdit(t)} className="text-xs text-indigo-600 hover:text-indigo-700 font-semibold transition-colors cursor-pointer">Save</button>
+                      <button onClick={cancelEdit} className="text-xs text-gray-400 hover:text-gray-600 transition-colors cursor-pointer">Cancel</button>
                     </div>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50/60 transition-colors duration-100">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{t.receiving_institution_name}</p>
-                      <p className="text-xs text-gray-500 truncate">{t.major_name}</p>
+                      <p className="text-sm font-semibold text-gray-900 truncate">{t.receiving_institution_name}</p>
+                      <p className="text-xs text-gray-400 truncate mt-0.5">{t.major_name}</p>
                     </div>
-                    <button
-                      onClick={() => startEdit(t)}
-                      className="text-indigo-400 hover:text-indigo-600 text-xs shrink-0 transition-colors"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => deleteTarget(t.id!)}
-                      className="text-red-400 hover:text-red-600 text-xs shrink-0 transition-colors"
-                    >
-                      Remove
-                    </button>
+                    <button onClick={() => startEdit(t)} className="text-xs text-indigo-500 hover:text-indigo-700 shrink-0 font-medium transition-colors cursor-pointer">Edit</button>
+                    <button onClick={() => deleteTarget(t.id!)} className="text-xs text-gray-300 hover:text-red-400 shrink-0 transition-colors cursor-pointer">Remove</button>
                   </div>
                 )}
               </div>

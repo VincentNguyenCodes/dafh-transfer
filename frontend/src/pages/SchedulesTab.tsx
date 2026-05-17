@@ -93,16 +93,27 @@ export default function SchedulesTab() {
         </div>
         <button
           onClick={() => setCreating(true)}
-          className="bg-indigo-600 text-white text-sm font-medium px-5 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+          className="bg-indigo-600 text-white text-sm font-semibold px-5 py-2 rounded-xl hover:bg-indigo-500 transition-all duration-150 cursor-pointer shadow-sm"
         >
           + Create new schedule
         </button>
       </div>
 
       {schedules.length === 0 ? (
-        <div className="bg-gray-50 border border-gray-200 rounded-2xl p-12 text-center">
-          <p className="text-gray-700 font-semibold mb-1">No schedules yet</p>
-          <p className="text-gray-500 text-sm">Create your first schedule to start planning your classes quarter by quarter.</p>
+        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-14 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-indigo-50 flex items-center justify-center mx-auto mb-4">
+            <svg className="w-7 h-7 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <p className="text-gray-900 font-semibold mb-1">No schedules yet</p>
+          <p className="text-gray-500 text-sm mb-5 max-w-xs mx-auto">Plan your classes quarter by quarter to stay on track for transfer.</p>
+          <button
+            onClick={() => setCreating(true)}
+            className="bg-indigo-600 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-indigo-500 transition-all duration-150 cursor-pointer shadow-sm"
+          >
+            Create your first schedule
+          </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -110,13 +121,13 @@ export default function SchedulesTab() {
             <button
               key={s.id}
               onClick={() => setViewing(s)}
-              className="text-left rounded-2xl border border-gray-100 bg-white shadow-sm p-5 flex flex-col hover:border-indigo-300 hover:shadow-md transition-all"
+              className="text-left rounded-2xl border border-gray-100 bg-white shadow-sm p-5 flex flex-col hover:shadow-md hover:border-indigo-200 transition-all duration-200 cursor-pointer group"
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="flex-1 min-w-0">
-                  <p className="text-base font-semibold text-gray-900 truncate">{s.name}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    {s.schedule_type === 'optimal' ? 'Optimal plan' : 'Custom plan'} · Updated {new Date(s.updated_at).toLocaleDateString()}
+                  <p className="text-sm font-semibold text-gray-900 truncate group-hover:text-indigo-700 transition-colors duration-150">{s.name}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {s.schedule_type === 'optimal' ? 'Optimal plan' : 'Custom plan'} · {new Date(s.updated_at).toLocaleDateString()}
                   </p>
                 </div>
                 <span
@@ -125,20 +136,24 @@ export default function SchedulesTab() {
                   onClick={(e) => { e.stopPropagation(); deleteSchedule(s.id) }}
                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); deleteSchedule(s.id) } }}
                   aria-disabled={busy === s.id}
-                  className="text-xs text-gray-400 hover:text-red-500 transition-colors shrink-0 cursor-pointer"
+                  className="text-xs text-gray-300 hover:text-red-400 transition-colors shrink-0 cursor-pointer ml-2"
                 >
                   Delete
                 </span>
               </div>
-              <div className="text-xs text-gray-500">
-                {s.quarters.length} quarter{s.quarters.length === 1 ? '' : 's'}
-                {' · '}
-                {s.class_bank.length} unplaced
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[11px] font-medium bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                  {s.quarters.length} quarter{s.quarters.length === 1 ? '' : 's'}
+                </span>
+                {s.class_bank.length > 0 && (
+                  <span className="text-[11px] font-medium bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                    {s.class_bank.length} unplaced
+                  </span>
+                )}
                 {s.ge_path && (
-                  <>
-                    {' · '}
-                    <span className="text-emerald-700">Cal-GETC</span>
-                  </>
+                  <span className="text-[11px] font-medium bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full">
+                    Cal-GETC
+                  </span>
                 )}
               </div>
             </button>

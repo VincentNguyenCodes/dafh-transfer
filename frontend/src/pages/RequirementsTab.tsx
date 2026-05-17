@@ -135,14 +135,9 @@ function buildAggregated(
   return Array.from(map.values())
 }
 
-function shortSchool(name: string) {
-  const parts = name.split(/[\s,]+/).filter(Boolean)
-  return parts.length > 2 ? parts[parts.length - 1] : name
-}
-
 function SchoolTags({ badges }: { badges: Badge[] }) {
   return (
-    <div className="flex gap-1 shrink-0 ml-2">
+    <div className="flex gap-1 shrink-0 ml-2 flex-wrap justify-end">
       {badges.slice(0, 3).map((b, i) => {
         const color = BADGE_COLORS[b.colorIdx]
         return (
@@ -151,7 +146,7 @@ function SchoolTags({ badges }: { badges: Badge[] }) {
             title={`${b.major_name}${b.receiving_name ? ` · ${b.receiving_name}` : ''}`}
             className={`text-[10px] px-1.5 py-0.5 rounded-md font-semibold ${color.bg} ${color.text} ${b.satisfied ? 'opacity-40' : ''} whitespace-nowrap`}
           >
-            {shortSchool(b.school_name)}
+            {b.school_name}
           </span>
         )
       })}
@@ -386,7 +381,7 @@ export default function RequirementsTab() {
               const isActive = selectedTarget === r.target
               return (
                 <button key={r.target} onClick={() => setSelectedTarget(r.target)} className={`px-3 py-1 rounded-full text-xs font-semibold transition-all duration-150 cursor-pointer ${isActive ? `${color.bg} ${color.text}` : 'bg-white/60 border border-white/60 text-gray-500 hover:border-gray-200'}`}>
-                  {shortSchool(r.school_name)}
+                  {r.school_name}
                 </button>
               )
             })}

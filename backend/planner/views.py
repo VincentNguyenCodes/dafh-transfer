@@ -1,3 +1,5 @@
+import anthropic
+from django.conf import settings
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -166,3 +168,53 @@ class ScheduleDetailView(APIView):
             return Response(status=status.HTTP_404_NOT_FOUND)
         s.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ChatView(APIView):
+    def post(self, request):
+        user_message = (request.data.get('message') or '').strip()
+        history = request.data.get('history', [])
+        if not user_message:
+            return Response({'error': 'message required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        from transcripts.models import TranscriptEntry
+        entries = list(TranscriptEntry.objects.filter(user=request.user).values('course_code', 'course_name', 'status'))
+        targets = list(TransferTarget.objects.filter(user=request.user).values('receiving_institution_name', 'major_name'))
+
+        courses_str = ', '.join(
+            f"{e['course_code']} ({'in progress' if e['status'] == 'in_progress' else 'done'})"
+            for e in entries
+        ) or 'None added yet'
+
+        targets_str = ', '.join(
+            f"{t['receiving_institution_name']} ({t['major_name']})"
+            for t in targets
+        ) or 'None added yet'
+
+        system = (
+            "You are a knowledgeable, friendly transfer advisor for De Anza and Foothill Community College students. "
+            "Help students understand ASSIST.org articulation, transfer requirements, GE patterns (Cal-GETC), "
+            "and how to plan courses for UC and CSU transfer. Keep answers concise, warm, and practical. "
+            "Use plain language — no jargon unless the student uses it first.\n\n"
+            f"Student's courses on file: {courses_str}\n"
+            f"Transfer targets: {targets_str}"
+        )
+
+        msgs = [
+            {'role': m['role'], 'content': m['content']}
+            for m in (history or [])[-10:]
+            if m.get('role') in ('user', 'assistant') and m.get('content')
+        ]
+        msgs.append({'role': 'user', 'content': user_message})
+
+        try:
+            client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
+            response = client.messages.create(
+                model='claude-haiku-4-5-20251001',
+                max_tokens=500,
+                system=system,
+                messages=msgs,
+            )
+            return Response({'reply': response.content[0].text})
+        except Exception:
+            return Response({'error': 'Advisor unavailable. Please try again.'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)

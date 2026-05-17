@@ -829,7 +829,7 @@ def compute_remaining(user, ge_path: str = '') -> list:
                     )
                 ]
 
-        from .ge_requirements import build_calgetc_requirements, CALGETC_APPLIES_TO
+        from .ge_requirements import build_calgetc_requirements, CALGETC_APPLIES_TO, CSU_INSTITUTION_IDS
         committed = set()
         for req in all_requirements:
             if req.get('no_articulation') or not req.get('options'):
@@ -858,6 +858,7 @@ def compute_remaining(user, ge_path: str = '') -> list:
             'target': f"{target.receiving_institution_name} — {target.major_name}",
             'school_name': target.receiving_institution_name,
             'major_name': target.major_name,
+            'is_csu': target.receiving_institution_id in CSU_INSTITUTION_IDS,
             'ge_path': ge_path,
             'ge_approved_codes': get_ge_approved_codes(ge_path),
             'prereq_map': PREREQS,

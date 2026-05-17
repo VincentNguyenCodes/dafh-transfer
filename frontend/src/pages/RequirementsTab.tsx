@@ -47,6 +47,7 @@ type TargetResult = {
   target: string
   school_name: string
   major_name: string
+  is_csu?: boolean
   requirements: Requirement[]
   recommended: Requirement[]
   elective_series: ElectiveGroup[]
@@ -54,6 +55,10 @@ type TargetResult = {
   total: number
   satisfied: number
 }
+
+const CALGETC_FILTER = '__calgetc__'
+const GOLDEN4_FILTER = '__golden4__'
+const GOLDEN_4_CODES = new Set(['CALGETC_1A', 'CALGETC_1B', 'CALGETC_1C', 'CALGETC_2'])
 
 type Badge = {
   target: string
@@ -278,7 +283,18 @@ export default function RequirementsTab() {
   const aggregated = buildAggregated(results, targetColorMap, (r) => r.requirements)
   const aggregatedRec = buildAggregated(results, targetColorMap, (r) => r.recommended)
 
-  const visibleResults = selectedTarget ? results.filter((r) => r.target === selectedTarget) : results
+  const isCalgetcReq = (req: AggregatedReq) => req.badges.some((b) => b.receiving_code.startsWith('CALGETC_'))
+  const isGolden4Req = (req: AggregatedReq) => req.badges.some((b) => GOLDEN_4_CODES.has(b.receiving_code))
+
+  const hasCalgetc = aggregated.some(isCalgetcReq)
+  const hasCsu = results.some((r) => r.is_csu)
+  const isCalgetcView = selectedTarget === CALGETC_FILTER
+  const isGolden4View = selectedTarget === GOLDEN4_FILTER
+  const isSpecialView = isCalgetcView || isGolden4View
+
+  const visibleResults = isSpecialView
+    ? []
+    : selectedTarget ? results.filter((r) => r.target === selectedTarget) : results
   const electiveGroups: ElectiveGroup[] = []
   const seenElectiveLabels = new Set<string>()
   for (const r of visibleResults) {
@@ -292,13 +308,21 @@ export default function RequirementsTab() {
   const unsatisfiedElectiveGroups = electiveGroups.filter((g) => !g.series.some((s) => s.satisfied))
   const satisfiedElectiveGroups = electiveGroups.filter((g) => g.series.some((s) => s.satisfied))
 
-  const visible = selectedTarget
-    ? aggregated.filter((r) => r.badges.some((b) => b.target === selectedTarget))
-    : aggregated
+  const visible = (() => {
+    if (isCalgetcView) return aggregated.filter(isCalgetcReq)
+    if (isGolden4View) return aggregated.filter(isGolden4Req)
+    const schoolReqs = aggregated.filter((r) => !isCalgetcReq(r))
+    return selectedTarget
+      ? schoolReqs.filter((r) => r.badges.some((b) => b.target === selectedTarget))
+      : schoolReqs
+  })()
 
-  const visibleRec = selectedTarget
-    ? aggregatedRec.filter((r) => r.badges.some((b) => b.target === selectedTarget))
-    : aggregatedRec
+  const visibleRec = (() => {
+    if (isSpecialView) return []
+    return selectedTarget
+      ? aggregatedRec.filter((r) => r.badges.some((b) => b.target === selectedTarget))
+      : aggregatedRec
+  })()
 
   const unsatisfied = visible.filter((r) => !r.satisfied && !r.no_articulation)
   const satisfied = visible.filter((r) => r.satisfied)
@@ -312,14 +336,20 @@ export default function RequirementsTab() {
       <div className="mb-5 flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold text-gray-900 tracking-tight mb-1">Requirements</h2>
-          <p className="text-gray-400 text-sm">All classes you still need across your transfer targets.</p>
+          <p className="text-gray-400 text-sm">
+            {isCalgetcView
+              ? 'General education areas required for UC, CSU, and AICCU transfer.'
+              : isGolden4View
+                ? 'CSU Golden 4. Must be completed with C- or higher before transfer.'
+                : 'All classes you still need across your transfer targets.'}
+          </p>
         </div>
         <button onClick={load} className="text-sm text-gray-400 hover:text-gray-700 font-medium transition-colors duration-150 px-3 py-1.5 rounded-xl hover:bg-white shrink-0">
           Refresh
         </button>
       </div>
 
-      <div className="flex gap-2 flex-wrap mb-6">
+      <div className="flex gap-2 flex-wrap mb-6 items-center">
         {results.map((r) => {
           const colorIdx = targetColorMap.get(r.target) ?? 0
           const color = BADGE_COLORS[colorIdx]
@@ -336,6 +366,27 @@ export default function RequirementsTab() {
             </button>
           )
         })}
+        {(hasCalgetc || hasCsu) && <span className="w-px h-5 bg-gray-200 mx-1" />}
+        {hasCalgetc && (
+          <button
+            onClick={() => setSelectedTarget(CALGETC_FILTER)}
+            className={`px-3.5 py-1.5 rounded-full text-sm font-medium transition-all duration-150 ${
+              isCalgetcView ? 'bg-emerald-100 text-gray-700' : 'bg-white border border-gray-100 text-gray-500 hover:border-gray-200'
+            }`}
+          >
+            Cal-GETC
+          </button>
+        )}
+        {hasCsu && (
+          <button
+            onClick={() => setSelectedTarget(GOLDEN4_FILTER)}
+            className={`px-3.5 py-1.5 rounded-full text-sm font-medium transition-all duration-150 ${
+              isGolden4View ? 'bg-amber-100 text-gray-700' : 'bg-white border border-gray-100 text-gray-500 hover:border-gray-200'
+            }`}
+          >
+            CSU Golden 4
+          </button>
+        )}
       </div>
 
       <div className="sticky top-[109px] z-10 -mx-8 px-8 py-4 mb-6 bg-[#f5f5f7]/95 backdrop-blur border-b border-gray-200/60">

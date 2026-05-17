@@ -139,82 +139,88 @@ function AggregatedRequirementRow({ req }: { req: AggregatedReq }) {
   const remaining = req.options.filter((o) => !o.satisfied)
 
   return (
-    <div className={`rounded-xl border px-4 py-3.5 ${req.satisfied ? 'bg-green-50 border-green-100' : 'bg-white border-gray-100'}`}>
-      <div className="flex gap-1.5 mb-3 flex-wrap">
-        {req.badges.map((b, i) => {
-          const color = BADGE_COLORS[b.colorIdx]
+    <div className={`rounded-xl overflow-hidden flex ${req.satisfied ? 'bg-green-50/70 border border-green-100' : 'bg-white border border-gray-100 shadow-sm'}`}>
+      <div className={`w-1 shrink-0 ${req.satisfied ? 'bg-green-400' : req.no_articulation ? 'bg-gray-200' : 'bg-indigo-500'}`} />
+      <div className="flex-1 px-4 py-3.5 min-w-0">
+        <div className="flex gap-1.5 mb-2.5 flex-wrap">
+          {req.badges.map((b, i) => {
+            const color = BADGE_COLORS[b.colorIdx]
+            return (
+              <span
+                key={i}
+                title={`${b.major_name}${b.receiving_name ? ` · ${b.receiving_name}` : ''}`}
+                className={`text-[11px] px-2 py-0.5 rounded-full font-semibold ${color.bg} ${color.text} ${b.satisfied ? 'opacity-35' : ''}`}
+              >
+                {b.school_name}{b.receiving_code ? ` · ${fmtCode(b.receiving_code)}` : ''}
+              </span>
+            )
+          })}
+        </div>
+
+        {req.no_articulation && (
+          <p className="text-xs text-gray-400 italic">No community college articulation available</p>
+        )}
+
+        {!req.no_articulation && req.satisfied && (() => {
+          const completedOpt = req.options.find((o) => o.satisfied)
+          if (!completedOpt) return <p className="text-xs text-gray-500">Already satisfied</p>
           return (
-            <span
-              key={i}
-              title={`${b.major_name}${b.receiving_name ? ` · ${b.receiving_name}` : ''}`}
-              className={`text-xs px-2 py-0.5 rounded-full font-medium ${color.bg} ${color.text} ${b.satisfied ? 'opacity-40 line-through' : ''}`}
-            >
-              {b.school_name}{b.receiving_code ? ` · ${fmtCode(b.receiving_code)}` : ''}
-            </span>
+            <div className="space-y-1.5">
+              {[...completedOpt.courses].sort((a, b) => a.code.localeCompare(b.code)).map((c, ci) => (
+                <div key={ci} className="flex items-center gap-2.5">
+                  <span className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center shrink-0">
+                    <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </span>
+                  <span className="font-mono text-xs font-bold bg-green-100 text-green-800 px-2 py-0.5 rounded-md line-through">{c.code}</span>
+                  <span className="text-xs text-gray-400 truncate">{c.name}</span>
+                  {c.units && <span className="text-xs text-gray-400 shrink-0 ml-auto">{c.units}u</span>}
+                </div>
+              ))}
+            </div>
           )
-        })}
-      </div>
+        })()}
 
-      {req.no_articulation && (
-        <p className="text-xs text-gray-400 italic">No community college articulation available</p>
-      )}
-
-      {!req.no_articulation && req.satisfied && (() => {
-        const completedOpt = req.options.find((o) => o.satisfied)
-        if (!completedOpt) return <p className="text-xs text-gray-600">Already satisfied</p>
-        return (
-          <div className="space-y-1">
-            {[...completedOpt.courses].sort((a, b) => a.code.localeCompare(b.code)).map((c, ci) => (
-              <div key={ci} className="flex items-center gap-2">
-                <span className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center shrink-0">
-                  <span className="text-white text-xs font-bold">✓</span>
-                </span>
-                <span className="font-mono text-sm font-semibold text-gray-500 line-through">{c.code}</span>
-                <span className="text-xs text-gray-500 truncate">{c.name}</span>
-                {c.units && <span className="text-xs text-gray-400 shrink-0 ml-auto">{c.units}u</span>}
+        {!req.no_articulation && !req.satisfied && remaining.length > 0 && (
+          <div className="space-y-2">
+            {remaining.length > 1 && (
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Pick one option</p>
+            )}
+            {remaining.map((opt, oi) => (
+              <div key={oi} className={`rounded-lg px-3 py-2.5 ${remaining.length > 1 ? 'bg-gray-50 border border-gray-100' : ''}`}>
+                {remaining.length > 1 && (
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">Option {oi + 1}</p>
+                )}
+                <div className="flex flex-wrap gap-x-3 gap-y-1.5 items-center">
+                  {[...opt.courses].sort((a, b) => a.code.localeCompare(b.code)).map((c, ci) => (
+                    <span key={ci} className="flex items-center gap-1.5">
+                      {ci > 0 && <span className="text-[10px] font-bold text-gray-400">+</span>}
+                      <span className={`font-mono text-xs font-bold px-2 py-0.5 rounded-md ${
+                        c.completed ? 'bg-gray-100 text-gray-400 line-through' : 'bg-indigo-50 text-indigo-800'
+                      }`}>
+                        {c.code}
+                      </span>
+                      {c.name && c.name !== c.code && (
+                        <span className="text-xs text-gray-400 max-w-[160px] truncate">{c.name}</span>
+                      )}
+                      {c.in_progress && (
+                        <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-medium">In Progress</span>
+                      )}
+                      {c.units && (
+                        <span className="text-[10px] text-gray-400">{c.units}u</span>
+                      )}
+                    </span>
+                  ))}
+                </div>
               </div>
             ))}
+            {remaining.length > 1 && (
+              <p className="text-[10px] text-gray-400">Options are equivalent — pick whichever fits your schedule.</p>
+            )}
           </div>
-        )
-      })()}
-
-      {!req.no_articulation && !req.satisfied && remaining.length > 0 && (
-        <div className="space-y-2">
-          {remaining.length > 1 && (
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Pick one option:</p>
-          )}
-          {remaining.map((opt, oi) => (
-            <div key={oi} className={`rounded-xl px-3 py-2 ${remaining.length > 1 ? 'bg-gray-50 border border-gray-100' : ''}`}>
-              {remaining.length > 1 && (
-                <p className="text-xs font-semibold text-gray-600 mb-1">Option {oi + 1}</p>
-              )}
-              <div className="space-y-1">
-                {[...opt.courses].sort((a, b) => a.code.localeCompare(b.code)).map((c, ci) => (
-                  <div key={ci} className="flex items-center gap-2">
-                    {opt.courses.length > 1 && ci > 0 && (
-                      <span className="text-xs text-gray-400 w-6 text-center">+</span>
-                    )}
-                    {opt.courses.length === 1 && <span className="w-6" />}
-                    <span className={`font-mono text-sm font-semibold ${c.completed ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
-                      {c.code}
-                    </span>
-                    <span className="text-xs text-gray-500 truncate">{c.name}</span>
-                    {c.in_progress && (
-                      <span className="text-xs bg-yellow-100 text-gray-700 px-1.5 py-0.5 rounded-full shrink-0">In Progress</span>
-                    )}
-                    {c.units && (
-                      <span className="text-xs text-gray-400 shrink-0 ml-auto">{c.units}u</span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-          {remaining.length > 1 && (
-            <p className="text-xs text-gray-500 pl-1">Options are equivalent, choose whichever fits your schedule.</p>
-          )}
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }

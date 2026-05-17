@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../api/client'
+import AdvisorChat from '../components/AdvisorChat'
 import ClassesTab from './ClassesTab'
 import RequirementsTab from './RequirementsTab'
 import SchedulesTab from './SchedulesTab'
@@ -189,6 +190,8 @@ export default function Dashboard() {
         {activeTab === 'targets' && <TransferTargetsTab />}
         {activeTab === 'classes' && <ClassesTab />}
       </main>
+
+      <AdvisorChat />
     </div>
   )
 }

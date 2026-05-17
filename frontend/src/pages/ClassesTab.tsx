@@ -146,7 +146,7 @@ export default function ClassesTab() {
             <button
               onClick={() => handleParse(school)}
               disabled={!pasteText[school].trim() || parsing[school]}
-              className="mt-2 text-sm bg-indigo-50 text-indigo-600 hover:bg-indigo-100 font-medium px-4 py-2 rounded-xl disabled:opacity-40 transition-all duration-150"
+              className="mt-2 text-sm bg-indigo-50 text-indigo-600 hover:bg-indigo-100 font-medium px-4 py-2 rounded-xl disabled:opacity-40 transition-all duration-150 cursor-pointer"
             >
               {parsing[school] ? 'Parsing...' : 'Parse transcript'}
             </button>
@@ -246,7 +246,7 @@ export default function ClassesTab() {
       <button
         onClick={handleSave}
         disabled={saving}
-        className="w-full bg-indigo-600 text-white rounded-2xl py-4 font-semibold text-sm hover:bg-indigo-500 hover:shadow-lg hover:shadow-indigo-500/20 disabled:opacity-40 transition-all duration-200 tracking-tight"
+        className="w-full bg-indigo-600 text-white rounded-2xl py-3.5 font-semibold text-sm hover:bg-indigo-500 hover:shadow-md hover:shadow-indigo-300/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 tracking-tight cursor-pointer"
       >
         {saving ? 'Saving...' : 'Save Classes'}
       </button>

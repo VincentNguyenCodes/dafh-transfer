@@ -267,7 +267,7 @@ export default function TransferTargetsTab() {
       <button
         onClick={handleSave}
         disabled={saving}
-        className="w-full bg-indigo-600 text-white rounded-2xl py-4 font-semibold text-sm hover:bg-indigo-700 disabled:opacity-50 transition-colors shadow-indigo-200"
+        className="w-full bg-indigo-600 text-white rounded-2xl py-3.5 font-semibold text-sm hover:bg-indigo-500 hover:shadow-md hover:shadow-indigo-300/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 cursor-pointer"
       >
         {saving ? 'Saving...' : 'Save Target'}
       </button>

@@ -23,7 +23,7 @@ const TABS: { id: Tab; label: string }[] = [
 
 function TopBar({ children, onLogout }: { children?: React.ReactNode; onLogout: () => void }) {
   return (
-    <header className="bg-white border-b border-gray-100 px-6 py-3.5 sticky top-0 z-30">
+    <header className="bg-white/90 backdrop-blur-md border-b border-gray-100 px-6 py-3.5 sticky top-0 z-30">
       <div className="max-w-5xl mx-auto flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <img src="/src/assets/logo.png" alt="DAFH" className="w-6 h-6 object-contain" />
@@ -33,7 +33,7 @@ function TopBar({ children, onLogout }: { children?: React.ReactNode; onLogout: 
           {children}
           <button
             onClick={onLogout}
-            className="text-xs text-gray-400 hover:text-gray-700 font-medium transition-colors duration-150"
+            className="text-xs text-gray-400 hover:text-gray-600 font-medium transition-colors duration-150 px-2.5 py-1.5 rounded-lg hover:bg-gray-100 cursor-pointer"
           >
             Log out
           </button>
@@ -45,15 +45,15 @@ function TopBar({ children, onLogout }: { children?: React.ReactNode; onLogout: 
 
 function LoadingBar() {
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 h-[2px] bg-gray-100 overflow-hidden">
+    <div className="fixed top-0 left-0 right-0 z-50 h-[2px] bg-gray-200/60 overflow-hidden">
       <div
-        className="h-full bg-indigo-500"
-        style={{ animation: 'loadbar 1.4s ease-in-out infinite', width: '40%' }}
+        className="h-full bg-indigo-500/70 rounded-full"
+        style={{ animation: 'loadbar 1.6s cubic-bezier(0.4,0,0.2,1) infinite', width: '45%' }}
       />
       <style>{`
         @keyframes loadbar {
-          0% { transform: translateX(-100%); }
-          100% { transform: translateX(350%); }
+          0% { transform: translateX(-120%); }
+          100% { transform: translateX(320%); }
         }
       `}</style>
     </div>

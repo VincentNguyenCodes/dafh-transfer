@@ -431,29 +431,37 @@ export default function RequirementsTab() {
       </div>
 
       {unsatisfied.length > 0 && (
-        <div className="mb-4 bg-white rounded-2xl border border-gray-100 overflow-hidden animate-fade-up stagger-1">
-          <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold text-gray-900 tracking-tight">Required - Have Not Completed</p>
-              <p className="text-xs text-gray-400 mt-0.5">Must complete for admission</p>
+        <div className="mb-4 rounded-2xl overflow-hidden shadow-sm animate-fade-up stagger-1 border border-gray-100">
+          <div className="flex">
+            <div className="w-1 bg-indigo-500 shrink-0" />
+            <div className="flex-1 bg-white">
+              <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-gray-900 tracking-tight">Still Needed — Required</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Must complete for admission</p>
+                </div>
+                <span className="text-xs font-bold text-white bg-indigo-500 px-2.5 py-1 rounded-full">
+                  {unsatisfied.length}
+                </span>
+              </div>
+              <div className="p-4 space-y-2">
+                {unsatisfied.map((req) => (
+                  <AggregatedRequirementRow key={req.key} req={req} />
+                ))}
+              </div>
             </div>
-            <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full">
-              {unsatisfied.length}
-            </span>
-          </div>
-          <div className="p-4 space-y-2">
-            {unsatisfied.map((req) => (
-              <AggregatedRequirementRow key={req.key} req={req} />
-            ))}
           </div>
         </div>
       )}
 
       {(unsatisfiedRec.length > 0 || unsatisfiedElectiveGroups.length > 0) && (
-        <div className="mb-4 bg-white rounded-2xl border border-gray-100 overflow-hidden animate-fade-up stagger-2">
+        <div className="mb-4 rounded-2xl overflow-hidden shadow-sm animate-fade-up stagger-2 border border-gray-100">
+          <div className="flex">
+            <div className="w-1 bg-violet-400 shrink-0" />
+            <div className="flex-1 bg-white">
           <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
             <div>
-              <p className="text-sm font-semibold text-gray-900 tracking-tight">Recommended - Have Not Completed</p>
+              <p className="text-sm font-semibold text-gray-900 tracking-tight">Still Needed — Recommended</p>
               <p className="text-xs text-gray-400 mt-0.5">Not required, but saves units after transfer</p>
             </div>
             <span className="text-xs font-bold text-violet-600 bg-violet-50 px-2.5 py-1 rounded-full">
@@ -465,29 +473,25 @@ export default function RequirementsTab() {
               <AggregatedRequirementRow key={req.key} req={req} />
             ))}
             {unsatisfiedElectiveGroups.map((group) => (
-              <div key={group.label} className="rounded-2xl border border-violet-100 overflow-hidden">
-                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide px-4 pt-3 pb-1">{group.label}</p>
+              <div key={group.label} className="rounded-xl border border-violet-100 overflow-hidden">
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest px-4 pt-3 pb-1">{group.label}</p>
                 <div className="p-3 space-y-2">
                   {group.series.map((s) => (
                     <div key={s.name} className={`rounded-xl border px-4 py-3 ${s.satisfied ? 'bg-green-50 border-green-100' : 'bg-gray-50 border-gray-100'}`}>
                       <div className="flex items-center justify-between mb-2">
                         <p className="text-sm font-semibold text-gray-900">{s.name}</p>
-                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${s.satisfied ? 'bg-green-100 text-gray-700' : 'bg-white text-gray-500 border border-gray-200'}`}>
-                          {s.completed_count}/{s.total} done
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${s.satisfied ? 'bg-green-100 text-green-700' : 'bg-white text-gray-500 border border-gray-200'}`}>
+                          {s.completed_count}/{s.total}
                         </span>
                       </div>
-                      <div className="space-y-1">
+                      <div className="flex flex-wrap gap-1.5">
                         {[...s.courses].sort((a, b) => a.code.localeCompare(b.code)).map((c, ci) => (
-                          <div key={ci} className="flex items-center gap-2">
-                            {c.completed
-                              ? <span className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center shrink-0"><span className="text-white text-xs font-bold">✓</span></span>
-                              : <span className="w-5 h-5 rounded-full border-2 border-gray-200 shrink-0" />
-                            }
-                            <span className={`font-mono text-sm font-semibold ${c.completed ? 'text-gray-500 line-through' : 'text-gray-900'}`}>{c.code}</span>
-                            {c.in_progress && (
-                              <span className="text-xs bg-yellow-100 text-gray-700 px-1.5 py-0.5 rounded-full">In Progress</span>
-                            )}
-                          </div>
+                          <span key={ci} className={`font-mono text-xs font-bold px-2 py-0.5 rounded-md ${
+                            c.completed ? 'bg-green-100 text-green-700 line-through' : 'bg-gray-100 text-gray-700'
+                          }`}>
+                            {c.code}
+                            {c.in_progress && <span className="ml-1 text-amber-500 not-italic">·</span>}
+                          </span>
                         ))}
                       </div>
                     </div>
@@ -496,17 +500,22 @@ export default function RequirementsTab() {
               </div>
             ))}
           </div>
+            </div>
+          </div>
         </div>
       )}
 
       {satisfied.length > 0 && (
-        <div className="mb-4 bg-white rounded-2xl border border-gray-100 overflow-hidden">
+        <div className="mb-4 rounded-2xl overflow-hidden border border-gray-100">
+          <div className="flex">
+            <div className="w-1 bg-green-400 shrink-0" />
+            <div className="flex-1 bg-white">
           <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
             <div>
-              <p className="text-sm font-semibold text-gray-900 tracking-tight">Completed Required</p>
+              <p className="text-sm font-semibold text-gray-900 tracking-tight">Completed — Required</p>
               <p className="text-xs text-gray-400 mt-0.5">Required courses you have already finished</p>
             </div>
-            <span className="text-xs font-bold text-green-600 bg-green-50 px-2.5 py-1 rounded-full">
+            <span className="text-xs font-bold text-green-700 bg-green-50 px-2.5 py-1 rounded-full">
               {satisfied.length}
             </span>
           </div>
@@ -515,17 +524,22 @@ export default function RequirementsTab() {
               <AggregatedRequirementRow key={req.key} req={req} />
             ))}
           </div>
+            </div>
+          </div>
         </div>
       )}
 
       {(satisfiedRec.length > 0 || satisfiedElectiveGroups.length > 0) && (
-        <div className="mb-4 bg-white rounded-2xl border border-gray-100 overflow-hidden">
+        <div className="mb-4 rounded-2xl overflow-hidden border border-gray-100">
+          <div className="flex">
+            <div className="w-1 bg-gray-300 shrink-0" />
+            <div className="flex-1 bg-white">
           <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
             <div>
-              <p className="text-sm font-semibold text-gray-900 tracking-tight">Completed Recommended</p>
+              <p className="text-sm font-semibold text-gray-900 tracking-tight">Completed — Recommended</p>
               <p className="text-xs text-gray-400 mt-0.5">Recommended courses you have already finished</p>
             </div>
-            <span className="text-xs font-bold text-gray-500 bg-gray-50 px-2.5 py-1 rounded-full">
+            <span className="text-xs font-bold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full">
               {satisfiedRec.length + satisfiedElectiveGroups.length}
             </span>
           </div>
@@ -534,28 +548,35 @@ export default function RequirementsTab() {
               <AggregatedRequirementRow key={req.key} req={req} />
             ))}
             {satisfiedElectiveGroups.map((group) => (
-              <div key={group.label} className="rounded-xl border border-green-100 bg-green-50 px-4 py-3">
-                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">{group.label}</p>
+              <div key={group.label} className="rounded-xl border border-green-100 bg-green-50/60 px-4 py-3">
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">{group.label}</p>
                 {group.series.filter((s) => s.satisfied).map((s) => (
-                  <div key={s.name} className="space-y-1">
-                    <p className="text-sm font-semibold text-gray-700 mb-1">{s.name} — completed</p>
-                    {[...s.courses].sort((a, b) => a.code.localeCompare(b.code)).map((c, ci) => (
-                      <div key={ci} className="flex items-center gap-2">
-                        <span className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center shrink-0"><span className="text-white text-xs font-bold">✓</span></span>
-                        <span className="font-mono text-sm font-semibold text-gray-500 line-through">{c.code}</span>
-                      </div>
-                    ))}
+                  <div key={s.name} className="mb-2">
+                    <p className="text-xs font-semibold text-gray-600 mb-1.5">{s.name}</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {[...s.courses].sort((a, b) => a.code.localeCompare(b.code)).map((c, ci) => (
+                        <span key={ci} className="font-mono text-xs font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded-md line-through">{c.code}</span>
+                      ))}
+                    </div>
                   </div>
                 ))}
               </div>
             ))}
           </div>
+            </div>
+          </div>
         </div>
       )}
 
       {unsatisfied.length === 0 && satisfied.length === 0 && unsatisfiedRec.length === 0 && satisfiedRec.length === 0 && (
-        <div className="bg-green-50 border border-green-100 rounded-2xl p-5 text-center">
-          <p className="text-gray-900 font-semibold">All requirements satisfied!</p>
+        <div className="bg-green-50 border border-green-100 rounded-2xl p-8 text-center">
+          <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-3">
+            <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <p className="text-gray-900 font-semibold mb-1">All requirements satisfied!</p>
+          <p className="text-xs text-gray-500">You have completed everything needed for this transfer target.</p>
         </div>
       )}
 

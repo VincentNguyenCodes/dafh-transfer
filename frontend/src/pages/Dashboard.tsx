@@ -94,12 +94,12 @@ export default function Dashboard() {
       <div className="min-h-screen bg-white">
         <TopBar onLogout={logout} />
 
-        <main className="max-w-lg mx-auto px-6 py-16 animate-fade-up">
-          <p className="text-[11px] font-mono text-gray-400 uppercase tracking-[0.15em] mb-10">
+        <main className="max-w-md mx-auto px-6 py-14 animate-fade-up">
+          <p className="text-[11px] font-semibold text-indigo-500 uppercase tracking-[0.15em] mb-10">
             Step {currentStep} of 3
           </p>
 
-          <div className="mb-14">
+          <div className="space-y-2 mb-12">
             {STEPS.map((s) => {
               const isDone = s.num < currentStep
               const isCurrent = s.num === currentStep
@@ -110,25 +110,38 @@ export default function Dashboard() {
                   key={s.num}
                   onClick={() => !isLocked && navigate(s.path)}
                   disabled={isLocked}
-                  className={`w-full flex items-start gap-5 py-4 text-left border-l-2 pl-5 mb-1 transition-all duration-150 animate-fade-up stagger-${s.num} ${
+                  className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-left transition-all duration-200 animate-fade-up stagger-${s.num} ${
                     isCurrent
-                      ? 'border-indigo-500'
+                      ? 'bg-white border border-gray-200 shadow-sm cursor-pointer'
                       : isDone
-                      ? 'border-gray-200 hover:border-gray-400'
-                      : 'border-gray-100 cursor-not-allowed'
+                      ? 'hover:bg-white/70 cursor-pointer'
+                      : 'cursor-not-allowed opacity-35'
                   }`}
                 >
-                  <span className={`font-mono text-xs mt-0.5 w-5 shrink-0 ${isCurrent ? 'text-indigo-500' : isDone ? 'text-gray-300' : 'text-gray-200'}`}>
-                    {isDone ? '✓' : `0${s.num}`}
-                  </span>
-                  <div>
-                    <p className={`text-sm font-semibold tracking-tight ${isCurrent ? 'text-gray-900' : isDone ? 'text-gray-400' : 'text-gray-200'}`}>
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-colors duration-200 ${
+                    isDone ? 'bg-green-100' : isCurrent ? 'bg-indigo-600' : 'bg-gray-100'
+                  }`}>
+                    {isDone ? (
+                      <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : (
+                      <span className={`text-xs font-bold ${isCurrent ? 'text-white' : 'text-gray-400'}`}>{s.num}</span>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-semibold tracking-tight ${isCurrent ? 'text-gray-900' : isDone ? 'text-gray-500' : 'text-gray-300'}`}>
                       {s.label}
                     </p>
                     {isCurrent && (
                       <p className="text-xs text-gray-400 mt-0.5">{s.desc}</p>
                     )}
                   </div>
+                  {isCurrent && (
+                    <svg className="w-4 h-4 text-gray-300 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                  )}
                 </button>
               )
             })}
@@ -136,7 +149,7 @@ export default function Dashboard() {
 
           <button
             onClick={() => navigate(nextPath)}
-            className="bg-indigo-600 text-white px-6 py-2.5 text-sm font-semibold hover:bg-indigo-500 transition-colors duration-150 rounded-lg"
+            className="bg-indigo-600 text-white px-7 py-3 text-sm font-semibold hover:bg-indigo-500 transition-all duration-150 rounded-xl cursor-pointer shadow-sm shadow-indigo-200"
           >
             Continue to {step.label.toLowerCase()}
           </button>

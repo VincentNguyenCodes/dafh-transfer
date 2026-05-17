@@ -79,8 +79,9 @@ export default function Dashboard() {
     return (
       <>
         <LoadingBar />
-        <div className="min-h-screen bg-white flex items-center justify-center">
-          <p className="text-sm text-gray-300 font-mono tracking-widest">loading</p>
+        <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-3">
+          <div className="w-8 h-8 rounded-full border-2 border-indigo-200 border-t-indigo-500 animate-spin" />
+          <p className="text-xs text-gray-400 font-medium tracking-wide">Loading your plan...</p>
         </div>
       </>
     )
@@ -92,6 +93,7 @@ export default function Dashboard() {
 
     return (
       <div className="min-h-screen bg-white">
+        <div className="h-[3px] gradient-brand w-full" />
         <TopBar onLogout={logout} />
 
         <main className="max-w-md mx-auto px-6 py-14 animate-fade-up">
@@ -160,6 +162,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-[#f5f5f7]">
+      <div className="h-[3px] gradient-brand w-full" />
       <TopBar onLogout={logout} />
 
       <div className="sticky top-[53px] z-20 bg-white/90 backdrop-blur-md border-b border-gray-100">

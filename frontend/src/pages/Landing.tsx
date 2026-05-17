@@ -33,8 +33,9 @@ export default function Landing() {
   }
 
   return (
-    <div className="min-h-screen flex bg-white">
-      <div className="hidden lg:flex lg:w-5/12 flex-col p-14 border-r border-gray-100 bg-[#faf9f7]">
+    <div className="min-h-screen flex flex-col bg-white">
+      <div className="h-[3px] gradient-brand w-full shrink-0" />
+      <div className="hidden lg:flex lg:w-5/12 flex-col flex-1 p-14 border-r border-gray-100 bg-[#faf9f7]">
         <div className="flex items-center gap-2.5">
           <img src="/src/assets/logo.png" alt="DAFH" className="w-7 h-7 object-contain" />
           <span className="text-sm font-semibold text-gray-900 tracking-tight">DAFH Transfer</span>
@@ -69,7 +70,7 @@ export default function Landing() {
         <p className="text-[10px] text-gray-300 font-medium tracking-wide mt-10">Powered by ASSIST.org articulation data</p>
       </div>
 
-      <div className="flex-1 flex items-center justify-center p-8 bg-white">
+      <div className="flex-1 flex items-center justify-center p-8 bg-white min-h-0">
         <div className="w-full max-w-xs animate-fade-up">
           <div className="flex items-center gap-2 mb-10 lg:hidden">
             <img src="/src/assets/logo.png" alt="DAFH" className="w-6 h-6 object-contain" />

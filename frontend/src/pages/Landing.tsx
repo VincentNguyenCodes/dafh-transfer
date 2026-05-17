@@ -69,20 +69,27 @@ export default function Landing() {
         <p className="text-[10px] text-gray-300 font-medium tracking-wide mt-10">Powered by ASSIST.org articulation data</p>
       </div>
 
-      <div className="flex-1 flex items-center justify-center p-8 bg-[#f9f9f9]">
+      <div className="flex-1 flex items-center justify-center p-8 bg-white">
         <div className="w-full max-w-xs animate-fade-up">
           <div className="flex items-center gap-2 mb-10 lg:hidden">
             <img src="/src/assets/logo.png" alt="DAFH" className="w-6 h-6 object-contain" />
             <span className="text-sm font-semibold text-gray-900">DAFH Transfer</span>
           </div>
 
-          <div className="flex gap-5 mb-8 border-b border-gray-200">
+          <h2 className="text-xl font-bold text-gray-900 tracking-tight mb-1">
+            {mode === 'login' ? 'Welcome back' : 'Get started'}
+          </h2>
+          <p className="text-sm text-gray-400 mb-7">
+            {mode === 'login' ? 'Log in to see your transfer plan.' : 'Start planning your transfer today.'}
+          </p>
+
+          <div className="flex gap-1 mb-7 p-1 bg-gray-100 rounded-xl">
             {(['login', 'register'] as const).map((m) => (
               <button
                 key={m}
                 onClick={() => setMode(m)}
-                className={`pb-3 text-sm font-medium transition-colors duration-150 border-b-2 -mb-px ${
-                  mode === m ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-400 hover:text-gray-600'
+                className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all duration-200 cursor-pointer ${
+                  mode === m ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'
                 }`}
               >
                 {m === 'login' ? 'Log in' : 'Register'}
@@ -90,11 +97,11 @@ export default function Landing() {
             ))}
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-2">Username</label>
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5">Username</label>
               <input
-                className="w-full bg-white border border-gray-200 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:border-indigo-400 transition-colors duration-150 rounded-lg"
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-3 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all duration-150"
                 placeholder="your_username"
                 value={form.username}
                 onChange={(e) => setForm({ ...form, username: e.target.value })}
@@ -103,9 +110,9 @@ export default function Landing() {
             </div>
             {mode === 'register' && (
               <div>
-                <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-2">Email</label>
+                <label className="block text-xs font-semibold text-gray-500 mb-1.5">Email</label>
                 <input
-                  className="w-full bg-white border border-gray-200 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:border-indigo-400 transition-colors duration-150 rounded-lg"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-3 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all duration-150"
                   placeholder="you@example.com"
                   type="email"
                   value={form.email}
@@ -114,9 +121,9 @@ export default function Landing() {
               </div>
             )}
             <div>
-              <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-2">Password</label>
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5">Password</label>
               <input
-                className="w-full bg-white border border-gray-200 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:border-indigo-400 transition-colors duration-150 rounded-lg"
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-3 text-sm text-gray-900 placeholder-gray-300 focus:outline-none focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all duration-150"
                 placeholder="••••••••"
                 type="password"
                 value={form.password}
@@ -130,7 +137,7 @@ export default function Landing() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-indigo-600 text-white py-2.5 text-sm font-semibold hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors duration-150 rounded-lg"
+              className="w-full bg-indigo-600 text-white py-3 text-sm font-semibold hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150 rounded-xl cursor-pointer"
             >
               {loading ? 'Please wait...' : mode === 'login' ? 'Log in' : 'Create account'}
             </button>

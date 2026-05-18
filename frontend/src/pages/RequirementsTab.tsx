@@ -224,28 +224,25 @@ function AggregatedRequirementRow({ req }: { req: AggregatedReq }) {
 
   if (remaining.length > 1) {
     return (
-      <div className="py-2 px-4 hover:bg-black/[0.02] transition-colors">
-        <div className="flex items-center gap-3 mb-1.5">
-          <div className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
-          <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wide flex-1">Pick one</span>
-          <SchoolTags badges={req.badges} />
-        </div>
-        <div className="ml-5 space-y-1">
+      <div className="flex items-center gap-3 py-2 px-4 hover:bg-black/[0.02] transition-colors flex-wrap">
+        <div className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
+        <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wide shrink-0">Pick one</span>
+        <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
           {remaining.map((opt, oi) => (
-            <div key={oi} className="flex items-center gap-2">
-              <span className="text-[10px] font-mono text-gray-400 w-3.5 shrink-0">{String.fromCharCode(65 + oi)}</span>
-              <div className="flex items-center gap-1.5 flex-wrap">
-                {[...opt.courses].sort((a, b) => a.code.localeCompare(b.code)).map((c, ci) => (
-                  <span key={ci} className="flex items-center gap-1">
-                    {ci > 0 && <span className="text-[10px] text-gray-300 font-bold">+</span>}
-                    <CourseChip c={c} style={`font-mono text-[11px] font-bold px-1.5 py-0.5 rounded cursor-default ${c.completed ? 'text-gray-400 line-through' : 'bg-indigo-50 text-indigo-800'}`} />
-                    {c.in_progress && <span className="text-[10px] bg-amber-100 text-amber-700 px-1 rounded">→</span>}
-                  </span>
-                ))}
-              </div>
-            </div>
+            <span key={oi} className="flex items-center gap-1.5">
+              {oi > 0 && <span className="text-[10px] font-bold text-gray-300 px-1">or</span>}
+              <span className="text-[10px] font-mono text-gray-400 shrink-0">{String.fromCharCode(65 + oi)}</span>
+              {[...opt.courses].sort((a, b) => a.code.localeCompare(b.code)).map((c, ci) => (
+                <span key={ci} className="flex items-center gap-1">
+                  {ci > 0 && <span className="text-[10px] text-gray-300 font-bold">+</span>}
+                  <CourseChip c={c} style={`font-mono text-[11px] font-bold px-1.5 py-0.5 rounded cursor-default ${c.completed ? 'text-gray-400 line-through' : 'bg-indigo-50 text-indigo-800'}`} />
+                  {c.in_progress && <span className="text-[10px] bg-amber-100 text-amber-700 px-1 rounded">→</span>}
+                </span>
+              ))}
+            </span>
           ))}
         </div>
+        <SchoolTags badges={req.badges} />
       </div>
     )
   }
@@ -389,7 +386,7 @@ export default function RequirementsTab() {
   const recPct = satisfiedRec.length + unsatisfiedRec.length > 0 ? (satisfiedRec.length / (satisfiedRec.length + unsatisfiedRec.length)) * 100 : 0
 
   const SectionHeader = ({ dot, label, count, countColor }: { dot: string; label: string; count: number; countColor: string }) => (
-    <div className="flex items-center gap-2 mb-1.5 px-1">
+    <div className="flex items-center gap-2 mb-1 px-1">
       <div className={`w-2 h-2 rounded-full shrink-0 ${dot}`} />
       <span className="text-[11px] font-bold text-gray-500 uppercase tracking-widest flex-1">{label}</span>
       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${countColor}`}>{count}</span>
@@ -402,8 +399,8 @@ export default function RequirementsTab() {
 
   return (
     <div>
-      <div className="sticky top-[109px] z-10 -mx-8 px-8 py-3 mb-5" style={{ background: 'rgba(245,245,247,0.92)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.6)' }}>
-        <div className="flex items-center gap-4 mb-2.5">
+      <div className="sticky top-[109px] z-10 -mx-8 px-8 py-2.5 mb-4" style={{ background: 'rgba(245,245,247,0.92)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.6)' }}>
+        <div className="flex items-center gap-4 mb-2">
           <div className="flex gap-2 flex-wrap items-center flex-1 min-w-0">
             {results.map((r) => {
               const colorIdx = targetColorMap.get(r.target) ?? 0
@@ -442,7 +439,7 @@ export default function RequirementsTab() {
         </div>
       </div>
 
-      <div className="space-y-5">
+      <div className="space-y-3">
         {unsatisfied.length > 0 && (
           <div className="animate-fade-up stagger-1">
             <SectionHeader dot="bg-indigo-500" label="Still Needed — Required" count={unsatisfied.length} countColor="bg-indigo-500 text-white" />

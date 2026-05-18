@@ -167,7 +167,7 @@ export default function Dashboard() {
       <TopBar onLogout={logout} />
 
       <div className="sticky top-[53px] z-20 bg-white/90 backdrop-blur-md border-b border-gray-100">
-        <div className="max-w-5xl mx-auto flex overflow-x-auto px-2">
+        <div className="max-w-7xl mx-auto flex overflow-x-auto px-2">
           {TABS.map((tab) => (
             <button
               key={tab.id}
@@ -184,7 +184,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <main key={activeTab} className="max-w-5xl mx-auto px-8 py-8 animate-fade-up">
+      <main key={activeTab} className="max-w-7xl mx-auto px-8 py-5 animate-fade-up">
         {activeTab === 'requirements' && <RequirementsTab />}
         {activeTab === 'schedules' && <SchedulesTab />}
         {activeTab === 'targets' && <TransferTargetsTab />}

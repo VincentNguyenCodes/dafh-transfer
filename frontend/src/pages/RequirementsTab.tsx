@@ -250,12 +250,13 @@ function AggregatedRequirementRow({ req }: { req: AggregatedReq }) {
         const completedOpt = req.options.find((o) => o.satisfied)
         const courses = [...(completedOpt?.courses ?? [])].sort((a, b) => a.code.localeCompare(b.code))
         return (
-          <div className="space-y-1">
+          <div className="flex flex-wrap gap-x-1.5 gap-y-1 items-center">
             {courses.map((c, ci) => (
-              <div key={ci} className="flex items-center gap-1.5">
-                {ci > 0 && <span className="text-[10px] text-gray-300 font-bold shrink-0 pl-1">+</span>}
-                <CourseLine c={c} done />
-              </div>
+              <span key={ci} className="flex items-center gap-1">
+                {ci > 0 && <span className="text-[10px] text-gray-300 font-bold">+</span>}
+                <CourseChip c={c} style="font-mono text-[11px] font-bold text-gray-400 line-through cursor-default" />
+                {c.units && <span className="text-[10px] text-gray-300">{c.units}u</span>}
+              </span>
             ))}
           </div>
         )
@@ -281,12 +282,14 @@ function AggregatedRequirementRow({ req }: { req: AggregatedReq }) {
       )}
 
       {!req.no_articulation && !req.satisfied && remaining.length === 1 && (
-        <div className="space-y-1">
+        <div className="flex flex-wrap gap-x-1.5 gap-y-1 items-center">
           {[...remaining[0].courses].sort((a, b) => a.code.localeCompare(b.code)).map((c, ci) => (
-            <div key={ci} className="flex items-center gap-1.5">
-              {ci > 0 && <span className="text-[10px] text-gray-400 font-bold shrink-0 pl-1">+</span>}
-              <CourseLine c={c} />
-            </div>
+            <span key={ci} className="flex items-center gap-1">
+              {ci > 0 && <span className="text-[10px] text-gray-400 font-bold">+</span>}
+              <CourseChip c={c} style={`font-mono text-[11px] font-bold px-1.5 py-0.5 rounded cursor-default ${c.completed ? 'bg-gray-100 text-gray-400 line-through' : 'bg-indigo-50 text-indigo-800'}`} />
+              {c.units && <span className="text-[10px] text-gray-400">{c.units}u</span>}
+              {c.in_progress && <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 rounded font-medium">→</span>}
+            </span>
           ))}
         </div>
       )}

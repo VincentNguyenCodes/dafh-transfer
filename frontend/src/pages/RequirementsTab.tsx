@@ -201,11 +201,11 @@ function AggregatedRequirementRow({ req }: { req: AggregatedReq }) {
     const completedOpt = req.options.find((o) => o.satisfied)
     const courses = [...(completedOpt?.courses ?? [])].sort((a, b) => a.code.localeCompare(b.code))
     return (
-      <div className="flex items-center gap-3 py-2 px-4 hover:bg-black/[0.02] transition-colors">
+      <div className="flex items-center gap-2 py-2 px-4 hover:bg-black/[0.02] transition-colors">
         <svg className="w-3.5 h-3.5 text-green-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
         </svg>
-        <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-1.5 flex-wrap">
           {courses.map((c, ci) => (
             <span key={ci} className="flex items-center gap-1">
               {ci > 0 && <span className="text-[10px] text-gray-300 font-bold">+</span>}
@@ -213,9 +213,6 @@ function AggregatedRequirementRow({ req }: { req: AggregatedReq }) {
               {c.units && <span className="text-[10px] text-gray-300">{c.units}u</span>}
             </span>
           ))}
-          {courses.length === 1 && courses[0].name && (
-            <span className="text-[11px] text-gray-400 truncate max-w-[220px]">{courses[0].name}</span>
-          )}
         </div>
         <SchoolTags badges={req.badges} />
       </div>
@@ -224,16 +221,16 @@ function AggregatedRequirementRow({ req }: { req: AggregatedReq }) {
 
   if (remaining.length > 1) {
     return (
-      <div className="flex items-center gap-3 py-2 px-4 hover:bg-black/[0.02] transition-colors flex-wrap">
+      <div className="flex items-center gap-2 py-2 px-4 hover:bg-black/[0.02] transition-colors flex-wrap">
         <div className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
         <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wide shrink-0">Pick one</span>
-        <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
+        <div className="flex items-center gap-1.5 flex-wrap">
           {remaining.map((opt, oi) => (
-            <span key={oi} className="flex items-center gap-1.5">
-              {oi > 0 && <span className="text-[10px] font-bold text-gray-300 px-1">or</span>}
+            <span key={oi} className="flex items-center gap-1">
+              {oi > 0 && <span className="text-[10px] font-bold text-gray-300 px-0.5">or</span>}
               <span className="text-[10px] font-mono text-gray-400 shrink-0">{String.fromCharCode(65 + oi)}</span>
               {[...opt.courses].sort((a, b) => a.code.localeCompare(b.code)).map((c, ci) => (
-                <span key={ci} className="flex items-center gap-1">
+                <span key={ci} className="flex items-center gap-0.5">
                   {ci > 0 && <span className="text-[10px] text-gray-300 font-bold">+</span>}
                   <CourseChip c={c} style={`font-mono text-[11px] font-bold px-1.5 py-0.5 rounded cursor-default ${c.completed ? 'text-gray-400 line-through' : 'bg-indigo-50 text-indigo-800'}`} />
                   {c.in_progress && <span className="text-[10px] bg-amber-100 text-amber-700 px-1 rounded">→</span>}
@@ -250,20 +247,17 @@ function AggregatedRequirementRow({ req }: { req: AggregatedReq }) {
   const opt = remaining[0]
   const courses = [...(opt?.courses ?? [])].sort((a, b) => a.code.localeCompare(b.code))
   return (
-    <div className="flex items-center gap-3 py-2 px-4 hover:bg-black/[0.02] transition-colors">
+    <div className="flex items-center gap-2 py-2 px-4 hover:bg-black/[0.02] transition-colors">
       <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0" />
-      <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
+      <div className="flex items-center gap-1.5 flex-wrap">
         {courses.map((c, ci) => (
-          <span key={ci} className="flex items-center gap-1.5">
+          <span key={ci} className="flex items-center gap-1">
             {ci > 0 && <span className="text-[10px] text-gray-400 font-bold">+</span>}
             <CourseChip c={c} style={`font-mono text-[11px] font-bold px-1.5 py-0.5 rounded cursor-default ${c.completed ? 'text-gray-400 line-through bg-gray-100' : 'bg-indigo-50 text-indigo-800'}`} />
-            {c.in_progress && <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 rounded font-medium">In Progress</span>}
+            {c.in_progress && <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 rounded font-medium">→</span>}
             {c.units && <span className="text-[10px] text-gray-400">{c.units}u</span>}
           </span>
         ))}
-        {courses.length === 1 && courses[0].name && (
-          <span className="text-[11px] text-gray-500 truncate max-w-[220px]">{courses[0].name}</span>
-        )}
       </div>
       <SchoolTags badges={req.badges} />
     </div>

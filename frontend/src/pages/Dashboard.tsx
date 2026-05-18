@@ -14,12 +14,11 @@ const STEPS = [
   { num: 3, label: 'View your results', desc: 'See which classes you still need to take', path: '/dashboard' },
 ]
 
-type Tab = 'overview' | 'requirements' | 'calgetc' | 'schedules' | 'targets' | 'classes'
+type Tab = 'overview' | 'requirements' | 'schedules' | 'targets' | 'classes'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'overview', label: 'Overview' },
   { id: 'requirements', label: 'Requirements' },
-  { id: 'calgetc', label: 'Cal-GETC' },
   { id: 'schedules', label: 'Schedules' },
   { id: 'targets', label: 'Targets' },
   { id: 'classes', label: 'Classes' },
@@ -190,7 +189,6 @@ export default function Dashboard() {
       <main key={activeTab} className="max-w-7xl mx-auto px-8 py-5 animate-fade-up">
         {activeTab === 'overview' && <OverviewTab />}
         {activeTab === 'requirements' && <RequirementsTab />}
-        {activeTab === 'calgetc' && <RequirementsTab defaultFilter="__calgetc__" />}
         {activeTab === 'schedules' && <SchedulesTab />}
         {activeTab === 'targets' && <TransferTargetsTab />}
         {activeTab === 'classes' && <ClassesTab />}

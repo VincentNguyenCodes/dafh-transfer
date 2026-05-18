@@ -154,18 +154,25 @@ function CourseLine({ c, done }: { c: CourseItem; done?: boolean }) {
   )
 }
 
+function shortMajor(name: string) {
+  return name.replace(/,?\s*(B\.S\.|B\.A\.|M\.S\.|B\.Sc\.|Bachelor.*|Master.*|Ph\.D.*)/i, '').trim()
+}
+
 function SchoolTags({ badges }: { badges: Badge[] }) {
   return (
     <div className="flex gap-1 shrink-0 ml-2 flex-wrap justify-end">
       {badges.slice(0, 3).map((b, i) => {
         const color = BADGE_COLORS[b.colorIdx]
+        const label = b.major_name
+          ? `${b.school_name} · ${shortMajor(b.major_name)}`
+          : b.school_name
         return (
           <span
             key={i}
-            title={`${b.major_name}${b.receiving_name ? ` · ${b.receiving_name}` : ''}`}
+            title={label}
             className={`text-[10px] px-1.5 py-0.5 rounded-md font-semibold ${color.bg} ${color.text} ${b.satisfied ? 'opacity-40' : ''} whitespace-nowrap`}
           >
-            {b.school_name}
+            {label}
           </span>
         )
       })}

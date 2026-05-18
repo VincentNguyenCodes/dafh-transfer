@@ -170,12 +170,12 @@ export default function Dashboard() {
       <TopBar onLogout={logout} />
 
       <div className="sticky top-[53px] z-20 bg-white/90 backdrop-blur-md border-b border-gray-100">
-        <div className="max-w-7xl mx-auto flex overflow-x-auto px-2">
+        <div className="max-w-7xl mx-auto flex">
           {TABS.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-3.5 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition-all duration-150 cursor-pointer ${
+              className={`flex-1 py-3 text-xs font-semibold border-b-2 whitespace-nowrap transition-all duration-150 cursor-pointer text-center tracking-wide ${
                 activeTab === tab.id
                   ? 'border-indigo-500 text-gray-900'
                   : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-200'

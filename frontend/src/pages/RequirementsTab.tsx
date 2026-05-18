@@ -170,7 +170,7 @@ function SchoolTags({ badges }: { badges: Badge[] }) {
           <span
             key={i}
             title={label}
-            className={`text-[10px] px-1.5 py-0.5 rounded-md font-semibold ${color.bg} ${color.text} ${b.satisfied ? 'opacity-40' : ''} truncate max-w-[180px]`}
+            className={`text-[10px] px-1.5 py-0.5 rounded-md font-semibold ${color.bg} ${color.text} ${b.satisfied ? 'opacity-40' : ''} whitespace-nowrap`}
           >
             {label}
           </span>

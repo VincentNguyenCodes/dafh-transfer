@@ -270,11 +270,11 @@ function AggregatedRequirementRow({ req }: { req: AggregatedReq }) {
   )
 }
 
-export default function RequirementsTab() {
+export default function RequirementsTab({ defaultFilter }: { defaultFilter?: string } = {}) {
   const [results, setResults] = useState<TargetResult[] | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [selectedTarget, setSelectedTarget] = useState<string | null>(null)
+  const [selectedTarget, setSelectedTarget] = useState<string | null>(defaultFilter ?? null)
 
   const load = () => {
     setLoading(true)
@@ -282,7 +282,7 @@ export default function RequirementsTab() {
     api.get('/results/')
       .then(({ data }) => {
         setResults(data)
-        if (data && data.length > 0) {
+        if (!defaultFilter && data && data.length > 0) {
           setSelectedTarget(data[0].target)
         }
       })

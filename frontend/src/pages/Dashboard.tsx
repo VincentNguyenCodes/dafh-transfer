@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import api from '../api/client'
 import AdvisorChat from '../components/AdvisorChat'
 import ClassesTab from './ClassesTab'
+import OverviewTab from './OverviewTab'
 import RequirementsTab from './RequirementsTab'
 import SchedulesTab from './SchedulesTab'
 import TransferTargetsTab from './TransferTargetsTab'
@@ -13,12 +14,14 @@ const STEPS = [
   { num: 3, label: 'View your results', desc: 'See which classes you still need to take', path: '/dashboard' },
 ]
 
-type Tab = 'requirements' | 'schedules' | 'targets' | 'classes'
+type Tab = 'overview' | 'requirements' | 'calgetc' | 'schedules' | 'targets' | 'classes'
 
 const TABS: { id: Tab; label: string }[] = [
+  { id: 'overview', label: 'Overview' },
   { id: 'requirements', label: 'Requirements' },
+  { id: 'calgetc', label: 'Cal-GETC' },
   { id: 'schedules', label: 'Schedules' },
-  { id: 'targets', label: 'Transfer Targets' },
+  { id: 'targets', label: 'Targets' },
   { id: 'classes', label: 'Classes' },
 ]
 
@@ -64,7 +67,7 @@ function LoadingBar() {
 export default function Dashboard() {
   const navigate = useNavigate()
   const [currentStep, setCurrentStep] = useState<number | null>(null)
-  const [activeTab, setActiveTab] = useState<Tab>('requirements')
+  const [activeTab, setActiveTab] = useState<Tab>('overview')
 
   useEffect(() => {
     api.get('/progress/').then(({ data }) => setCurrentStep(data.current_step))
@@ -172,7 +175,7 @@ export default function Dashboard() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-5 py-3.5 text-sm font-medium border-b-2 whitespace-nowrap transition-all duration-150 cursor-pointer ${
+              className={`px-3.5 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition-all duration-150 cursor-pointer ${
                 activeTab === tab.id
                   ? 'border-indigo-500 text-gray-900'
                   : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-200'
@@ -185,7 +188,9 @@ export default function Dashboard() {
       </div>
 
       <main key={activeTab} className="max-w-7xl mx-auto px-8 py-5 animate-fade-up">
+        {activeTab === 'overview' && <OverviewTab />}
         {activeTab === 'requirements' && <RequirementsTab />}
+        {activeTab === 'calgetc' && <RequirementsTab defaultFilter="__calgetc__" />}
         {activeTab === 'schedules' && <SchedulesTab />}
         {activeTab === 'targets' && <TransferTargetsTab />}
         {activeTab === 'classes' && <ClassesTab />}

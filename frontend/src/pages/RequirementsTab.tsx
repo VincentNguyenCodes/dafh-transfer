@@ -160,7 +160,7 @@ function shortMajor(name: string) {
 
 function SchoolTags({ badges }: { badges: Badge[] }) {
   return (
-    <div className="flex gap-1 shrink-0 ml-2 flex-wrap justify-end">
+    <div className="flex flex-col gap-1 items-end shrink-0 ml-2">
       {badges.slice(0, 3).map((b, i) => {
         const color = BADGE_COLORS[b.colorIdx]
         const label = b.major_name

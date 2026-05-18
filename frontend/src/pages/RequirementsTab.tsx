@@ -135,33 +135,22 @@ function buildAggregated(
   return Array.from(map.values())
 }
 
-function CourseChip({ c, style }: { c: CourseItem; style: string }) {
+function CourseLine({ c, done }: { c: CourseItem; done?: boolean }) {
+  const codeStyle = done
+    ? 'font-mono text-[11px] font-bold text-gray-400 line-through shrink-0'
+    : c.completed
+    ? 'font-mono text-[11px] font-bold bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded line-through shrink-0'
+    : 'font-mono text-[11px] font-bold bg-indigo-50 text-indigo-800 px-1.5 py-0.5 rounded shrink-0'
+
   return (
-    <span className="relative group/chip inline-block">
-      <span className={style}>{c.code}</span>
-      {(c.name || c.units) && (
-        <div className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-2 z-[300] opacity-0 group-hover/chip:opacity-100 transition-opacity duration-150">
-          <div
-            className="flex items-center gap-2.5 rounded-xl px-3 py-2 whitespace-nowrap"
-            style={{ background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 8px 28px -4px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.06)' }}
-          >
-            <span className="text-xs font-bold text-gray-900 font-mono shrink-0">{c.code}</span>
-            {c.name && c.name !== c.code && (
-              <>
-                <span className="w-px h-3 bg-gray-200 shrink-0" />
-                <span className="text-xs text-gray-600 max-w-[260px] truncate">{c.name}</span>
-              </>
-            )}
-            {c.units && (
-              <>
-                <span className="w-px h-3 bg-gray-200 shrink-0" />
-                <span className="text-[11px] font-semibold text-gray-400 shrink-0">{c.units}u</span>
-              </>
-            )}
-          </div>
-        </div>
+    <div className="flex items-center gap-2 min-w-0">
+      <span className={codeStyle}>{c.code}</span>
+      {c.name && c.name !== c.code && (
+        <span className={`text-[11px] truncate ${done ? 'text-gray-400' : 'text-gray-500'}`}>{c.name}</span>
       )}
-    </span>
+      {c.units && <span className="text-[10px] text-gray-400 shrink-0 ml-auto">{c.units}u</span>}
+      {c.in_progress && <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded shrink-0">In Progress</span>}
+    </div>
   )
 }
 
@@ -224,45 +213,42 @@ function AggregatedRequirementRow({ req }: { req: AggregatedReq }) {
         const completedOpt = req.options.find((o) => o.satisfied)
         const courses = [...(completedOpt?.courses ?? [])].sort((a, b) => a.code.localeCompare(b.code))
         return (
-          <div className="flex flex-wrap gap-x-2 gap-y-1 items-center">
+          <div className="space-y-1">
             {courses.map((c, ci) => (
-              <span key={ci} className="flex items-center gap-1">
-                {ci > 0 && <span className="text-[10px] text-gray-300 font-bold">+</span>}
-                <CourseChip c={c} style="font-mono text-[11px] font-bold text-gray-400 line-through cursor-default" />
-                {c.units && <span className="text-[10px] text-gray-300">{c.units}u</span>}
-              </span>
+              <div key={ci} className="flex items-center gap-1.5">
+                {ci > 0 && <span className="text-[10px] text-gray-300 font-bold shrink-0 pl-1">+</span>}
+                <CourseLine c={c} done />
+              </div>
             ))}
           </div>
         )
       })()}
 
       {!req.no_articulation && !req.satisfied && remaining.length > 1 && (
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           {remaining.map((opt, oi) => (
-            <div key={oi} className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-[10px] font-mono font-bold text-gray-400 w-3 shrink-0">{String.fromCharCode(65 + oi)}</span>
-              {[...opt.courses].sort((a, b) => a.code.localeCompare(b.code)).map((c, ci) => (
-                <span key={ci} className="flex items-center gap-1">
-                  {ci > 0 && <span className="text-[10px] text-gray-300 font-bold">+</span>}
-                  <CourseChip c={c} style={`font-mono text-[11px] font-bold px-1.5 py-0.5 rounded cursor-default ${c.completed ? 'text-gray-400 line-through' : 'bg-indigo-50 text-indigo-800'}`} />
-                  {c.units && <span className="text-[10px] text-gray-400">{c.units}u</span>}
-                  {c.in_progress && <span className="text-[10px] bg-amber-100 text-amber-700 px-1 rounded">→</span>}
-                </span>
-              ))}
+            <div key={oi} className="space-y-1">
+              <span className="text-[10px] font-mono font-bold text-gray-400">{String.fromCharCode(65 + oi)}</span>
+              <div className="pl-3 space-y-1 border-l border-gray-200/60">
+                {[...opt.courses].sort((a, b) => a.code.localeCompare(b.code)).map((c, ci) => (
+                  <div key={ci} className="flex items-center gap-1.5">
+                    {ci > 0 && <span className="text-[10px] text-gray-300 font-bold shrink-0">+</span>}
+                    <CourseLine c={c} />
+                  </div>
+                ))}
+              </div>
             </div>
           ))}
         </div>
       )}
 
       {!req.no_articulation && !req.satisfied && remaining.length === 1 && (
-        <div className="flex flex-wrap gap-x-2 gap-y-1 items-center">
+        <div className="space-y-1">
           {[...remaining[0].courses].sort((a, b) => a.code.localeCompare(b.code)).map((c, ci) => (
-            <span key={ci} className="flex items-center gap-1">
-              {ci > 0 && <span className="text-[10px] text-gray-400 font-bold">+</span>}
-              <CourseChip c={c} style={`font-mono text-[11px] font-bold px-1.5 py-0.5 rounded cursor-default ${c.completed ? 'text-gray-400 line-through bg-gray-100' : 'bg-indigo-50 text-indigo-800'}`} />
-              {c.units && <span className="text-[10px] text-gray-400">{c.units}u</span>}
-              {c.in_progress && <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 rounded font-medium">→</span>}
-            </span>
+            <div key={ci} className="flex items-center gap-1.5">
+              {ci > 0 && <span className="text-[10px] text-gray-400 font-bold shrink-0 pl-1">+</span>}
+              <CourseLine c={c} />
+            </div>
           ))}
         </div>
       )}

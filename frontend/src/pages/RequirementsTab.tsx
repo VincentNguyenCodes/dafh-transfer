@@ -187,79 +187,85 @@ function SchoolTags({ badges }: { badges: Badge[] }) {
 function AggregatedRequirementRow({ req }: { req: AggregatedReq }) {
   const remaining = req.options.filter((o) => !o.satisfied)
 
-  if (req.no_articulation) {
-    return (
-      <div className="flex items-center gap-3 py-2 px-4 hover:bg-black/[0.02] transition-colors">
-        <div className="w-1.5 h-1.5 rounded-full bg-gray-300 shrink-0" />
-        <span className="text-xs text-gray-400 italic flex-1">No community college articulation</span>
-        <SchoolTags badges={req.badges} />
-      </div>
-    )
-  }
+  const borderAccent = req.satisfied
+    ? 'border-l-green-400'
+    : req.no_articulation
+    ? 'border-l-gray-200'
+    : remaining.length > 1
+    ? 'border-l-amber-400'
+    : 'border-l-indigo-400'
 
-  if (req.satisfied) {
-    const completedOpt = req.options.find((o) => o.satisfied)
-    const courses = [...(completedOpt?.courses ?? [])].sort((a, b) => a.code.localeCompare(b.code))
-    return (
-      <div className="flex items-center gap-2 py-2 px-4 hover:bg-black/[0.02] transition-colors">
-        <svg className="w-3.5 h-3.5 text-green-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-        </svg>
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {courses.map((c, ci) => (
-            <span key={ci} className="flex items-center gap-1">
-              {ci > 0 && <span className="text-[10px] text-gray-300 font-bold">+</span>}
-              <CourseChip c={c} style="font-mono text-[11px] font-bold text-gray-400 line-through cursor-default" />
-              {c.units && <span className="text-[10px] text-gray-300">{c.units}u</span>}
-            </span>
-          ))}
+  return (
+    <div className={`glass rounded-xl border-l-2 ${borderAccent} p-3 flex flex-col gap-2.5`}>
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-1.5">
+          {req.satisfied ? (
+            <svg className="w-3.5 h-3.5 text-green-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          ) : req.no_articulation ? (
+            <div className="w-1.5 h-1.5 rounded-full bg-gray-300 mt-0.5 shrink-0" />
+          ) : remaining.length > 1 ? (
+            <div className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-0.5 shrink-0" />
+          ) : (
+            <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-0.5 shrink-0" />
+          )}
+          {remaining.length > 1 && !req.satisfied && (
+            <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wide">Pick one</span>
+          )}
+          {req.no_articulation && (
+            <span className="text-[10px] text-gray-400 italic">No CCC articulation</span>
+          )}
         </div>
         <SchoolTags badges={req.badges} />
       </div>
-    )
-  }
 
-  if (remaining.length > 1) {
-    return (
-      <div className="flex items-center gap-2 py-2 px-4 hover:bg-black/[0.02] transition-colors flex-wrap">
-        <div className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
-        <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wide shrink-0">Pick one</span>
-        <div className="flex items-center gap-1.5 flex-wrap">
+      {req.satisfied && (() => {
+        const completedOpt = req.options.find((o) => o.satisfied)
+        const courses = [...(completedOpt?.courses ?? [])].sort((a, b) => a.code.localeCompare(b.code))
+        return (
+          <div className="flex flex-wrap gap-x-2 gap-y-1 items-center">
+            {courses.map((c, ci) => (
+              <span key={ci} className="flex items-center gap-1">
+                {ci > 0 && <span className="text-[10px] text-gray-300 font-bold">+</span>}
+                <CourseChip c={c} style="font-mono text-[11px] font-bold text-gray-400 line-through cursor-default" />
+                {c.units && <span className="text-[10px] text-gray-300">{c.units}u</span>}
+              </span>
+            ))}
+          </div>
+        )
+      })()}
+
+      {!req.no_articulation && !req.satisfied && remaining.length > 1 && (
+        <div className="space-y-1.5">
           {remaining.map((opt, oi) => (
-            <span key={oi} className="flex items-center gap-1">
-              {oi > 0 && <span className="text-[10px] font-bold text-gray-300 px-0.5">or</span>}
-              <span className="text-[10px] font-mono text-gray-400 shrink-0">{String.fromCharCode(65 + oi)}</span>
+            <div key={oi} className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[10px] font-mono font-bold text-gray-400 w-3 shrink-0">{String.fromCharCode(65 + oi)}</span>
               {[...opt.courses].sort((a, b) => a.code.localeCompare(b.code)).map((c, ci) => (
-                <span key={ci} className="flex items-center gap-0.5">
+                <span key={ci} className="flex items-center gap-1">
                   {ci > 0 && <span className="text-[10px] text-gray-300 font-bold">+</span>}
                   <CourseChip c={c} style={`font-mono text-[11px] font-bold px-1.5 py-0.5 rounded cursor-default ${c.completed ? 'text-gray-400 line-through' : 'bg-indigo-50 text-indigo-800'}`} />
+                  {c.units && <span className="text-[10px] text-gray-400">{c.units}u</span>}
                   {c.in_progress && <span className="text-[10px] bg-amber-100 text-amber-700 px-1 rounded">→</span>}
                 </span>
               ))}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!req.no_articulation && !req.satisfied && remaining.length === 1 && (
+        <div className="flex flex-wrap gap-x-2 gap-y-1 items-center">
+          {[...remaining[0].courses].sort((a, b) => a.code.localeCompare(b.code)).map((c, ci) => (
+            <span key={ci} className="flex items-center gap-1">
+              {ci > 0 && <span className="text-[10px] text-gray-400 font-bold">+</span>}
+              <CourseChip c={c} style={`font-mono text-[11px] font-bold px-1.5 py-0.5 rounded cursor-default ${c.completed ? 'text-gray-400 line-through bg-gray-100' : 'bg-indigo-50 text-indigo-800'}`} />
+              {c.units && <span className="text-[10px] text-gray-400">{c.units}u</span>}
+              {c.in_progress && <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 rounded font-medium">→</span>}
             </span>
           ))}
         </div>
-        <SchoolTags badges={req.badges} />
-      </div>
-    )
-  }
-
-  const opt = remaining[0]
-  const courses = [...(opt?.courses ?? [])].sort((a, b) => a.code.localeCompare(b.code))
-  return (
-    <div className="flex items-center gap-2 py-2 px-4 hover:bg-black/[0.02] transition-colors">
-      <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0" />
-      <div className="flex items-center gap-1.5 flex-wrap">
-        {courses.map((c, ci) => (
-          <span key={ci} className="flex items-center gap-1">
-            {ci > 0 && <span className="text-[10px] text-gray-400 font-bold">+</span>}
-            <CourseChip c={c} style={`font-mono text-[11px] font-bold px-1.5 py-0.5 rounded cursor-default ${c.completed ? 'text-gray-400 line-through bg-gray-100' : 'bg-indigo-50 text-indigo-800'}`} />
-            {c.in_progress && <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 rounded font-medium">→</span>}
-            {c.units && <span className="text-[10px] text-gray-400">{c.units}u</span>}
-          </span>
-        ))}
-      </div>
-      <SchoolTags badges={req.badges} />
+      )}
     </div>
   )
 }
@@ -387,8 +393,8 @@ export default function RequirementsTab({ defaultFilter }: { defaultFilter?: str
     </div>
   )
 
-  const RowList = ({ children }: { children: React.ReactNode }) => (
-    <div className="glass rounded-xl overflow-hidden divide-y divide-white/40">{children}</div>
+  const RowGrid = ({ children }: { children: React.ReactNode }) => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">{children}</div>
   )
 
   return (
@@ -437,62 +443,65 @@ export default function RequirementsTab({ defaultFilter }: { defaultFilter?: str
         {unsatisfied.length > 0 && (
           <div className="animate-fade-up stagger-1">
             <SectionHeader dot="bg-indigo-500" label="Still Needed — Required" count={unsatisfied.length} countColor="bg-indigo-500 text-white" />
-            <RowList>
+            <RowGrid>
               {unsatisfied.map((req) => <AggregatedRequirementRow key={req.key} req={req} />)}
-            </RowList>
+            </RowGrid>
           </div>
         )}
 
         {(unsatisfiedRec.length > 0 || unsatisfiedElectiveGroups.length > 0) && (
           <div className="animate-fade-up stagger-2">
             <SectionHeader dot="bg-violet-400" label="Still Needed — Recommended" count={unsatisfiedRec.length + unsatisfiedElectiveGroups.reduce((n, g) => n + g.series.length, 0)} countColor="bg-violet-100 text-violet-700" />
-            <RowList>
+            <RowGrid>
               {unsatisfiedRec.map((req) => <AggregatedRequirementRow key={req.key} req={req} />)}
-              {unsatisfiedElectiveGroups.map((group) => (
-                <div key={group.label}>
-                  <div className="px-4 py-1.5 glass-header">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{group.label}</span>
-                  </div>
-                  {group.series.map((s) => (
-                    <div key={s.name} className="flex items-center gap-3 py-2 px-4 hover:bg-black/[0.02] transition-colors">
-                      <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${s.satisfied ? 'bg-green-400' : 'bg-gray-300'}`} />
-                      <span className="text-xs font-semibold text-gray-700 flex-1">{s.name}</span>
-                      <div className="flex gap-1 flex-wrap">
-                        {[...s.courses].sort((a,b) => a.code.localeCompare(b.code)).map((c, ci) => (
-                          <span key={ci} className={`font-mono text-[10px] font-bold px-1.5 py-0.5 rounded ${c.completed ? 'bg-green-100 text-green-700 line-through' : 'bg-gray-100 text-gray-600'}`}>{c.code}</span>
-                        ))}
+              {unsatisfiedElectiveGroups.map((group) =>
+                group.series.map((s) => (
+                  <div key={`${group.label}-${s.name}`} className="glass rounded-xl border-l-2 border-l-violet-400 p-3 flex flex-col gap-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-1.5 h-1.5 rounded-full bg-violet-400 shrink-0" />
+                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">{group.label}</span>
                       </div>
-                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${s.satisfied ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>{s.completed_count}/{s.total}</span>
+                      <span className="text-[10px] font-bold bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full shrink-0">{s.completed_count}/{s.total}</span>
                     </div>
-                  ))}
-                </div>
-              ))}
-            </RowList>
+                    <p className="text-xs font-semibold text-gray-700">{s.name}</p>
+                    <div className="flex flex-wrap gap-1">
+                      {[...s.courses].sort((a,b) => a.code.localeCompare(b.code)).map((c, ci) => (
+                        <span key={ci} className={`font-mono text-[10px] font-bold px-1.5 py-0.5 rounded ${c.completed ? 'bg-green-100 text-green-700 line-through' : 'bg-gray-100 text-gray-600'}`}>{c.code}</span>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              )}
+            </RowGrid>
           </div>
         )}
 
         {satisfied.length > 0 && (
           <div>
             <SectionHeader dot="bg-green-400" label="Completed — Required" count={satisfied.length} countColor="bg-green-100 text-green-700" />
-            <RowList>
+            <RowGrid>
               {satisfied.map((req) => <AggregatedRequirementRow key={req.key} req={req} />)}
-            </RowList>
+            </RowGrid>
           </div>
         )}
 
         {(satisfiedRec.length > 0 || satisfiedElectiveGroups.length > 0) && (
           <div>
             <SectionHeader dot="bg-gray-300" label="Completed — Recommended" count={satisfiedRec.length + satisfiedElectiveGroups.length} countColor="bg-gray-100 text-gray-500" />
-            <RowList>
+            <RowGrid>
               {satisfiedRec.map((req) => <AggregatedRequirementRow key={req.key} req={req} />)}
               {satisfiedElectiveGroups.map((group) =>
                 group.series.filter((s) => s.satisfied).map((s) => (
-                  <div key={`${group.label}-${s.name}`} className="flex items-center gap-3 py-2 px-4 hover:bg-black/[0.02] transition-colors">
-                    <svg className="w-3.5 h-3.5 text-green-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span className="text-xs text-gray-500 flex-1">{s.name}</span>
-                    <div className="flex gap-1 flex-wrap">
+                  <div key={`${group.label}-${s.name}`} className="glass rounded-xl border-l-2 border-l-green-400 p-3 flex flex-col gap-2.5">
+                    <div className="flex items-center gap-1.5">
+                      <svg className="w-3.5 h-3.5 text-green-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">{group.label}</span>
+                    </div>
+                    <p className="text-xs font-semibold text-gray-600">{s.name}</p>
+                    <div className="flex flex-wrap gap-1">
                       {[...s.courses].sort((a,b) => a.code.localeCompare(b.code)).map((c, ci) => (
                         <span key={ci} className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-green-100 text-green-600 line-through">{c.code}</span>
                       ))}
@@ -500,16 +509,16 @@ export default function RequirementsTab({ defaultFilter }: { defaultFilter?: str
                   </div>
                 ))
               )}
-            </RowList>
+            </RowGrid>
           </div>
         )}
 
         {noArticulation.length > 0 && (
           <div>
             <SectionHeader dot="bg-gray-200" label="No Articulation Path" count={noArticulation.length} countColor="bg-gray-100 text-gray-400" />
-            <RowList>
+            <RowGrid>
               {noArticulation.map((req) => <AggregatedRequirementRow key={req.key} req={req} />)}
-            </RowList>
+            </RowGrid>
           </div>
         )}
 

@@ -265,7 +265,6 @@ function AggregatedRequirementRow({ req }: { req: AggregatedReq }) {
         <div className="flex flex-wrap gap-x-1.5 gap-y-1 items-center">
           {remaining.map((opt, oi) => (
             <span key={oi} className="flex items-center gap-1">
-              {oi > 0 && <span className="text-[10px] font-semibold text-gray-300 px-0.5">or</span>}
               {[...opt.courses].sort((a, b) => a.code.localeCompare(b.code)).map((c, ci) => (
                 <span key={ci} className="flex items-center gap-0.5">
                   {ci > 0 && <span className="text-[10px] text-gray-300 font-bold">+</span>}

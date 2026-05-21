@@ -52,6 +52,10 @@ type TargetResult = {
   recommended: Requirement[]
   elective_series: ElectiveGroup[]
   flags?: string[]
+  unsupported?: boolean
+  unsupported_reason?: string
+  low_confidence?: boolean
+  low_confidence_reason?: string
   total: number
   satisfied: number
 }
@@ -140,7 +144,7 @@ function CourseChip({ c, style }: { c: CourseItem; style: string }) {
     <span className="relative group/chip inline-block">
       <span className={style}>{c.code}</span>
       {(c.name || c.units) && (
-        <div className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-2 z-[300] opacity-0 group-hover/chip:opacity-100 transition-opacity duration-150">
+        <div className="pointer-events-none absolute top-full left-0 mt-1 z-[300] opacity-0 group-hover/chip:opacity-100 transition-opacity duration-150">
           <div
             className="flex items-center gap-2.5 rounded-xl px-3 py-2 whitespace-nowrap"
             style={{ background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 8px 28px -4px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.06)' }}
@@ -149,7 +153,7 @@ function CourseChip({ c, style }: { c: CourseItem; style: string }) {
             {c.name && c.name !== c.code && (
               <>
                 <span className="w-px h-3 bg-gray-200 shrink-0" />
-                <span className="text-xs text-gray-600 max-w-[260px] truncate">{c.name}</span>
+                <span className="text-xs text-gray-600">{c.name}</span>
               </>
             )}
             {c.units && (
@@ -222,7 +226,7 @@ function AggregatedRequirementRow({ req }: { req: AggregatedReq }) {
     : 'border-l-indigo-400'
 
   return (
-    <div className={`glass rounded-xl border-l-2 ${borderAccent} p-3 flex flex-col gap-2.5`}>
+    <div className={`relative hover:z-[5] glass rounded-xl border-l-2 ${borderAccent} p-3 flex flex-col gap-2.5`}>
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-1.5">
           {req.satisfied ? (
@@ -421,7 +425,7 @@ export default function RequirementsTab({ defaultFilter }: { defaultFilter?: str
   )
 
   const RowGrid = ({ children }: { children: React.ReactNode }) => (
-    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">{children}</div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">{children}</div>
   )
 
   return (
@@ -467,6 +471,23 @@ export default function RequirementsTab({ defaultFilter }: { defaultFilter?: str
       </div>
 
       <div className="space-y-3">
+        {visibleResults.filter((r) => r.unsupported).map((r) => (
+          <div key={`unsupported-${r.target}`} className="glass rounded-xl border-l-2 border-l-rose-400 p-4 animate-fade-up">
+            <p className="text-sm font-bold text-gray-900 mb-1">{r.school_name}</p>
+            <p className="text-xs font-semibold text-rose-600 mb-1">Major-specific requirements unavailable</p>
+            <p className="text-xs text-gray-500 leading-relaxed">{r.unsupported_reason || 'No ASSIST major articulation is published for this independent university.'}</p>
+          </div>
+        ))}
+
+        {visibleResults.some((r) => r.low_confidence && !r.unsupported) && (
+          <div className="glass rounded-xl border-l-2 border-l-amber-400 p-3 animate-fade-up">
+            <p className="text-xs font-bold text-amber-700 mb-0.5">Partial articulation</p>
+            <p className="text-xs text-gray-600 leading-relaxed">
+              {visibleResults.find((r) => r.low_confidence && !r.unsupported)?.low_confidence_reason || 'ASSIST data for this school is incomplete. Verify requirements against the school catalog.'}
+            </p>
+          </div>
+        )}
+
         {unsatisfied.length > 0 && (
           <div className="animate-fade-up stagger-1">
             <SectionHeader dot="bg-indigo-500" label="Still Needed — Required" count={unsatisfied.length} countColor="bg-indigo-500 text-white" />

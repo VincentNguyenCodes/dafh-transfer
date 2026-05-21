@@ -756,6 +756,41 @@ def compute_remaining(user, ge_path: str = '') -> list:
     results = []
 
     for target in targets:
+        from .ge_requirements import (
+            INDEPENDENT_UNSUPPORTED_IDS,
+            INDEPENDENT_LOW_CONFIDENCE_IDS,
+            CALGETC_APPLIES_TO as _CALGETC_APPLIES_TO,
+            build_calgetc_requirements as _build_calgetc,
+        )
+        from .ge_requirements import get_ge_approved_codes as _get_ge_codes
+        from .prerequisites import PREREQS as _PREREQS
+
+        if target.receiving_institution_id in INDEPENDENT_UNSUPPORTED_IDS:
+            calgetc_reqs = (
+                _build_calgetc(target.receiving_institution_id, completed_codes, in_progress_codes, set())
+                if target.receiving_institution_id in _CALGETC_APPLIES_TO else []
+            )
+            results.append({
+                'target': f"{target.receiving_institution_name} — {target.major_name}",
+                'school_name': target.receiving_institution_name,
+                'major_name': target.major_name,
+                'is_csu': False,
+                'ge_path': ge_path,
+                'ge_approved_codes': _get_ge_codes(ge_path),
+                'prereq_map': _PREREQS,
+                'requirements': calgetc_reqs,
+                'recommended': [],
+                'elective_series': [],
+                'flags': ['unsupported:no_assist_major_articulation'],
+                'unsupported': True,
+                'unsupported_reason': 'No ASSIST major articulation is published for this independent university. The Cal-GETC general education plan below still applies if this school accepts Cal-GETC. Verify major-specific requirements directly with the school catalog.',
+                'low_confidence': False,
+                'low_confidence_reason': '',
+                'total': len(calgetc_reqs),
+                'satisfied': sum(1 for r in calgetc_reqs if r.get('satisfied')),
+            })
+            continue
+
         year_id = target.academic_year_id or LATEST_YEAR_ID
         all_requirements = []
         seen_recv = set()
@@ -766,6 +801,10 @@ def compute_remaining(user, ge_path: str = '') -> list:
         claude_series_combined = []
         seen_series_labels = set()
         all_flags = []
+
+        is_low_confidence = target.receiving_institution_id in INDEPENDENT_LOW_CONFIDENCE_IDS
+        if is_low_confidence:
+            all_flags.append('low_confidence:independent_partial_assist')
 
         for sending_id in [DEANZA_ID, FOOTHILL_ID]:
             school = _school_label(sending_id)
@@ -866,6 +905,12 @@ def compute_remaining(user, ge_path: str = '') -> list:
             'recommended': all_recommended,
             'elective_series': elective_series,
             'flags': all_flags,
+            'unsupported': False,
+            'low_confidence': is_low_confidence,
+            'low_confidence_reason': (
+                'ASSIST articulation for this independent university is partial. Verify required versus recommended courses against the school catalog.'
+                if is_low_confidence else ''
+            ),
             'total': len(all_requirements),
             'satisfied': sum(1 for r in all_requirements if r['satisfied']),
         })

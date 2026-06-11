@@ -26,7 +26,7 @@ export default function Landing() {
       navigate('/dashboard')
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: Record<string, string[]> } })?.response?.data
-      setError(msg ? Object.values(msg).flat().join(' ') : 'Something went wrong.')
+      setError(msg ? Object.values(msg).flat().join(' ') : 'Check your username and password and try again.')
     } finally {
       setLoading(false)
     }

@@ -72,6 +72,16 @@ export default function Dashboard() {
     api.get('/progress/').then(({ data }) => setCurrentStep(data.current_step))
   }, [])
 
+  useEffect(() => {
+    const tabKeys: Record<string, Tab> = { '1': 'overview', '2': 'requirements', '3': 'schedules', '4': 'targets', '5': 'classes' }
+    const handler = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement) return
+      if (tabKeys[e.key]) setActiveTab(tabKeys[e.key])
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [])
+
   const logout = () => {
     localStorage.removeItem('access')
     localStorage.removeItem('refresh')
@@ -170,10 +180,11 @@ export default function Dashboard() {
 
       <div className="sticky top-[53px] z-20 bg-white/90 backdrop-blur-md border-b border-gray-100">
         <div className="max-w-7xl mx-auto flex">
-          {TABS.map((tab) => (
+          {TABS.map((tab, idx) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
+              title={`${tab.label} (press ${idx + 1})`}
               className={`flex-1 py-3 text-xs font-semibold border-b-2 whitespace-nowrap transition-all duration-150 cursor-pointer text-center ${
                 activeTab === tab.id
                   ? 'border-indigo-500 text-gray-900'

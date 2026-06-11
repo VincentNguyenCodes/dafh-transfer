@@ -316,6 +316,7 @@ export default function RequirementsTab({ defaultFilter }: { defaultFilter?: str
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [selectedTarget, setSelectedTarget] = useState<string | null>(defaultFilter ?? null)
+  const [loadedAt, setLoadedAt] = useState<Date | null>(null)
 
   const load = () => {
     setLoading(true)
@@ -323,6 +324,7 @@ export default function RequirementsTab({ defaultFilter }: { defaultFilter?: str
     api.get('/results/')
       .then(({ data }) => {
         setResults(data)
+        setLoadedAt(new Date())
         if (!defaultFilter && data && data.length > 0) {
           setSelectedTarget(data[0].target)
         }
@@ -353,18 +355,26 @@ export default function RequirementsTab({ defaultFilter }: { defaultFilter?: str
 
   if (error) {
     return (
-      <div className="card-elevated rounded-xl p-4 border border-red-200 bg-red-50">
-        <p className="text-sm font-semibold text-gray-900 mb-0.5">Could not load results</p>
-        <p className="text-xs text-red-700">{error}</p>
+      <div className="card-elevated rounded-xl p-5 border border-red-200 bg-red-50 max-w-sm">
+        <p className="text-sm font-semibold text-gray-900 mb-1">Could not load requirements</p>
+        <p className="text-xs text-red-700 leading-relaxed mb-3">{error}</p>
+        <p className="text-xs text-gray-500 leading-relaxed mb-4">This usually means ASSIST.org is slow to respond, or you haven't added schools yet. Check the Targets tab first.</p>
+        <button
+          onClick={load}
+          className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition-colors cursor-pointer"
+        >
+          Try again
+        </button>
       </div>
     )
   }
 
   if (!results || results.length === 0) {
     return (
-      <div className="card-elevated rounded-xl p-4">
-        <p className="text-sm font-semibold text-gray-900 mb-0.5">No transfer targets set</p>
-        <p className="text-xs text-gray-500">Add schools and majors in the Transfer Targets tab.</p>
+      <div className="card-elevated rounded-xl p-8 text-center max-w-sm mx-auto">
+        <p className="text-sm font-semibold text-gray-900 mb-1">No transfer targets yet</p>
+        <p className="text-xs text-gray-500 leading-relaxed mb-4">Add a school and major in the Targets tab to see which courses you still need.</p>
+        <p className="text-xs text-indigo-600 font-semibold">Go to Targets tab to get started</p>
       </div>
     )
   }
@@ -475,7 +485,16 @@ export default function RequirementsTab({ defaultFilter }: { defaultFilter?: str
               </div>
               <span className="text-[11px] font-bold text-violet-500 shrink-0">{satisfiedRec.length}/{satisfiedRec.length + unsatisfiedRec.length}</span>
             </div>
-            <button onClick={load} className="text-xs text-gray-400 hover:text-gray-600 font-medium cursor-pointer px-2 py-1 rounded-lg hover:bg-white/50 transition-all shrink-0">Refresh</button>
+            <div className="flex items-center gap-2 shrink-0">
+              {loadedAt && (
+                <span className="text-[11px] text-gray-400">
+                  {Math.floor((Date.now() - loadedAt.getTime()) / 60000) < 1
+                    ? 'just now'
+                    : `${Math.floor((Date.now() - loadedAt.getTime()) / 60000)}m ago`}
+                </span>
+              )}
+              <button onClick={load} className="text-xs text-gray-400 hover:text-gray-600 font-medium cursor-pointer px-2 py-1 rounded-lg hover:bg-white/50 transition-all">Refresh</button>
+            </div>
           </div>
         </div>
       </div>

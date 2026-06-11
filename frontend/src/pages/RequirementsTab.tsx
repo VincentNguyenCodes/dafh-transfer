@@ -189,7 +189,24 @@ function CourseLine({ c, done }: { c: CourseItem; done?: boolean }) {
 }
 
 function shortMajor(name: string) {
-  return name.replace(/,?\s*(B\.S\.|B\.A\.|M\.S\.|B\.Sc\.|Bachelor.*|Master.*|Ph\.D.*)/i, '').trim()
+  return name
+    .replace(/,?\s*(B\.S\.|B\.A\.|M\.S\.|B\.Sc\.|Bachelor.*|Master.*|Ph\.D.*)/i, '')
+    .replace(/\s*[-–]\s*.+?(Concentration|Track|Option|Emphasis|Focus).*/i, '')
+    .replace(/\s+(Concentration|Track|Option|Emphasis|Focus)$/i, '')
+    .trim()
+}
+
+function shortSchool(name: string) {
+  return name
+    .replace(/^University of California,?\s*/i, 'UC ')
+    .replace(/^California State University,?\s*/i, 'CSU ')
+    .replace(/^California Polytechnic University,?\s*/i, 'Cal Poly ')
+    .replace(/^California Polytechnic State University,?\s*/i, 'Cal Poly ')
+    .replace(/^San Jose State University.*/i, 'SJSU')
+    .replace(/^San Diego State University.*/i, 'SDSU')
+    .replace(/^San Francisco State University.*/i, 'SFSU')
+    .replace(/^Sacramento State.*/i, 'Sac State')
+    .trim()
 }
 
 function SchoolTags({ badges }: { badges: Badge[] }) {
@@ -198,13 +215,14 @@ function SchoolTags({ badges }: { badges: Badge[] }) {
       {badges.slice(0, 3).map((b, i) => {
         const color = BADGE_COLORS[b.colorIdx]
         const label = b.major_name
-          ? `${b.school_name} · ${shortMajor(b.major_name)}`
-          : b.school_name
+          ? `${shortSchool(b.school_name)} · ${shortMajor(b.major_name)}`
+          : shortSchool(b.school_name)
+        const fullLabel = b.major_name ? `${b.school_name} · ${b.major_name}` : b.school_name
         return (
           <span
             key={i}
-            title={label}
-            className={`text-xs px-1.5 py-0.5 rounded-md font-semibold ${color.bg} ${color.text} ${b.satisfied ? 'opacity-40' : ''} whitespace-nowrap`}
+            title={fullLabel}
+            className={`text-xs px-1.5 py-0.5 rounded-md font-semibold whitespace-nowrap ${color.bg} ${color.text} ${b.satisfied ? 'opacity-40' : ''}`}
           >
             {label}
           </span>
@@ -430,8 +448,8 @@ export default function RequirementsTab({ defaultFilter }: { defaultFilter?: str
               const color = BADGE_COLORS[colorIdx]
               const isActive = selectedTarget === r.target
               return (
-                <button key={r.target} onClick={() => setSelectedTarget(r.target)} className={`px-3 py-1 rounded-full text-xs font-semibold transition-all duration-150 cursor-pointer ${isActive ? `${color.bg} ${color.text}` : 'bg-white/60 border border-white/60 text-gray-500 hover:border-gray-200'}`}>
-                  {r.school_name}
+                <button key={r.target} onClick={() => setSelectedTarget(r.target)} title={r.school_name} className={`px-3 py-1 rounded-full text-xs font-semibold transition-all duration-150 cursor-pointer whitespace-nowrap ${isActive ? `${color.bg} ${color.text}` : 'bg-white/60 border border-white/60 text-gray-500 hover:border-gray-200'}`}>
+                  {shortSchool(r.school_name)}
                 </button>
               )
             })}

@@ -27,6 +27,7 @@ export default function Schools() {
   const [error, setError] = useState('')
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editMajorKey, setEditMajorKey] = useState('')
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
 
   useEffect(() => {
     Promise.all([
@@ -197,11 +198,18 @@ export default function Schools() {
                       <button onClick={() => startEdit(t)} className="text-xs text-indigo-500 hover:text-indigo-700 shrink-0 font-medium transition-colors duration-150">
                         Edit
                       </button>
-                      <button onClick={() => deleteTarget(t.id!)} aria-label="Remove target" className="text-gray-300 hover:text-red-400 shrink-0 transition-colors duration-150">
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
+                      {confirmDeleteId === t.id ? (
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button onClick={() => { deleteTarget(t.id!); setConfirmDeleteId(null) }} className="text-xs font-semibold text-red-500 hover:text-red-700 transition-colors cursor-pointer">Delete</button>
+                          <button onClick={() => setConfirmDeleteId(null)} className="text-xs text-gray-400 hover:text-gray-600 transition-colors cursor-pointer">Cancel</button>
+                        </div>
+                      ) : (
+                        <button onClick={() => setConfirmDeleteId(t.id!)} aria-label="Remove target" className="text-gray-300 hover:text-red-400 shrink-0 transition-colors duration-150 cursor-pointer">
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>

@@ -251,10 +251,10 @@ function AggregatedRequirementRow({ req }: { req: AggregatedReq }) {
             <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-0.5 shrink-0" />
           )}
           {remaining.length > 1 && !req.satisfied && (
-            <span className="text-xs font-bold text-amber-600 uppercase tracking-wide">Pick one</span>
+            <span className="text-xs font-bold text-amber-600 uppercase tracking-wide" title="Any one of these course options satisfies this requirement">Pick one</span>
           )}
           {req.no_articulation && (
-            <span className="text-xs text-gray-400 italic">No CCC articulation</span>
+            <span className="text-xs text-gray-400 italic" title="No De Anza or Foothill course satisfies this requirement — you may need to take it at the university">No CCC articulation</span>
           )}
         </div>
         <SchoolTags badges={req.badges} />
@@ -301,7 +301,7 @@ function AggregatedRequirementRow({ req }: { req: AggregatedReq }) {
             <span key={ci} className="flex items-center gap-1">
               {ci > 0 && <span className="text-xs text-gray-400 font-bold">+</span>}
               <CourseChip c={c} style={`font-mono text-[11px] font-bold px-1.5 py-0.5 rounded cursor-default ${c.completed ? 'bg-gray-100 text-gray-400 line-through' : 'bg-indigo-50 text-indigo-800'}`} />
-              {c.units && <span className="text-xs text-gray-400">{c.units}u</span>}
+              {c.units && <span className="text-xs text-indigo-600">{c.units}u</span>}
               {c.in_progress && <span className="text-xs bg-amber-100 text-amber-700 px-1.5 rounded font-medium">→</span>}
             </span>
           ))}
@@ -440,8 +440,8 @@ export default function RequirementsTab({ defaultFilter }: { defaultFilter?: str
 
   return (
     <div>
-      <div className="sticky top-[109px] z-10 -mx-8 px-8 py-2.5 mb-4" style={{ background: 'rgba(245,245,247,0.92)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.6)' }}>
-        <div className="flex items-center gap-4 mb-2">
+      <div className="sticky top-[97px] z-10 -mx-8 px-8 py-2 mb-4" style={{ background: 'rgba(245,245,247,0.92)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.6)' }}>
+        <div className="flex items-center gap-3 flex-wrap">
           <div className="flex gap-2 flex-wrap items-center flex-1 min-w-0">
             {results.map((r) => {
               const colorIdx = targetColorMap.get(r.target) ?? 0
@@ -461,21 +461,21 @@ export default function RequirementsTab({ defaultFilter }: { defaultFilter?: str
               <button onClick={() => setSelectedTarget(GOLDEN4_FILTER)} className={`px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${isGolden4View ? 'bg-amber-100 text-amber-700' : 'bg-white/60 border border-white/60 text-gray-500 hover:border-gray-200'}`}>Golden 4</button>
             )}
           </div>
-          <button onClick={load} className="text-xs text-gray-400 hover:text-gray-600 font-medium cursor-pointer px-2 py-1 rounded-lg hover:bg-white/50 transition-all shrink-0">Refresh</button>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 flex-1">
-            <div className="flex-1 bg-gray-200/50 rounded-full h-1.5">
-              <div className="bg-indigo-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${reqPct}%` }} />
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="flex items-center gap-1.5">
+              <div className="w-20 bg-gray-200/50 rounded-full h-1.5">
+                <div className="bg-indigo-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${reqPct}%` }} />
+              </div>
+              <span className="text-[11px] font-bold text-indigo-600 shrink-0">{satisfied.length}/{satisfied.length + unsatisfied.length}</span>
             </div>
-            <span className="text-[11px] font-bold text-indigo-600 shrink-0 w-14 text-right">{satisfied.length}/{satisfied.length + unsatisfied.length} req</span>
-          </div>
-          <div className="w-px h-4 bg-gray-200 shrink-0" />
-          <div className="flex items-center gap-2 flex-1">
-            <div className="flex-1 bg-gray-200/50 rounded-full h-1.5">
-              <div className="bg-violet-400 h-1.5 rounded-full transition-all duration-500" style={{ width: `${recPct}%` }} />
+            <div className="w-px h-3 bg-gray-200 shrink-0" />
+            <div className="flex items-center gap-1.5">
+              <div className="w-20 bg-gray-200/50 rounded-full h-1.5">
+                <div className="bg-violet-400 h-1.5 rounded-full transition-all duration-500" style={{ width: `${recPct}%` }} />
+              </div>
+              <span className="text-[11px] font-bold text-violet-500 shrink-0">{satisfiedRec.length}/{satisfiedRec.length + unsatisfiedRec.length}</span>
             </div>
-            <span className="text-[11px] font-bold text-violet-500 shrink-0 w-14 text-right">{satisfiedRec.length}/{satisfiedRec.length + unsatisfiedRec.length} rec</span>
+            <button onClick={load} className="text-xs text-gray-400 hover:text-gray-600 font-medium cursor-pointer px-2 py-1 rounded-lg hover:bg-white/50 transition-all shrink-0">Refresh</button>
           </div>
         </div>
       </div>
@@ -558,7 +558,7 @@ export default function RequirementsTab({ defaultFilter }: { defaultFilter?: str
                       </svg>
                       <span className="text-xs font-bold text-gray-400 uppercase tracking-wide">{group.label}</span>
                     </div>
-                    <p className="text-xs font-semibold text-gray-600">{s.name}</p>
+                    <p className="text-xs font-semibold text-green-800">{s.name}</p>
                     <div className="flex flex-wrap gap-1">
                       {[...s.courses].sort((a,b) => a.code.localeCompare(b.code)).map((c, ci) => (
                         <span key={ci} className="font-mono text-xs font-bold px-1.5 py-0.5 rounded bg-green-100 text-green-600 line-through">{c.code}</span>

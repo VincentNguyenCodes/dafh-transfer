@@ -47,18 +47,18 @@ export default function Landing() {
           <h1 className="text-4xl font-bold text-gray-900 leading-[1.15] tracking-tight mb-5">
             Know exactly<br />what you need<br />to transfer.
           </h1>
-          <p className="text-sm text-gray-400 leading-relaxed max-w-[260px] mb-12">
+          <p className="text-sm text-gray-500 leading-relaxed max-w-[260px] mb-12">
             Live articulation data from ASSIST.org, matched against your transcript in seconds.
           </p>
 
           <div className="space-y-7">
             {[
-              { num: '01', label: 'Paste your transcript', desc: 'We automatically parse De Anza and Foothill courses' },
-              { num: '02', label: 'Choose target schools', desc: 'Pick UC, CSU, or private universities and your major' },
-              { num: '03', label: 'See your gap', desc: 'Know exactly which classes you still need to take' },
+              { label: 'Paste your transcript', desc: 'We automatically parse De Anza and Foothill courses' },
+              { label: 'Choose target schools', desc: 'Pick UC, CSU, or private universities and your major' },
+              { label: 'See your gap', desc: 'Know exactly which classes you still need to take' },
             ].map((step) => (
-              <div key={step.num} className="flex items-start gap-4">
-                <span className="text-[11px] font-mono font-bold text-indigo-400 mt-0.5 w-6 shrink-0">{step.num}</span>
+              <div key={step.label} className="flex items-start gap-4">
+                <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-1.5 shrink-0" />
                 <div>
                   <p className="text-sm font-semibold text-gray-800 tracking-tight">{step.label}</p>
                   <p className="text-xs text-gray-400 mt-0.5 leading-relaxed">{step.desc}</p>
@@ -68,7 +68,7 @@ export default function Landing() {
           </div>
         </div>
 
-        <p className="text-[10px] text-gray-300 font-medium tracking-wide mt-10">Powered by ASSIST.org articulation data</p>
+        <p className="text-xs text-gray-400 font-medium mt-10">Powered by ASSIST.org articulation data</p>
       </div>
 
       <div className="flex-1 flex items-center justify-center p-8 bg-white min-h-0">

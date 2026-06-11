@@ -61,8 +61,8 @@ export default function OverviewTab() {
   const recPct = totalRec > 0 ? (doneRec / totalRec) * 100 : 0
 
   const StatCard = ({ label, value, sub, accent }: { label: string; value: string | number; sub?: string; accent: string }) => (
-    <div className="glass rounded-xl px-4 py-3.5 flex flex-col gap-1">
-      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{label}</p>
+    <div className="card-elevated rounded-xl px-4 py-3.5 flex flex-col gap-1">
+      <p className="text-xs font-medium text-gray-500">{label}</p>
       <p className={`text-2xl font-bold ${accent}`}>{value}</p>
       {sub && <p className="text-[11px] text-gray-400">{sub}</p>}
     </div>
@@ -71,7 +71,7 @@ export default function OverviewTab() {
   return (
     <div className="space-y-5">
       <div>
-        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Progress</p>
+        <p className="text-xs font-semibold text-gray-600 mb-2 px-1">Progress</p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
           <StatCard label="Required Done" value={`${doneReq}/${totalReq}`} sub={`${Math.round(reqPct)}% complete`} accent="text-indigo-600" />
           <StatCard label="Recommended Done" value={`${doneRec}/${totalRec}`} sub={`${Math.round(recPct)}% complete`} accent="text-violet-500" />
@@ -82,8 +82,8 @@ export default function OverviewTab() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         <div>
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Progress by Target</p>
-          <div className="glass rounded-xl overflow-hidden divide-y divide-white/40">
+          <p className="text-xs font-semibold text-gray-600 mb-2 px-1">Progress by Target</p>
+          <div className="card-elevated rounded-xl overflow-hidden divide-y divide-gray-100">
             {results && results.length > 0 ? results.map((r) => {
               const req = r.requirements.filter((x) => !x.no_articulation)
               const done = req.filter((x) => x.satisfied).length
@@ -111,8 +111,8 @@ export default function OverviewTab() {
         </div>
 
         <div>
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Classes Breakdown</p>
-          <div className="glass rounded-xl overflow-hidden divide-y divide-white/40">
+          <p className="text-xs font-semibold text-gray-600 mb-2 px-1">Classes Breakdown</p>
+          <div className="card-elevated rounded-xl overflow-hidden divide-y divide-gray-100">
             {[
               { label: 'De Anza College', completed: deanza.filter((e) => e.status === 'completed').length, inProgress: deanza.filter((e) => e.status === 'in_progress').length },
               { label: 'Foothill College', completed: foothill.filter((e) => e.status === 'completed').length, inProgress: foothill.filter((e) => e.status === 'in_progress').length },
@@ -147,8 +147,8 @@ export default function OverviewTab() {
       </div>
 
       <div>
-        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Overall</p>
-        <div className="glass rounded-xl px-4 py-4 space-y-3">
+        <p className="text-xs font-semibold text-gray-600 mb-2 px-1">Overall</p>
+        <div className="card-elevated rounded-xl px-4 py-4 space-y-3">
           <div className="flex items-center gap-3">
             <span className="text-[11px] font-bold text-gray-500 w-28 shrink-0">Required</span>
             <div className="flex-1 bg-gray-200/50 rounded-full h-2">

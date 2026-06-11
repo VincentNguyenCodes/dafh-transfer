@@ -392,7 +392,7 @@ function ClassChip({ c, dragging }: { c: ClassItem; dragging?: boolean }) {
         {c.units != null && <span className="text-xs text-gray-400">{c.units}u</span>}
       </div>
       {uniqueSchools.length > 0 && (
-        <span className="text-[10px] text-gray-500 font-medium">{uniqueSchools.join(' · ')}</span>
+        <span className="text-xs text-gray-500 font-medium">{uniqueSchools.join(' · ')}</span>
       )}
     </div>
   )

@@ -87,12 +87,12 @@ function fmtCode(code: string) {
 }
 
 const BADGE_COLORS = [
-  { bg: 'bg-indigo-100', text: 'text-gray-700' },
-  { bg: 'bg-violet-100', text: 'text-gray-700' },
-  { bg: 'bg-emerald-100', text: 'text-gray-700' },
-  { bg: 'bg-amber-100', text: 'text-gray-700' },
-  { bg: 'bg-rose-100', text: 'text-gray-700' },
-  { bg: 'bg-cyan-100', text: 'text-gray-700' },
+  { bg: 'bg-indigo-100', text: 'text-indigo-800' },
+  { bg: 'bg-violet-100', text: 'text-violet-800' },
+  { bg: 'bg-emerald-100', text: 'text-emerald-800' },
+  { bg: 'bg-amber-100', text: 'text-amber-800' },
+  { bg: 'bg-rose-100', text: 'text-rose-800' },
+  { bg: 'bg-cyan-100', text: 'text-cyan-800' },
 ]
 
 function buildAggregated(
@@ -182,8 +182,8 @@ function CourseLine({ c, done }: { c: CourseItem; done?: boolean }) {
       {c.name && c.name !== c.code && (
         <span className={`text-[11px] truncate ${done ? 'text-gray-400' : 'text-gray-500'}`}>{c.name}</span>
       )}
-      {c.units && <span className="text-[10px] text-gray-400 shrink-0 ml-auto">{c.units}u</span>}
-      {c.in_progress && <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded shrink-0">In Progress</span>}
+      {c.units && <span className="text-xs text-gray-400 shrink-0 ml-auto">{c.units}u</span>}
+      {c.in_progress && <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded shrink-0">In Progress</span>}
     </div>
   )
 }
@@ -204,7 +204,7 @@ function SchoolTags({ badges }: { badges: Badge[] }) {
           <span
             key={i}
             title={label}
-            className={`text-[10px] px-1.5 py-0.5 rounded-md font-semibold ${color.bg} ${color.text} ${b.satisfied ? 'opacity-40' : ''} whitespace-nowrap`}
+            className={`text-xs px-1.5 py-0.5 rounded-md font-semibold ${color.bg} ${color.text} ${b.satisfied ? 'opacity-40' : ''} whitespace-nowrap`}
           >
             {label}
           </span>
@@ -217,16 +217,8 @@ function SchoolTags({ badges }: { badges: Badge[] }) {
 function AggregatedRequirementRow({ req }: { req: AggregatedReq }) {
   const remaining = req.options.filter((o) => !o.satisfied)
 
-  const borderAccent = req.satisfied
-    ? 'border-l-green-400'
-    : req.no_articulation
-    ? 'border-l-gray-200'
-    : remaining.length > 1
-    ? 'border-l-amber-400'
-    : 'border-l-indigo-400'
-
   return (
-    <div className={`relative hover:z-[5] glass rounded-xl border-l-2 ${borderAccent} p-3 flex flex-col gap-2.5`}>
+    <div className="relative hover:z-[5] card-elevated rounded-xl p-3 flex flex-col gap-2.5">
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-1.5">
           {req.satisfied ? (
@@ -241,10 +233,10 @@ function AggregatedRequirementRow({ req }: { req: AggregatedReq }) {
             <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-0.5 shrink-0" />
           )}
           {remaining.length > 1 && !req.satisfied && (
-            <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wide">Pick one</span>
+            <span className="text-xs font-bold text-amber-600 uppercase tracking-wide">Pick one</span>
           )}
           {req.no_articulation && (
-            <span className="text-[10px] text-gray-400 italic">No CCC articulation</span>
+            <span className="text-xs text-gray-400 italic">No CCC articulation</span>
           )}
         </div>
         <SchoolTags badges={req.badges} />
@@ -257,9 +249,9 @@ function AggregatedRequirementRow({ req }: { req: AggregatedReq }) {
           <div className="flex flex-wrap gap-x-1.5 gap-y-1 items-center">
             {courses.map((c, ci) => (
               <span key={ci} className="flex items-center gap-1">
-                {ci > 0 && <span className="text-[10px] text-gray-300 font-bold">+</span>}
+                {ci > 0 && <span className="text-xs text-gray-300 font-bold">+</span>}
                 <CourseChip c={c} style="font-mono text-[11px] font-bold text-gray-400 line-through cursor-default" />
-                {c.units && <span className="text-[10px] text-gray-300">{c.units}u</span>}
+                {c.units && <span className="text-xs text-gray-300">{c.units}u</span>}
               </span>
             ))}
           </div>
@@ -272,12 +264,12 @@ function AggregatedRequirementRow({ req }: { req: AggregatedReq }) {
             <span key={oi} className="flex items-center gap-1">
               {[...opt.courses].sort((a, b) => a.code.localeCompare(b.code)).map((c, ci) => (
                 <span key={ci} className="flex items-center gap-0.5">
-                  {ci > 0 && <span className="text-[10px] text-gray-300 font-bold">+</span>}
+                  {ci > 0 && <span className="text-xs text-gray-300 font-bold">+</span>}
                   <CourseChip
                     c={c}
                     style={`font-mono text-[11px] font-bold px-1.5 py-0.5 rounded cursor-default ${c.completed ? 'bg-gray-100 text-gray-400 line-through' : 'bg-indigo-50 text-indigo-800'}`}
                   />
-                  {c.in_progress && <span className="text-[10px] bg-amber-100 text-amber-700 px-1 rounded">→</span>}
+                  {c.in_progress && <span className="text-xs bg-amber-100 text-amber-700 px-1 rounded">→</span>}
                 </span>
               ))}
             </span>
@@ -289,10 +281,10 @@ function AggregatedRequirementRow({ req }: { req: AggregatedReq }) {
         <div className="flex flex-wrap gap-x-1.5 gap-y-1 items-center">
           {[...remaining[0].courses].sort((a, b) => a.code.localeCompare(b.code)).map((c, ci) => (
             <span key={ci} className="flex items-center gap-1">
-              {ci > 0 && <span className="text-[10px] text-gray-400 font-bold">+</span>}
+              {ci > 0 && <span className="text-xs text-gray-400 font-bold">+</span>}
               <CourseChip c={c} style={`font-mono text-[11px] font-bold px-1.5 py-0.5 rounded cursor-default ${c.completed ? 'bg-gray-100 text-gray-400 line-through' : 'bg-indigo-50 text-indigo-800'}`} />
-              {c.units && <span className="text-[10px] text-gray-400">{c.units}u</span>}
-              {c.in_progress && <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 rounded font-medium">→</span>}
+              {c.units && <span className="text-xs text-gray-400">{c.units}u</span>}
+              {c.in_progress && <span className="text-xs bg-amber-100 text-amber-700 px-1.5 rounded font-medium">→</span>}
             </span>
           ))}
         </div>
@@ -343,18 +335,18 @@ export default function RequirementsTab({ defaultFilter }: { defaultFilter?: str
 
   if (error) {
     return (
-      <div className="border-l-2 border-red-400 pl-5 py-4">
+      <div className="card-elevated rounded-xl p-4 border border-red-200 bg-red-50">
         <p className="text-sm font-semibold text-gray-900 mb-0.5">Could not load results</p>
-        <p className="text-xs text-gray-400">{error}</p>
+        <p className="text-xs text-red-700">{error}</p>
       </div>
     )
   }
 
   if (!results || results.length === 0) {
     return (
-      <div className="border-l-2 border-gray-200 pl-5 py-4">
+      <div className="card-elevated rounded-xl p-4">
         <p className="text-sm font-semibold text-gray-900 mb-0.5">No transfer targets set</p>
-        <p className="text-xs text-gray-400">Add schools and majors in the Transfer Targets tab.</p>
+        <p className="text-xs text-gray-500">Add schools and majors in the Transfer Targets tab.</p>
       </div>
     )
   }
@@ -419,8 +411,8 @@ export default function RequirementsTab({ defaultFilter }: { defaultFilter?: str
   const SectionHeader = ({ dot, label, count, countColor }: { dot: string; label: string; count: number; countColor: string }) => (
     <div className="flex items-center gap-2 mb-1 px-1">
       <div className={`w-2 h-2 rounded-full shrink-0 ${dot}`} />
-      <span className="text-[11px] font-bold text-gray-500 uppercase tracking-widest flex-1">{label}</span>
-      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${countColor}`}>{count}</span>
+      <span className="text-xs font-semibold text-gray-600 flex-1">{label}</span>
+      <span className={`text-xs font-bold px-1.5 py-0.5 rounded-md ${countColor}`}>{count}</span>
     </div>
   )
 
@@ -472,7 +464,7 @@ export default function RequirementsTab({ defaultFilter }: { defaultFilter?: str
 
       <div className="space-y-3">
         {visibleResults.filter((r) => r.unsupported).map((r) => (
-          <div key={`unsupported-${r.target}`} className="glass rounded-xl border-l-2 border-l-rose-400 p-4 animate-fade-up">
+          <div key={`unsupported-${r.target}`} className="card-elevated rounded-xl p-4 animate-fade-up">
             <p className="text-sm font-bold text-gray-900 mb-1">{r.school_name}</p>
             <p className="text-xs font-semibold text-rose-600 mb-1">Major-specific requirements unavailable</p>
             <p className="text-xs text-gray-500 leading-relaxed">{r.unsupported_reason || 'No ASSIST major articulation is published for this independent university.'}</p>
@@ -480,7 +472,7 @@ export default function RequirementsTab({ defaultFilter }: { defaultFilter?: str
         ))}
 
         {visibleResults.some((r) => r.low_confidence && !r.unsupported) && (
-          <div className="glass rounded-xl border-l-2 border-l-amber-400 p-3 animate-fade-up">
+          <div className="card-elevated rounded-xl p-3 animate-fade-up">
             <p className="text-xs font-bold text-amber-700 mb-0.5">Partial articulation</p>
             <p className="text-xs text-gray-600 leading-relaxed">
               {visibleResults.find((r) => r.low_confidence && !r.unsupported)?.low_confidence_reason || 'ASSIST data for this school is incomplete. Verify requirements against the school catalog.'}
@@ -504,18 +496,18 @@ export default function RequirementsTab({ defaultFilter }: { defaultFilter?: str
               {unsatisfiedRec.map((req) => <AggregatedRequirementRow key={req.key} req={req} />)}
               {unsatisfiedElectiveGroups.map((group) =>
                 group.series.map((s) => (
-                  <div key={`${group.label}-${s.name}`} className="glass rounded-xl border-l-2 border-l-violet-400 p-3 flex flex-col gap-2.5">
+                  <div key={`${group.label}-${s.name}`} className="card-elevated rounded-xl p-3 flex flex-col gap-2.5">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-1.5">
                         <div className="w-1.5 h-1.5 rounded-full bg-violet-400 shrink-0" />
-                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">{group.label}</span>
+                        <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">{group.label}</span>
                       </div>
-                      <span className="text-[10px] font-bold bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full shrink-0">{s.completed_count}/{s.total}</span>
+                      <span className="text-xs font-bold bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full shrink-0">{s.completed_count}/{s.total}</span>
                     </div>
                     <p className="text-xs font-semibold text-gray-700">{s.name}</p>
                     <div className="flex flex-wrap gap-1">
                       {[...s.courses].sort((a,b) => a.code.localeCompare(b.code)).map((c, ci) => (
-                        <span key={ci} className={`font-mono text-[10px] font-bold px-1.5 py-0.5 rounded ${c.completed ? 'bg-green-100 text-green-700 line-through' : 'bg-gray-100 text-gray-600'}`}>{c.code}</span>
+                        <span key={ci} className={`font-mono text-xs font-bold px-1.5 py-0.5 rounded ${c.completed ? 'bg-green-100 text-green-700 line-through' : 'bg-gray-100 text-gray-600'}`}>{c.code}</span>
                       ))}
                     </div>
                   </div>
@@ -541,17 +533,17 @@ export default function RequirementsTab({ defaultFilter }: { defaultFilter?: str
               {satisfiedRec.map((req) => <AggregatedRequirementRow key={req.key} req={req} />)}
               {satisfiedElectiveGroups.map((group) =>
                 group.series.filter((s) => s.satisfied).map((s) => (
-                  <div key={`${group.label}-${s.name}`} className="glass rounded-xl border-l-2 border-l-green-400 p-3 flex flex-col gap-2.5">
+                  <div key={`${group.label}-${s.name}`} className="card-elevated rounded-xl p-3 flex flex-col gap-2.5">
                     <div className="flex items-center gap-1.5">
                       <svg className="w-3.5 h-3.5 text-green-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                       </svg>
-                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">{group.label}</span>
+                      <span className="text-xs font-bold text-gray-400 uppercase tracking-wide">{group.label}</span>
                     </div>
                     <p className="text-xs font-semibold text-gray-600">{s.name}</p>
                     <div className="flex flex-wrap gap-1">
                       {[...s.courses].sort((a,b) => a.code.localeCompare(b.code)).map((c, ci) => (
-                        <span key={ci} className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-green-100 text-green-600 line-through">{c.code}</span>
+                        <span key={ci} className="font-mono text-xs font-bold px-1.5 py-0.5 rounded bg-green-100 text-green-600 line-through">{c.code}</span>
                       ))}
                     </div>
                   </div>
@@ -571,7 +563,7 @@ export default function RequirementsTab({ defaultFilter }: { defaultFilter?: str
         )}
 
         {unsatisfied.length === 0 && satisfied.length === 0 && unsatisfiedRec.length === 0 && satisfiedRec.length === 0 && (
-          <div className="glass rounded-2xl p-10 text-center">
+          <div className="card-elevated rounded-2xl p-10 text-center">
             <div className="w-11 h-11 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-3">
               <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />

@@ -100,7 +100,7 @@ export default function Dashboard() {
         <TopBar onLogout={logout} />
 
         <main className="max-w-md mx-auto px-6 py-14 animate-fade-up">
-          <p className="text-[11px] font-semibold text-indigo-500 uppercase tracking-[0.15em] mb-10">
+          <p className="text-xs font-semibold text-indigo-600 mb-10">
             Step {currentStep} of 3
           </p>
 
@@ -174,7 +174,7 @@ export default function Dashboard() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 py-3 text-xs font-semibold border-b-2 whitespace-nowrap transition-all duration-150 cursor-pointer text-center tracking-wide ${
+              className={`flex-1 py-3 text-xs font-semibold border-b-2 whitespace-nowrap transition-all duration-150 cursor-pointer text-center ${
                 activeTab === tab.id
                   ? 'border-indigo-500 text-gray-900'
                   : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-200'

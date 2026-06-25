@@ -38,6 +38,7 @@ class OptionPreference(models.Model):
 class Schedule(models.Model):
     TYPE_CUSTOM = 'custom'
     TYPE_OPTIMAL = 'optimal'
+    TYPE_BLANK = 'blank'
     GE_IGETC = 'igetc'
     GE_CSU = 'csu'
 

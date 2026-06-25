@@ -1,6 +1,6 @@
 import { DndContext, DragOverlay, PointerSensor, useDraggable, useDroppable, useSensor, useSensors } from '@dnd-kit/core'
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core'
-import { Fragment, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 
 export type ClassItem = {
   code: string
@@ -21,10 +21,35 @@ export type Quarter = {
 const TERMS: Quarter['term'][] = ['Winter', 'Spring', 'Summer', 'Fall']
 const BANK_ID = 'bank'
 
+function normalizeCode(code: string): string {
+  const parts = code.split(/\s+/)
+  if (parts.length < 2) return code
+  const last = parts[parts.length - 1].replace(/^[DF]0*/, '').replace(/\.$/, '')
+  return [...parts.slice(0, -1), last].join(' ')
+}
+
+function quarterRank(q: Quarter): number {
+  return q.year * 4 + TERMS.indexOf(q.term)
+}
+
+function buildPlacementRank(quarters: Quarter[]): Map<string, number> {
+  const m = new Map<string, number>()
+  for (const q of quarters) {
+    const rank = quarterRank(q)
+    for (const code of q.class_codes) {
+      if (!m.has(code) || rank < m.get(code)!) m.set(code, rank)
+    }
+  }
+  return m
+}
+
 type Props = {
   classBank: ClassItem[]
   prePlaced?: ClassItem[]
   initialQuarters?: Quarter[]
+  prereqMap?: Record<string, string[]>
+  completedCodes?: Set<string>
+  allowManualAdd?: boolean
   name: string
   onNameChange: (name: string) => void
   onBack: () => void
@@ -33,7 +58,7 @@ type Props = {
   error: string
 }
 
-export default function ScheduleBuilder({ classBank, prePlaced = [], initialQuarters = [], name, onNameChange, onBack, onSave, saving, error }: Props) {
+export default function ScheduleBuilder({ classBank, prePlaced = [], initialQuarters = [], prereqMap = {}, completedCodes = new Set(), allowManualAdd = false, name, onNameChange, onBack, onSave, saving, error }: Props) {
   const [editingName, setEditingName] = useState(!name)
   const [draftName, setDraftName] = useState(name)
   const [quarters, setQuarters] = useState<Quarter[]>(initialQuarters)
@@ -42,15 +67,64 @@ export default function ScheduleBuilder({ classBank, prePlaced = [], initialQuar
     return classBank.map((c) => c.code).filter((code) => !placed.has(code))
   })
   const [activeDragId, setActiveDragId] = useState<string | null>(null)
+  const [prereqWarning, setPrereqWarning] = useState<string | null>(null)
+  const [manualClasses, setManualClasses] = useState<ClassItem[]>([])
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
+
+  useEffect(() => {
+    if (!prereqWarning) return
+    const t = setTimeout(() => setPrereqWarning(null), 6000)
+    return () => clearTimeout(t)
+  }, [prereqWarning])
 
   const classByCode = useMemo(() => {
     const m = new Map<string, ClassItem>()
     for (const c of classBank) m.set(c.code, c)
     for (const c of prePlaced) if (!m.has(c.code)) m.set(c.code, c)
+    for (const c of manualClasses) m.set(c.code, c)
     return m
-  }, [classBank, prePlaced])
+  }, [classBank, prePlaced, manualClasses])
+
+  const addManualClass = (item: ClassItem) => {
+    setManualClasses((m) => [...m, item])
+    setBankCodes((b) => [...b, item.code])
+  }
+
+  const isCompleted = (code: string) => completedCodes.has(code) || completedCodes.has(normalizeCode(code))
+
+  const lookupPrereqs = (code: string): string[] => {
+    if (prereqMap[code]) return prereqMap[code]
+    const norm = normalizeCode(code)
+    if (prereqMap[norm]) return prereqMap[norm]
+    if (code.endsWith('H')) {
+      const stripped = code.slice(0, -1)
+      return prereqMap[stripped] || prereqMap[normalizeCode(stripped)] || []
+    }
+    return []
+  }
+
+  const findMissingPrereqs = (code: string, rank: number, rankMap: Map<string, number>): string[] => {
+    return lookupPrereqs(code).filter((p) => {
+      if (isCompleted(p)) return false
+      const pRank = rankMap.get(p) ?? rankMap.get(normalizeCode(p))
+      return pRank === undefined || pRank >= rank
+    })
+  }
+
+  const prereqIssues = useMemo(() => {
+    const rankMap = buildPlacementRank(quarters)
+    const m = new Map<string, string[]>()
+    for (const q of quarters) {
+      const rank = quarterRank(q)
+      for (const code of q.class_codes) {
+        const missing = findMissingPrereqs(code, rank, rankMap)
+        if (missing.length > 0) m.set(code, missing)
+      }
+    }
+    return m
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quarters, prereqMap, completedCodes])
 
   const addQuarter = () => {
     const lastYear = quarters.length > 0 ? quarters[quarters.length - 1].year : new Date().getFullYear()
@@ -93,8 +167,22 @@ export default function ScheduleBuilder({ classBank, prePlaced = [], initialQuar
 
     if (overId === BANK_ID) {
       setBankCodes((b) => (b.includes(code) ? b : [...b, code]))
+      setPrereqWarning(null)
     } else {
-      setQuarters((qs) => qs.map((q) => (q.id === overId ? { ...q, class_codes: [...q.class_codes, code] } : q)))
+      setQuarters((qs) => {
+        const next = qs.map((q) => (q.id === overId ? { ...q, class_codes: [...q.class_codes, code] } : q))
+        const droppedQuarter = next.find((q) => q.id === overId)
+        if (droppedQuarter) {
+          const rankMap = buildPlacementRank(next)
+          const missing = findMissingPrereqs(code, quarterRank(droppedQuarter), rankMap)
+          setPrereqWarning(
+            missing.length > 0
+              ? `${code} needs ${missing.join(' and ')} as a prerequisite first, in an earlier quarter.`
+              : null
+          )
+        }
+        return next
+      })
     }
   }
 
@@ -174,6 +262,15 @@ export default function ScheduleBuilder({ classBank, prePlaced = [], initialQuar
           {totalRemaining} in bank · {totalPlanned} planned across {quarters.length} quarter{quarters.length === 1 ? '' : 's'}
         </div>
 
+        {prereqWarning && (
+          <div className="mb-3 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 animate-fade-up">
+            <span className="text-amber-500 text-sm shrink-0">⚠</span>
+            <p className="text-sm text-amber-800">{prereqWarning}</p>
+          </div>
+        )}
+
+        {allowManualAdd && <AddClassForm existing={classByCode} onAdd={addManualClass} />}
+
         <ClassBank items={remainingBank} />
 
         <div className="mt-6 -mx-8 px-8 overflow-x-auto pb-3">
@@ -183,6 +280,7 @@ export default function ScheduleBuilder({ classBank, prePlaced = [], initialQuar
                 key={q.id}
                 quarter={q}
                 classes={q.class_codes.map((code) => classByCode.get(code) || { code, name: code, units: null, needed_for: [] })}
+                prereqIssues={prereqIssues}
                 onChange={(patch) => updateQuarter(q.id, patch)}
                 onRemove={() => removeQuarter(q.id)}
               />
@@ -254,6 +352,74 @@ function buildPrereqGroups(items: ClassItem[]): ClassItem[][] {
   })
 }
 
+function AddClassForm({ existing, onAdd }: { existing: Map<string, ClassItem>; onAdd: (item: ClassItem) => void }) {
+  const [code, setCode] = useState('')
+  const [name, setName] = useState('')
+  const [units, setUnits] = useState('')
+  const [formError, setFormError] = useState('')
+
+  const submit = () => {
+    const trimmedCode = code.trim()
+    if (!trimmedCode) {
+      setFormError('Enter a course code.')
+      return
+    }
+    if (existing.has(trimmedCode)) {
+      setFormError(`${trimmedCode} is already on the board.`)
+      return
+    }
+    onAdd({
+      code: trimmedCode,
+      name: name.trim() || trimmedCode,
+      units: units.trim() ? Number(units) : null,
+      needed_for: [],
+    })
+    setCode('')
+    setName('')
+    setUnits('')
+    setFormError('')
+  }
+
+  return (
+    <div className="mb-4 rounded-2xl border-2 border-dashed border-gray-200 bg-white p-4">
+      <p className="text-sm font-bold text-gray-900 mb-2">Add a class</p>
+      <div className="flex flex-wrap gap-2 items-start">
+        <input
+          type="text"
+          value={code}
+          onChange={(e) => { setCode(e.target.value); setFormError('') }}
+          onKeyDown={(e) => { if (e.key === 'Enter') submit() }}
+          placeholder="Code (e.g. MATH 1B)"
+          className="flex-1 min-w-[140px] text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+        />
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') submit() }}
+          placeholder="Name (optional)"
+          className="flex-1 min-w-[160px] text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+        />
+        <input
+          type="number"
+          value={units}
+          onChange={(e) => setUnits(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') submit() }}
+          placeholder="Units"
+          className="w-20 text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+        />
+        <button
+          onClick={submit}
+          className="bg-indigo-600 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+        >
+          Add
+        </button>
+      </div>
+      {formError && <p className="text-xs text-red-500 mt-2">{formError}</p>}
+    </div>
+  )
+}
+
 function ClassBank({ items }: { items: ClassItem[] }) {
   const { setNodeRef, isOver } = useDroppable({ id: BANK_ID })
   const groups = useMemo(() => buildPrereqGroups(items), [items])
@@ -296,11 +462,13 @@ function ClassBank({ items }: { items: ClassItem[] }) {
 function QuarterCard({
   quarter,
   classes,
+  prereqIssues,
   onChange,
   onRemove,
 }: {
   quarter: Quarter
   classes: ClassItem[]
+  prereqIssues: Map<string, string[]>
   onChange: (patch: Partial<Quarter>) => void
   onRemove: () => void
 }) {
@@ -336,7 +504,7 @@ function QuarterCard({
           <p className="text-xs text-gray-400 text-center py-6">Drop classes here</p>
         ) : (
           <div className="flex flex-col gap-1.5">
-            {classes.map((c) => <ClassChip key={c.code} c={c} />)}
+            {classes.map((c) => <ClassChip key={c.code} c={c} missingPrereqs={prereqIssues.get(c.code)} />)}
           </div>
         )}
       </div>
@@ -362,27 +530,35 @@ function abbreviateSchool(name: string): string {
   return words.map((w) => w[0]).join('').slice(0, 4).toUpperCase()
 }
 
-function ClassChip({ c, dragging }: { c: ClassItem; dragging?: boolean }) {
+function ClassChip({ c, dragging, missingPrereqs }: { c: ClassItem; dragging?: boolean; missingPrereqs?: string[] }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: c.code })
   const hidden = isDragging && !dragging
   const isRequired = c.kind === 'required'
   const isRecommended = c.kind === 'recommended'
   const isPrereq = c.kind === 'prereq'
-  const colorClass = isRequired
-    ? 'border-red-200 bg-red-50'
-    : isRecommended
-      ? 'border-yellow-200 bg-yellow-50'
-      : isPrereq
-        ? 'border-blue-200 bg-blue-50'
-        : 'border-gray-200 bg-white'
+  const hasWarning = !!missingPrereqs && missingPrereqs.length > 0
+  const colorClass = hasWarning
+    ? 'border-amber-300 bg-amber-50'
+    : isRequired
+      ? 'border-red-200 bg-red-50'
+      : isRecommended
+        ? 'border-yellow-200 bg-yellow-50'
+        : isPrereq
+          ? 'border-blue-200 bg-blue-50'
+          : 'border-gray-200 bg-white'
   const schoolAbbrevs = (c.needed_for || []).filter(Boolean).map(abbreviateSchool)
   const uniqueSchools = Array.from(new Set(schoolAbbrevs))
+  const title = hasWarning
+    ? `Needs ${missingPrereqs!.join(' and ')} as a prerequisite first, in an earlier quarter`
+    : c.needed_for && c.needed_for.length > 0
+      ? `${c.kind === 'required' ? 'Required' : c.kind === 'recommended' ? 'Recommended' : ''} for: ${c.needed_for.join(', ')}`
+      : undefined
   return (
     <div
       ref={setNodeRef}
       {...attributes}
       {...listeners}
-      title={c.needed_for && c.needed_for.length > 0 ? `${c.kind === 'required' ? 'Required' : c.kind === 'recommended' ? 'Recommended' : ''} for: ${c.needed_for.join(', ')}` : undefined}
+      title={title}
       className={`flex flex-col gap-0.5 px-3 py-2 rounded-xl border ${colorClass} cursor-grab active:cursor-grabbing select-none shadow-sm ${
         hidden ? 'opacity-30' : ''
       } ${dragging ? 'shadow-lg' : ''}`}
@@ -390,6 +566,7 @@ function ClassChip({ c, dragging }: { c: ClassItem; dragging?: boolean }) {
       <div className="flex items-center gap-2">
         <span className="font-mono text-sm font-semibold text-gray-900">{c.code}</span>
         {c.units != null && <span className="text-xs text-gray-400">{c.units}u</span>}
+        {hasWarning && <span className="text-amber-500 text-xs" aria-label="Prerequisite warning">⚠</span>}
       </div>
       {uniqueSchools.length > 0 && (
         <span className="text-[10px] text-gray-500 font-medium">{uniqueSchools.join(' · ')}</span>

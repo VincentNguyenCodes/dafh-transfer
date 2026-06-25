@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import api from '../api/client'
 
 type CourseItem = {
@@ -48,6 +48,7 @@ type TargetResult = {
   school_name: string
   major_name: string
   is_csu?: boolean
+  prereq_map?: Record<string, string[]>
   requirements: Requirement[]
   recommended: Requirement[]
   elective_series: ElectiveGroup[]
@@ -84,6 +85,24 @@ type AggregatedReq = {
 
 function fmtCode(code: string) {
   return code.replace(/([A-Za-z]+)(\d)/, '$1 $2')
+}
+
+function normalizeCode(code: string): string {
+  const parts = code.split(/\s+/)
+  if (parts.length < 2) return code
+  const last = parts[parts.length - 1].replace(/^[DF]0*/, '').replace(/\.$/, '')
+  return [...parts.slice(0, -1), last].join(' ')
+}
+
+function lookupPrereqs(code: string, prereqMap: Record<string, string[]>): string[] {
+  if (prereqMap[code]) return prereqMap[code]
+  const norm = normalizeCode(code)
+  if (prereqMap[norm]) return prereqMap[norm]
+  if (code.endsWith('H')) {
+    const stripped = code.slice(0, -1)
+    return prereqMap[stripped] || prereqMap[normalizeCode(stripped)] || []
+  }
+  return []
 }
 
 const BADGE_COLORS = [
@@ -139,11 +158,12 @@ function buildAggregated(
   return Array.from(map.values())
 }
 
-function CourseChip({ c, style }: { c: CourseItem; style: string }) {
+function CourseChip({ c, style, prereqMap }: { c: CourseItem; style: string; prereqMap: Record<string, string[]> }) {
+  const prereqs = lookupPrereqs(c.code, prereqMap)
   return (
     <span className="relative group/chip inline-block">
       <span className={style}>{c.code}</span>
-      {(c.name || c.units) && (
+      {(c.name || c.units || prereqs.length > 0) && (
         <div className="pointer-events-none absolute top-full left-0 mt-1 z-[300] opacity-0 group-hover/chip:opacity-100 transition-opacity duration-150">
           <div
             className="flex items-center gap-2.5 rounded-xl px-3 py-2 whitespace-nowrap"
@@ -160,6 +180,12 @@ function CourseChip({ c, style }: { c: CourseItem; style: string }) {
               <>
                 <span className="w-px h-3 bg-gray-200 shrink-0" />
                 <span className="text-[11px] font-semibold text-gray-400 shrink-0">{c.units}u</span>
+              </>
+            )}
+            {prereqs.length > 0 && (
+              <>
+                <span className="w-px h-3 bg-gray-200 shrink-0" />
+                <span className="text-[11px] text-gray-500">Prereq: {prereqs.join(', ')}</span>
               </>
             )}
           </div>
@@ -214,7 +240,7 @@ function SchoolTags({ badges }: { badges: Badge[] }) {
   )
 }
 
-function AggregatedRequirementRow({ req }: { req: AggregatedReq }) {
+function AggregatedRequirementRow({ req, prereqMap }: { req: AggregatedReq; prereqMap: Record<string, string[]> }) {
   const remaining = req.options.filter((o) => !o.satisfied)
 
   const borderAccent = req.satisfied
@@ -258,7 +284,7 @@ function AggregatedRequirementRow({ req }: { req: AggregatedReq }) {
             {courses.map((c, ci) => (
               <span key={ci} className="flex items-center gap-1">
                 {ci > 0 && <span className="text-[10px] text-gray-300 font-bold">+</span>}
-                <CourseChip c={c} style="font-mono text-[11px] font-bold text-gray-400 line-through cursor-default" />
+                <CourseChip c={c} style="font-mono text-[11px] font-bold text-gray-400 line-through cursor-default" prereqMap={prereqMap} />
                 {c.units && <span className="text-[10px] text-gray-300">{c.units}u</span>}
               </span>
             ))}
@@ -269,18 +295,22 @@ function AggregatedRequirementRow({ req }: { req: AggregatedReq }) {
       {!req.no_articulation && !req.satisfied && remaining.length > 1 && (
         <div className="flex flex-wrap gap-x-1.5 gap-y-1 items-center">
           {remaining.map((opt, oi) => (
-            <span key={oi} className="flex items-center gap-1">
-              {[...opt.courses].sort((a, b) => a.code.localeCompare(b.code)).map((c, ci) => (
-                <span key={ci} className="flex items-center gap-0.5">
-                  {ci > 0 && <span className="text-[10px] text-gray-300 font-bold">+</span>}
-                  <CourseChip
-                    c={c}
-                    style={`font-mono text-[11px] font-bold px-1.5 py-0.5 rounded cursor-default ${c.completed ? 'bg-gray-100 text-gray-400 line-through' : 'bg-indigo-50 text-indigo-800'}`}
-                  />
-                  {c.in_progress && <span className="text-[10px] bg-amber-100 text-amber-700 px-1 rounded">→</span>}
-                </span>
-              ))}
-            </span>
+            <Fragment key={oi}>
+              {oi > 0 && <span className="text-[10px] text-gray-300 font-bold">or</span>}
+              <span className="flex items-center gap-1">
+                {[...opt.courses].sort((a, b) => a.code.localeCompare(b.code)).map((c, ci) => (
+                  <span key={ci} className="flex items-center gap-0.5">
+                    {ci > 0 && <span className="text-[10px] text-gray-300 font-bold">+</span>}
+                    <CourseChip
+                      c={c}
+                      style={`font-mono text-[11px] font-bold px-1.5 py-0.5 rounded cursor-default ${c.completed ? 'bg-gray-100 text-gray-400 line-through' : 'bg-indigo-50 text-indigo-800'}`}
+                      prereqMap={prereqMap}
+                    />
+                    {c.in_progress && <span className="text-[10px] bg-amber-100 text-amber-700 px-1 rounded">→</span>}
+                  </span>
+                ))}
+              </span>
+            </Fragment>
           ))}
         </div>
       )}
@@ -290,7 +320,7 @@ function AggregatedRequirementRow({ req }: { req: AggregatedReq }) {
           {[...remaining[0].courses].sort((a, b) => a.code.localeCompare(b.code)).map((c, ci) => (
             <span key={ci} className="flex items-center gap-1">
               {ci > 0 && <span className="text-[10px] text-gray-400 font-bold">+</span>}
-              <CourseChip c={c} style={`font-mono text-[11px] font-bold px-1.5 py-0.5 rounded cursor-default ${c.completed ? 'bg-gray-100 text-gray-400 line-through' : 'bg-indigo-50 text-indigo-800'}`} />
+              <CourseChip c={c} style={`font-mono text-[11px] font-bold px-1.5 py-0.5 rounded cursor-default ${c.completed ? 'bg-gray-100 text-gray-400 line-through' : 'bg-indigo-50 text-indigo-800'}`} prereqMap={prereqMap} />
               {c.units && <span className="text-[10px] text-gray-400">{c.units}u</span>}
               {c.in_progress && <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 rounded font-medium">→</span>}
             </span>
@@ -358,6 +388,8 @@ export default function RequirementsTab({ defaultFilter }: { defaultFilter?: str
       </div>
     )
   }
+
+  const prereqMap = results[0]?.prereq_map || {}
 
   const targetColorMap = new Map<string, number>()
   results.forEach((r, i) => targetColorMap.set(r.target, i % BADGE_COLORS.length))
@@ -492,7 +524,7 @@ export default function RequirementsTab({ defaultFilter }: { defaultFilter?: str
           <div className="animate-fade-up stagger-1">
             <SectionHeader dot="bg-indigo-500" label="Still Needed — Required" count={unsatisfied.length} countColor="bg-indigo-500 text-white" />
             <RowGrid>
-              {unsatisfied.map((req) => <AggregatedRequirementRow key={req.key} req={req} />)}
+              {unsatisfied.map((req) => <AggregatedRequirementRow key={req.key} req={req} prereqMap={prereqMap} />)}
             </RowGrid>
           </div>
         )}
@@ -501,7 +533,7 @@ export default function RequirementsTab({ defaultFilter }: { defaultFilter?: str
           <div className="animate-fade-up stagger-2">
             <SectionHeader dot="bg-violet-400" label="Still Needed — Recommended" count={unsatisfiedRec.length + unsatisfiedElectiveGroups.reduce((n, g) => n + g.series.length, 0)} countColor="bg-violet-100 text-violet-700" />
             <RowGrid>
-              {unsatisfiedRec.map((req) => <AggregatedRequirementRow key={req.key} req={req} />)}
+              {unsatisfiedRec.map((req) => <AggregatedRequirementRow key={req.key} req={req} prereqMap={prereqMap} />)}
               {unsatisfiedElectiveGroups.map((group) =>
                 group.series.map((s) => (
                   <div key={`${group.label}-${s.name}`} className="glass rounded-xl border-l-2 border-l-violet-400 p-3 flex flex-col gap-2.5">
@@ -529,7 +561,7 @@ export default function RequirementsTab({ defaultFilter }: { defaultFilter?: str
           <div>
             <SectionHeader dot="bg-green-400" label="Completed — Required" count={satisfied.length} countColor="bg-green-100 text-green-700" />
             <RowGrid>
-              {satisfied.map((req) => <AggregatedRequirementRow key={req.key} req={req} />)}
+              {satisfied.map((req) => <AggregatedRequirementRow key={req.key} req={req} prereqMap={prereqMap} />)}
             </RowGrid>
           </div>
         )}
@@ -538,7 +570,7 @@ export default function RequirementsTab({ defaultFilter }: { defaultFilter?: str
           <div>
             <SectionHeader dot="bg-gray-300" label="Completed — Recommended" count={satisfiedRec.length + satisfiedElectiveGroups.length} countColor="bg-gray-100 text-gray-500" />
             <RowGrid>
-              {satisfiedRec.map((req) => <AggregatedRequirementRow key={req.key} req={req} />)}
+              {satisfiedRec.map((req) => <AggregatedRequirementRow key={req.key} req={req} prereqMap={prereqMap} />)}
               {satisfiedElectiveGroups.map((group) =>
                 group.series.filter((s) => s.satisfied).map((s) => (
                   <div key={`${group.label}-${s.name}`} className="glass rounded-xl border-l-2 border-l-green-400 p-3 flex flex-col gap-2.5">
@@ -565,7 +597,7 @@ export default function RequirementsTab({ defaultFilter }: { defaultFilter?: str
           <div>
             <SectionHeader dot="bg-gray-200" label="No Articulation Path" count={noArticulation.length} countColor="bg-gray-100 text-gray-400" />
             <RowGrid>
-              {noArticulation.map((req) => <AggregatedRequirementRow key={req.key} req={req} />)}
+              {noArticulation.map((req) => <AggregatedRequirementRow key={req.key} req={req} prereqMap={prereqMap} />)}
             </RowGrid>
           </div>
         )}

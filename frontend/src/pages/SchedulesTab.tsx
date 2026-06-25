@@ -6,7 +6,7 @@ import ScheduleBuilder, { type ClassItem, type Quarter } from './ScheduleBuilder
 type Schedule = {
   id: number
   name: string
-  schedule_type: 'custom' | 'optimal'
+  schedule_type: 'custom' | 'optimal' | 'blank'
   ge_path: string
   quarters: Quarter[]
   class_bank: ClassItem[]
@@ -14,12 +14,19 @@ type Schedule = {
   updated_at: string
 }
 
+function normalizeCode(code: string): string {
+  const parts = code.split(/\s+/)
+  if (parts.length < 2) return code
+  const last = parts[parts.length - 1].replace(/^[DF]0*/, '').replace(/\.$/, '')
+  return [...parts.slice(0, -1), last].join(' ')
+}
+
 export default function SchedulesTab() {
   const [schedules, setSchedules] = useState<Schedule[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [creating, setCreating] = useState(false)
-  const [wizardType, setWizardType] = useState<'custom' | 'optimal' | null>(null)
+  const [wizardType, setWizardType] = useState<'prebuilt' | 'blank' | null>(null)
   const [busy, setBusy] = useState<number | null>(null)
   const [viewing, setViewing] = useState<Schedule | null>(null)
 
@@ -47,10 +54,18 @@ export default function SchedulesTab() {
     }
   }
 
-  if (wizardType) {
+  if (wizardType === 'prebuilt') {
     return (
       <ScheduleWizard
-        scheduleType={wizardType}
+        onCancel={() => setWizardType(null)}
+        onSaved={() => { setWizardType(null); load() }}
+      />
+    )
+  }
+
+  if (wizardType === 'blank') {
+    return (
+      <NewBlankSchedule
         onCancel={() => setWizardType(null)}
         onSaved={() => { setWizardType(null); load() }}
       />
@@ -89,7 +104,7 @@ export default function SchedulesTab() {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold text-gray-900 mb-1">Schedules</h2>
-          <p className="text-gray-500 text-sm">Build a schedule by picking your options or letting us optimize for the fewest classes.</p>
+          <p className="text-gray-500 text-sm">Build a prebuilt schedule from your requirements, or start a blank one and add classes yourself.</p>
         </div>
         <button
           onClick={() => setCreating(true)}
@@ -127,7 +142,7 @@ export default function SchedulesTab() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-gray-900 truncate group-hover:text-indigo-700 transition-colors duration-150">{s.name}</p>
                   <p className="text-xs text-gray-400 mt-0.5">
-                    {s.schedule_type === 'optimal' ? 'Optimal plan' : 'Custom plan'} · {new Date(s.updated_at).toLocaleDateString()}
+                    {s.schedule_type === 'optimal' ? 'Optimal plan' : s.schedule_type === 'blank' ? 'Blank plan' : 'Prebuilt plan'} · {new Date(s.updated_at).toLocaleDateString()}
                   </p>
                 </div>
                 <span
@@ -171,7 +186,7 @@ export default function SchedulesTab() {
   )
 }
 
-function CreateScheduleModal({ onClose, onPicked }: { onClose: () => void; onPicked: (kind: 'custom' | 'optimal') => void }) {
+function CreateScheduleModal({ onClose, onPicked }: { onClose: () => void; onPicked: (kind: 'prebuilt' | 'blank') => void }) {
   return (
     <div className="fixed inset-0 bg-gray-900/40 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div className="glass rounded-2xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
@@ -179,19 +194,19 @@ function CreateScheduleModal({ onClose, onPicked }: { onClose: () => void; onPic
         <p className="text-sm text-gray-500 mb-5">Choose how you want to build this schedule.</p>
 
         <button
-          onClick={() => onPicked('custom')}
+          onClick={() => onPicked('prebuilt')}
           className="w-full text-left rounded-xl glass-row hover:border-indigo-200 px-4 py-4 mb-3 transition-colors"
         >
-          <p className="text-sm font-semibold text-gray-900 mb-0.5">Create custom</p>
+          <p className="text-sm font-semibold text-gray-900 mb-0.5">Prebuilt schedule</p>
           <p className="text-xs text-gray-500">Pick your option for every requirement that has alternatives.</p>
         </button>
 
         <button
-          onClick={() => onPicked('optimal')}
+          onClick={() => onPicked('blank')}
           className="w-full text-left rounded-xl glass-row hover:border-indigo-200 px-4 py-4 transition-colors"
         >
-          <p className="text-sm font-semibold text-gray-900 mb-0.5">Create optimal</p>
-          <p className="text-xs text-gray-500">We pick the option that requires the fewest classes. You decide on ties.</p>
+          <p className="text-sm font-semibold text-gray-900 mb-0.5">Blank schedule</p>
+          <p className="text-xs text-gray-500">Start empty and add any classes you want yourself.</p>
         </button>
 
         <div className="mt-5 flex justify-end">
@@ -206,6 +221,22 @@ function ScheduleViewer({ schedule, onClose }: { schedule: Schedule; onClose: ()
   const [name, setName] = useState(schedule.name)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [prereqMap, setPrereqMap] = useState<Record<string, string[]>>({})
+  const [completedCodes, setCompletedCodes] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    api.get('/prerequisites/').then(({ data }) => setPrereqMap(data.prereq_map || {})).catch(() => {})
+    api.get('/transcript/').then(({ data }) => {
+      const s = new Set<string>()
+      for (const t of data) {
+        if (t.status === 'completed' || t.status === 'in_progress') {
+          s.add(t.course_code)
+          s.add(normalizeCode(t.course_code))
+        }
+      }
+      setCompletedCodes(s)
+    }).catch(() => {})
+  }, [])
 
   const save = async (quarters: Quarter[], remainingBank: ClassItem[]) => {
     setSaving(true)
@@ -231,9 +262,55 @@ function ScheduleViewer({ schedule, onClose }: { schedule: Schedule; onClose: ()
     <ScheduleBuilder
       classBank={schedule.class_bank}
       initialQuarters={schedule.quarters}
+      prereqMap={prereqMap}
+      completedCodes={completedCodes}
+      allowManualAdd={schedule.schedule_type === 'blank'}
       name={name}
       onNameChange={setName}
       onBack={onClose}
+      onSave={save}
+      saving={saving}
+      error={error}
+    />
+  )
+}
+
+function NewBlankSchedule({ onCancel, onSaved }: { onCancel: () => void; onSaved: () => void }) {
+  const [name, setName] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const [prereqMap, setPrereqMap] = useState<Record<string, string[]>>({})
+
+  useEffect(() => {
+    api.get('/prerequisites/').then(({ data }) => setPrereqMap(data.prereq_map || {})).catch(() => {})
+  }, [])
+
+  const save = async (quarters: Quarter[], remainingBank: ClassItem[]) => {
+    setSaving(true)
+    setError('')
+    try {
+      await api.post('/schedules/', {
+        name,
+        schedule_type: 'blank',
+        quarters,
+        class_bank: remainingBank,
+      })
+      onSaved()
+    } catch (err: unknown) {
+      const errAxios = err as { response?: { data?: { error?: string } } }
+      setError(errAxios?.response?.data?.error || 'Failed to save schedule.')
+      setSaving(false)
+    }
+  }
+
+  return (
+    <ScheduleBuilder
+      classBank={[]}
+      allowManualAdd
+      prereqMap={prereqMap}
+      name={name}
+      onNameChange={setName}
+      onBack={onCancel}
       onSave={save}
       saving={saving}
       error={error}

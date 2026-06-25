@@ -52,7 +52,6 @@ type TargetResult = {
 type ClassBankItem = ClassItem
 
 type Props = {
-  scheduleType: 'custom' | 'optimal'
   onCancel: () => void
   onSaved: () => void
 }
@@ -89,7 +88,7 @@ type TranscriptEntry = {
   term: string
 }
 
-export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Props) {
+export default function ScheduleWizard({ onCancel, onSaved }: Props) {
   const [results, setResults] = useState<TargetResult[] | null>(null)
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([])
   const [loading, setLoading] = useState(false)
@@ -162,23 +161,17 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
   }, [results])
 
   const visibleReqs = useMemo(() => {
-    const filtered = scheduleType === 'custom'
-      ? multiOptionReqs
-      : multiOptionReqs.filter((m) => {
-          const min = Math.min(...m.remainingCounts)
-          return m.remainingCounts.filter((c) => c === min).length > 1
-        })
     const rank = (code: string) => {
       if (code.startsWith('CALGETC_')) return 0
       return 1
     }
-    return [...filtered].sort((a, b) => {
+    return [...multiOptionReqs].sort((a, b) => {
       const ra = rank(a.req.receiving_code)
       const rb = rank(b.req.receiving_code)
       if (ra !== rb) return ra - rb
       return a.req.receiving_code.localeCompare(b.req.receiving_code, undefined, { numeric: true })
     })
-  }, [scheduleType, multiOptionReqs])
+  }, [multiOptionReqs])
 
   const visibleElectives = useMemo(
     () => electiveGroups.filter((e) => !e.group.series.some((s) => s.satisfied)),
@@ -289,7 +282,7 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
     }
 
     setPicks((p) => ({ ...current, ...p }))
-  }, [scheduleType, results, multiOptionReqs, completedCodes])
+  }, [results, multiOptionReqs, completedCodes])
 
   const multiPickValid = (req: Requirement, value: number | number[] | undefined): boolean => {
     const pc = req.pick_count || 1
@@ -421,7 +414,7 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
       }
     }
     return Array.from(bank.values()).map((c) => ({ ...c, needed_for: Array.from(c.needed_for) }))
-  }, [results, picks, electivePicks, scheduleType, completedCodes, gePath])
+  }, [results, picks, electivePicks, completedCodes, gePath])
 
   const initialQuarters: Quarter[] = useMemo(() => {
     const byTerm: Record<string, string[]> = {}
@@ -468,7 +461,7 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
       for (const c of taken) if (!fullBank.has(c.code)) fullBank.set(c.code, c)
       await api.post('/schedules/', {
         name,
-        schedule_type: scheduleType,
+        schedule_type: 'custom',
         ge_path: gePath,
         quarters,
         class_bank: Array.from(fullBank.values()),
@@ -506,6 +499,8 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
         classBank={classBank}
         prePlaced={taken}
         initialQuarters={initialQuarters}
+        prereqMap={results?.[0]?.prereq_map || {}}
+        completedCodes={completedCodes}
         name={name}
         onNameChange={setName}
         onBack={() => setStage('picking')}
@@ -520,14 +515,8 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
     <div>
       <div className="mb-5 flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-900 mb-1">
-            {scheduleType === 'custom' ? 'Create custom schedule' : 'Create optimal schedule'}
-          </h2>
-          <p className="text-gray-500 text-sm">
-            {scheduleType === 'custom'
-              ? 'Pick which option you want for each requirement that has alternatives.'
-              : 'We auto-picked options that minimize classes. You decide on ties.'}
-          </p>
+          <h2 className="text-xl font-bold text-gray-900 mb-1">Create prebuilt schedule</h2>
+          <p className="text-gray-500 text-sm">Pick which option you want for each requirement that has alternatives.</p>
         </div>
         <button onClick={onCancel} className="text-sm text-gray-500 hover:text-gray-700">Cancel</button>
       </div>
@@ -543,9 +532,7 @@ export default function ScheduleWizard({ scheduleType, onCancel, onSaved }: Prop
       {visibleReqs.length === 0 && visibleElectives.length === 0 ? (
         <div className="bg-gray-50 border border-gray-200 rounded-2xl p-8 text-center mb-6">
           <p className="text-gray-700 font-semibold mb-1">Nothing to pick</p>
-          <p className="text-gray-500 text-sm">
-            {scheduleType === 'optimal' ? 'No ties to resolve.' : 'None of your requirements have alternatives.'}
-          </p>
+          <p className="text-gray-500 text-sm">None of your requirements have alternatives.</p>
         </div>
       ) : (
         <div className="space-y-3 mb-6">

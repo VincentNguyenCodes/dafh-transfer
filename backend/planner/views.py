@@ -5,8 +5,14 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import OptionPreference, Schedule, StudentProgress, TransferTarget
+from .prerequisites import PREREQS
 from .results import compute_best_schedule, compute_remaining
 from .serializers import StudentProgressSerializer, TransferTargetSerializer
+
+
+class PrerequisitesView(APIView):
+    def get(self, request):
+        return Response({'prereq_map': PREREQS})
 
 
 class ProgressView(APIView):
@@ -118,8 +124,8 @@ class ScheduleListView(APIView):
     def post(self, request):
         name = (request.data.get('name') or '').strip()
         schedule_type = request.data.get('schedule_type', Schedule.TYPE_CUSTOM)
-        if schedule_type not in (Schedule.TYPE_CUSTOM, Schedule.TYPE_OPTIMAL):
-            return Response({'error': 'schedule_type must be custom or optimal'}, status=status.HTTP_400_BAD_REQUEST)
+        if schedule_type not in (Schedule.TYPE_CUSTOM, Schedule.TYPE_BLANK):
+            return Response({'error': 'schedule_type must be custom or blank'}, status=status.HTTP_400_BAD_REQUEST)
         if name and Schedule.objects.filter(user=request.user, name=name).exists():
             return Response({'error': 'name already used'}, status=status.HTTP_400_BAD_REQUEST)
         s = Schedule.objects.create(

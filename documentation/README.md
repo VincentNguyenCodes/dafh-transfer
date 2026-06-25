@@ -1,4 +1,4 @@
-# DAFH Transfer — Project Documentation
+# DAFH Transfer: Project Documentation
 
 A transfer planning web app for De Anza and Foothill Community College students. Given a student's transcript and which UC, CSU, or AICCU schools and majors they want to transfer into, it computes which CCC courses they still need to take, lets them build quarter-by-quarter schedules, and integrates Cal-GETC general education requirements.
 
@@ -11,11 +11,11 @@ This single document is intended to be pasted into a chat (e.g. claude.ai) to gi
 1. Student creates an account (JWT auth)
 2. Student pastes their unofficial De Anza and/or Foothill transcript text. The parser extracts course rows (code, name, units, term, grade, status: completed/in_progress)
 3. Student picks transfer targets via a school + major search powered by the ASSIST.org institution and agreement APIs
-4. Student visits the Requirements tab to see, per target, which receiving-school courses are required, which are recommended, what's a choose-one group (e.g. MATH 244 or MATH 206), what's an elective series (e.g. Physics OR Chemistry), and which CCC course satisfies each
-5. Student creates a Schedule via a wizard:
-   - Picks one option for every choose-one requirement that has alternatives (custom mode), or lets the optimizer pre-select the option requiring the fewest classes (optimal mode), with prereqs auto-added
-   - Multi-pick areas (Cal-GETC Area 3 Arts and Humanities, Cal-GETC Area 4 Social and Behavioral Sciences) use checkboxes with constraint validation (at-least-one-per-subarea for Area 3, different-disciplines for Area 4)
-   - Drags classes into quarters via a quarter-based schedule builder
+4. Student visits the Requirements tab to see, per target, which receiving-school courses are required, which are recommended, what's a choose-one group (e.g. MATH 244 or MATH 206), what's an elective series (e.g. Physics OR Chemistry), and which CCC course satisfies each. A "Cal-GETC" filter pill in the same tab switches the view to show only GE area requirements across all targets (there is no separate Cal-GETC tab)
+5. Student creates a Schedule, choosing either:
+   - **Prebuilt schedule**: a wizard where they pick one option for every choose-one requirement that has alternatives, with prereqs auto-added. Multi-pick areas (Cal-GETC Area 3 Arts and Humanities, Cal-GETC Area 4 Social and Behavioral Sciences) use checkboxes with constraint validation (at-least-one-per-subarea for Area 3, different-disciplines for Area 4)
+   - **Blank schedule**: starts completely empty; the student manually types in a course code, name, and units to add it to the bank
+   - Either way, they drag classes into quarters via the same quarter-based schedule builder, which warns (but doesn't block) if a class is placed before its prerequisite
    - Saves the schedule (name, quarters, full bank metadata)
 6. Saved schedules appear on the Schedules tab; clicking one re-opens the builder for editing
 
@@ -27,16 +27,17 @@ This single document is intended to be pasted into a chat (e.g. claude.ai) to gi
 - Django 4.2 + Django REST Framework
 - PostgreSQL (or SQLite for dev) with JSONField storage for schedules and cached payloads
 - SimpleJWT for auth (access + refresh tokens)
-- Anthropic Claude Haiku (`anthropic` Python SDK) for parsing unstructured admissions HTML (six scrapers: Cal Poly SLO, Cal Poly Pomona, Cal State LA, SJSU, CSU Long Beach, SDSU)
+- Anthropic Claude Haiku (`anthropic` Python SDK) for parsing unstructured admissions HTML (six scrapers: Cal Poly SLO, Cal Poly Pomona, Cal State LA, SJSU, CSU Long Beach, SDSU) and for the in-app advisor chat (`ChatView`, model `claude-haiku-4-5-20251001`)
 
 **Frontend**
 - React 19 + TypeScript + Vite
 - Tailwind CSS for styling
 - @dnd-kit for drag-and-drop in the schedule builder
 - Axios for HTTP, with a global response interceptor that auto-refreshes JWT tokens
+- Floating `AdvisorChat` widget (visible across all Dashboard tabs) for free-text Q&A grounded in the student's transcript and targets
 
 **Data sources**
-- ASSIST.org reverse-engineered browser API endpoints (no API key needed) — canonical for course articulation between CCCs and UC/CSU/AICCU
+- ASSIST.org reverse-engineered browser API endpoints (no API key needed), canonical for course articulation between CCCs and UC/CSU/AICCU
 - Per-campus admissions websites (live HTML scraping for 6 schools)
 - De Anza Cal-GETC course list (hardcoded snapshot)
 
@@ -53,7 +54,7 @@ dafh-transfer/
 │   ├── planner/                Core planning logic
 │   │   ├── models.py           TransferTarget, StudentProgress, Schedule, OptionPreference
 │   │   ├── results.py          compute_remaining + compute_best_schedule (the brain)
-│   │   ├── views.py            API endpoints (Results, Targets, Progress, Schedules)
+│   │   ├── views.py            API endpoints (Results, Targets, Progress, Schedules, BestSchedule, Prerequisites, Chat, OptionPreference)
 │   │   ├── ge_requirements.py  Cal-GETC area definitions + multi-pick rules + builder
 │   │   ├── prerequisites.py    Hardcoded course prereq map + chain walker
 │   │   ├── series_config.py    Hardcoded multi-course series (Physics 4ABCD, etc.)
@@ -67,15 +68,22 @@ dafh-transfer/
 │   └── manage.py
 ├── frontend/src/
 │   ├── api/client.ts                Axios instance, JWT refresh logic
+│   ├── components/AdvisorChat.tsx   Floating AI advisor chat widget, posts to /api/chat/
 │   ├── pages/
 │   │   ├── Landing.tsx              Login/register
-│   │   ├── Dashboard.tsx            Step-by-step nav hub
-│   │   ├── Transcript.tsx           Transcript paste UI
-│   │   ├── Schools.tsx              Add transfer targets
-│   │   ├── RequirementsTab.tsx      Per-target requirement view
-│   │   ├── SchedulesTab.tsx         Schedule list + viewer
+│   │   ├── Dashboard.tsx            Step-by-step nav hub; once past step 3, renders a 5-tab shell
+│   │   │                            (Overview, Requirements, Schedules, Targets, Classes)
+│   │   ├── Transcript.tsx           Transcript paste UI (step 1)
+│   │   ├── Schools.tsx              Add transfer targets (step 2)
+│   │   ├── OverviewTab.tsx          Dashboard tab: progress summary across all targets
+│   │   ├── RequirementsTab.tsx      Dashboard tab: per-target requirement view + Cal-GETC filter pill
+│   │   ├── SchedulesTab.tsx         Dashboard tab: schedule list + viewer
+│   │   ├── TransferTargetsTab.tsx   Dashboard tab: manage transfer targets (in-dashboard version of Schools)
+│   │   ├── ClassesTab.tsx           Dashboard tab: manage transcript entries (in-dashboard version of Transcript)
 │   │   ├── ScheduleWizard.tsx       Multi-stage schedule creation
-│   │   └── ScheduleBuilder.tsx      Quarter drag-and-drop UI
+│   │   ├── ScheduleBuilder.tsx      Quarter drag-and-drop UI
+│   │   └── Results.tsx              Legacy standalone results page at /results; superseded by
+│   │                                RequirementsTab but route still exists, unreferenced by any nav link
 │   └── App.tsx + index.css
 └── documentation/README.md          (this file)
 ```
@@ -158,16 +166,27 @@ A Cal-GETC area is **auto-suppressed** (silently treated as satisfied, no picker
 For each target, the response contains:
 ```json
 {
+  "target": "California Polytechnic University, San Luis Obispo — COMPUTER SCIENCE, B.S.",
   "school_name": "California Polytechnic University, San Luis Obispo",
   "major_name": "COMPUTER SCIENCE, B.S.",
+  "is_csu": false,
   "ge_path": "calgetc",
   "ge_approved_codes": ["ENGL C1000", "MATH 1A", ...],
   "prereq_map": {"SPAN 2": ["SPAN 1"], "MATH 1B": ["MATH 1A"], ...},
   "requirements": [...],
   "recommended": [...],
-  "elective_series": [...]
+  "elective_series": [...],
+  "flags": [],
+  "unsupported": false,
+  "unsupported_reason": "",
+  "low_confidence": false,
+  "low_confidence_reason": "",
+  "total": 12,
+  "satisfied": 7
 }
 ```
+
+For an AICCU independent in `INDEPENDENT_UNSUPPORTED_IDS` (see below), `requirements` is Cal-GETC-only (no major-specific entries), `unsupported` is `true`, and `recommended`/`elective_series` are empty. For one in `INDEPENDENT_LOW_CONFIDENCE_IDS`, `low_confidence` is `true` and a `low_confidence:independent_partial_assist` flag is added, but major requirements still populate normally.
 
 ### Step 8: Frontend builds a class bank
 `ScheduleWizard.tsx` `classBank` useMemo iterates results, runs `pickOption` for each single-pick requirement and collects all checked options for multi-pick requirements, then collects a deduplicated set of CCC course chips. Then it walks `prereq_map` for each picked code and adds missing prereqs (skipping anything in the transcript). Finally tags each chip with the appropriate `needed_for` label:
@@ -204,6 +223,14 @@ Cal-GETC (California General Education Transfer Curriculum) replaced both IGETC 
 - `AICCU_INSTITUTION_IDS = {201, 206, 209, 213, 214, 215, 216, 217, 220, 222, 227, 228, 230, 235}` (14 AICCU independents in ASSIST)
 - `CALGETC_APPLIES_TO = CSU_INSTITUTION_IDS | UC_INSTITUTION_IDS | AICCU_INSTITUTION_IDS`
 
+### AICCU independent support tiers
+AICCU schools vary widely in how much of their major articulation is actually published on ASSIST, so each one is classified into a support tier in `ge_requirements.py`:
+- `INDEPENDENT_FULL_SUPPORT_IDS = {209, 213, 217, 220}`: major requirements processed normally, no caveats shown
+- `INDEPENDENT_LOW_CONFIDENCE_IDS = {206, 215, 228}`: major requirements still computed, but the response carries `low_confidence: True` plus a `low_confidence:independent_partial_assist` flag, and the Requirements tab shows a warning banner telling the student to verify required vs. recommended courses against the school catalog
+- `INDEPENDENT_UNSUPPORTED_IDS`: 24 ids (a superset of `AICCU_INSTITUTION_IDS` minus the full-support and low-confidence ids, plus AICCU schools not yet wired into ASSIST tracking at all). For these, `compute_remaining` skips major articulation entirely and returns Cal-GETC-only requirements with `unsupported: True`; the Requirements tab renders a "no ASSIST major articulation" card instead of a requirement list
+
+Every AICCU id falls into exactly one of the three tiers. Cal-GETC injection itself is independent of tier and is governed solely by `CALGETC_APPLIES_TO`.
+
 ---
 
 ## Key data: Prerequisites (`prerequisites.py`)
@@ -239,6 +266,16 @@ All scrapers emit the same JSON shape with `comprehensive: True` so the legacy c
 
 ---
 
+## Requirements tab mechanics (`RequirementsTab.tsx`)
+
+- A school-pill row lets the student switch between targets; a `Cal-GETC` pill (`CALGETC_FILTER` sentinel) switches to a cross-target view showing only Cal-GETC area requirements
+- Unsupported AICCU targets (see [AICCU independent support tiers](#aiccu-independent-support-tiers)) render a dedicated warning card instead of a requirement list; low-confidence targets render a banner above their normal requirement list
+- Every course chip (satisfied, single-option, and each option of a pick-one requirement) is rendered by a shared `CourseChip` component with a hover tooltip showing code, name, units, and (if the code is a key in `prereq_map`) a "Prereq: ..." line; `prereq_map` is read straight off `results[0].prereq_map`, no extra API call
+- Pick-one requirement options are laid out as an inline, wrapping row of chips; courses within one option are joined with `+`, and a grey "or" separator (same size/weight as the `+`) sits between alternative options so a 2-course option isn't visually confused with two separate options (e.g. `CIS 22C + CIS 29` or `CIS 22CH + CIS 29` reads as two alternatives, not a 4-course chain)
+- `CourseLine` remains in the file but is unused dead code; it predates `CourseChip` and rendered single-requirement chips before tooltips were added
+
+---
+
 ## Schedule builder mechanics (`ScheduleBuilder.tsx`)
 
 - Renders a class bank (top) plus a horizontal row of `QuarterCard`s
@@ -249,11 +286,28 @@ All scrapers emit the same JSON shape with `comprehensive: True` so the legacy c
 
 When the wizard saves, it persists the **complete** class bank (placed + unplaced + transcript items) so reloading the schedule preserves all metadata (names, units, kind, prereq_for). For older saved schedules without this metadata, the builder falls back to a minimal chip showing just the code.
 
+### Manual class entry (blank schedules)
+`ScheduleBuilder` takes an `allowManualAdd` prop. When true, an `AddClassForm` (code, name, units inputs plus an Add button) renders above the class bank. Submitting it pushes a new entry into local `manualClasses` state and into `bankCodes`, so it shows up unplaced in the bank exactly like a requirement-driven chip, with the same drag-and-drop, empty-quarter handling, and prerequisite-ordering-warning behavior. Validation is just "non-empty code, not already on the board"; there's no lookup against any course catalog or ASSIST data, the user types the code/name/units themselves. `SchedulesTab.tsx`'s `NewBlankSchedule` (new schedule) passes `allowManualAdd` unconditionally; `ScheduleViewer` (reopening a saved schedule) passes it only when `schedule.schedule_type === 'blank'`.
+
+### Prerequisite ordering check
+`ScheduleBuilder` takes a `prereqMap` (code -> direct prereq codes) and `completedCodes` prop and checks, on every drop into a quarter, whether each direct prereq of the dropped class is either already completed/in-progress or placed in a strictly earlier quarter (compared by `year * 4 + term index`, Winter < Spring < Summer < Fall). Two layers of feedback:
+- An amber toast banner flashes for ~6 seconds naming the missing prereq(s) ("MATH 1B needs MATH 1A as a prerequisite first, in an earlier quarter")
+- A persistent amber warning badge stays on the chip (recomputed from current quarter state, not just at drop time) until the ordering is fixed
+
+This is advisory only; an out-of-order placement can still be saved. `ScheduleWizard` sources `prereqMap` from `results[0].prereq_map` (already being fetched for the picking stage); `ScheduleViewer` (editing a saved schedule, where `/api/results/` isn't otherwise called) fetches the dedicated `GET /api/prerequisites/` endpoint plus `/api/transcript/` instead, since `prereq_map` is just the global `PREREQS` dict and doesn't require live ASSIST data.
+
 ---
 
-## Schedule wizard mechanics (`ScheduleWizard.tsx`)
+## Creating a schedule: Prebuilt vs Blank (`SchedulesTab.tsx`, `ScheduleWizard.tsx`)
 
-Two stages: `picking` and `building`.
+"+ Create new schedule" opens a `CreateScheduleModal` with two choices:
+
+- **Prebuilt schedule** renders `ScheduleWizard` (the requirements-driven flow below). Saves with `schedule_type: 'custom'`.
+- **Blank schedule** renders `NewBlankSchedule` (defined in `SchedulesTab.tsx`): no picking stage, no transcript/target data pulled in at all, just a bare `ScheduleBuilder` with `classBank={[]}` and `allowManualAdd` (see [Manual class entry](#manual-class-entry-blank-schedules) above). It still fetches `GET /api/prerequisites/` so the prerequisite-ordering warning works on manually-added classes, but does **not** fetch the transcript, so a manually-added class can't be auto-recognized as already completed elsewhere. Saves with `schedule_type: 'blank'`.
+
+There used to be a third mode, "Optimal" (auto-pick the option requiring the fewest classes, user only resolves ties). It's been removed: `ScheduleWizard` no longer takes a `scheduleType` prop and always behaves like the old "Custom" mode. Schedules already saved with `schedule_type: 'optimal'` from before this change still load and edit fine (no backend validation on PATCH); the schedule list card just keeps showing them as "Optimal plan" since no new ones can be created.
+
+`ScheduleWizard` itself has two stages: `picking` and `building`.
 
 **Picking stage**: shows a "GE pattern: Cal-GETC" indicator banner, then a sorted list of picker cards. Order: Cal-GETC areas (1A, 1B, 1C, 2, 3, 4, 5A, 5B, 6 numerically) first, then school-specific requirements alphabetically. Single-pick uses radio buttons; multi-pick (Area 3, Area 4) uses checkboxes with subarea grouping and live constraint validation. Picker cards for already-satisfied requirements are hidden (auto-suppression). Cards for individual satisfied options within a multi-option picker are hidden.
 
@@ -266,7 +320,7 @@ Two stages: `picking` and `building`.
 ```python
 class StudentProgress(models.Model):
     user = OneToOne(User)
-    last_step = CharField  # which page to resume on
+    current_step = IntegerField(default=1)  # which onboarding step (1-3) to resume on
 
 class TranscriptEntry(models.Model):
     user = FK(User)
@@ -283,6 +337,9 @@ class TransferTarget(models.Model):
     receiving_institution_id = IntegerField  # ASSIST id
     receiving_institution_name = CharField
     major_name = CharField
+    major_code = CharField
+    academic_year_id = IntegerField
+    # unique_together: (user, receiving_institution_id, major_code)
 
 class AssistCache(models.Model):
     receiving_institution_id, sending_institution_id, academic_year_id, major_code = IntegerFields/CharField
@@ -292,17 +349,21 @@ class AssistCache(models.Model):
 class Schedule(models.Model):
     user = FK(User)
     name = CharField
-    schedule_type = CharField  # 'custom' | 'optimal'
+    schedule_type = CharField  # 'custom' (prebuilt) | 'blank' | legacy 'optimal' (no longer created, still loads)
     ge_path = CharField  # always 'calgetc' for new schedules; legacy 'igetc'/'csu' values still accepted
     quarters = JSONField  # [{id, term, year, class_codes}]
     class_bank = JSONField  # [ClassItem]
+    # unique_together: (user, name), so schedule names must be unique per user
 
 class OptionPreference(models.Model):
     user = FK(User)
     requirement_key = CharField
     chosen_option_index = IntegerField
-    scope = CharField  # 'requirements' | 'schedule'
+    scope = CharField  # 'custom' (default) | 'schedule'
+    # unique_together: (user, scope, requirement_key)
 ```
+
+`OptionPreference` and its `GET/POST/DELETE /api/option-preferences/` endpoints currently have no frontend caller; `ScheduleWizard` and `ScheduleBuilder` track picks entirely in local component state instead.
 
 ---
 
@@ -338,7 +399,7 @@ All caches share the `AssistCache` model with a JSON payload. Cache keys use sen
 
 ## Auth
 
-JWT (access + refresh) via SimpleJWT. Tokens stored in `localStorage` on the frontend. The Axios client (`frontend/src/api/client.ts`) auto-refreshes on 401 and redirects to `/` if refresh fails. All API endpoints require auth except `/api/auth/register/` and `/api/auth/token/`.
+JWT (access + refresh) via SimpleJWT. Tokens stored in `localStorage` on the frontend. The Axios client (`frontend/src/api/client.ts`) auto-refreshes on 401 and redirects to `/` if refresh fails. All API endpoints require auth except `/api/auth/register/` and `/api/auth/login/`.
 
 ---
 
@@ -358,8 +419,8 @@ Per the project `CLAUDE.md`:
 
 ```
 POST /api/auth/register/
-POST /api/auth/token/
-POST /api/auth/token/refresh/
+POST /api/auth/login/
+POST /api/auth/refresh/
 
 GET  /api/transcript/         List user's transcript entries
 POST /api/transcript/         Add entries
@@ -374,6 +435,8 @@ DELETE /api/targets/<id>/
 
 GET  /api/results/?ge_path=calgetc
 GET  /api/best-schedule/
+GET  /api/prerequisites/      {prereq_map}, the global PREREQS dict, no transfer targets required
+POST /api/chat/               Advisor chat: {message, history} -> {reply}, grounded in transcript + targets
 
 GET    /api/option-preferences/
 POST   /api/option-preferences/
@@ -392,31 +455,39 @@ ASSIST proxy endpoints under /api/assist/...
 
 ## Recent feature additions (most recent first)
 
-1. **Cal-GETC migration** — replaced IGETC + CSU GE Breadth with a single Cal-GETC pattern per De Anza 2025-2026 policy. New Area 6 Ethnic Studies added. Area 1C now required for everyone (no UC/CSU split). Area 3 picks 2 (was 3); Area 4 picks 2 (was 3). Area 6 LOTE removed (now a separate UC graduation requirement). Wizard GE-path picker step removed.
-2. **SDSU catalog scraper** — `catalog.sdsu.edu/preview_program.php?catoid=11&poid={poid}` per program, 537 programs indexed, lazy fetch on first request
-3. **CSU Long Beach multi-college scraper** — index + 7 college pages, lazy combined fetch
-4. **SJSU impaction scraper** — single mega-page with ♦ marker handling
-5. **Cal State LA scraper** — single page with year-prefixed URL (currently 2026-2027)
-6. **Cal Poly Pomona impacted-majors scraper** — single tabular page
-7. **Honors-variant prereq fallback** — `CIS 26BH` inherits prereqs from `CIS 26B`
-8. **Click-to-open saved schedules** — SchedulesTab cards now open the schedule in the builder; full class metadata is persisted in `class_bank` so reloads aren't blank
-9. **Picker dedup across schools** — Cal-GETC area 5B needed by UCSB + UCB shows one card with both targets
-10. **Multi-pick Cal-GETC Areas 3 and 4** — single picker card with checkboxes, subarea grouping for Area 3, discipline-diversity rule for Area 4, live constraint validation
-11. **Cal-GETC chip labels** — bank chips for GE-only courses show "Cal-GETC" instead of school list; courses serving both major and GE show "School · Cal-GETC"
-12. **Prerequisites system** — hardcoded prereq map, chain walker, frontend bank expansion with grouped UI, optimizer awareness in `compute_best_schedule`
-13. **Cal Poly admissions scraper** — replaces the old "default everything to recommended" behavior for Cal Poly
-14. **AICCU institution support** — 14 AICCU independents in ASSIST now get Cal-GETC injection
-15. **Catalog overflow short-circuit** — `comprehensive: True` flag prevents the legacy fallback from flooding the bank with unrelated articulated courses
+1. **Prebuilt/Blank schedule modes replace Custom/Optimal**: the schedule creation chooser now offers "Prebuilt schedule" (today's old Custom behavior; Optimal's auto-pick-fewest-classes mode is removed) and "Blank schedule" (starts completely empty, manual code/name/units entry via a new `AddClassForm` in `ScheduleBuilder`, no search, no transcript/target data pulled in). `Schedule.TYPE_BLANK` added; existing `schedule_type='optimal'` rows still load and edit, just can't be newly created
+2. **Pick-one `or` separator restored, prereq line added to chip tooltip**: a grey "or" (matching the `+` separator's size/weight) now sits between alternative options in pick-one requirements, fixing a case where a 2-course option (e.g. `CIS 22C + CIS 29`) was visually indistinguishable from two separate options; `CourseChip`'s hover tooltip also gained a "Prereq: ..." line sourced from `prereq_map`
+3. **Prerequisite ordering check**: dragging a class into a quarter now checks its direct prereqs against the rest of the schedule; an unmet prereq flashes a toast and leaves a persistent warning badge on the chip. New `GET /api/prerequisites/` endpoint backs this for the schedule viewer (editing a saved schedule), since it doesn't otherwise call `/api/results/`
+4. **AICCU support tiering**: AICCU independents split into `INDEPENDENT_FULL_SUPPORT_IDS`, `INDEPENDENT_LOW_CONFIDENCE_IDS`, and `INDEPENDENT_UNSUPPORTED_IDS`; unsupported schools fall back to Cal-GETC-only requirements instead of an empty or misleading major requirement list
+5. **Cal-GETC tab removed**: replaced by a `Cal-GETC` filter pill inside the Requirements tab that switches to a cross-target GE-only view
+6. **Course chip tooltip and pick-one rendering overhaul**: shared `CourseChip` component adds a hover tooltip (code, name, units) to every chip; pick-one options render as an inline wrapping row (the `or` separator between alternatives removed here was later restored, see item 2)
+7. **5-tab Dashboard shell**: Dashboard now hosts Overview, Requirements, Schedules, Targets, and Classes as in-page tabs (`OverviewTab.tsx`, `TransferTargetsTab.tsx`, `ClassesTab.tsx` added); the standalone `/transcript` and `/schools` routes still exist for the initial 3-step onboarding flow
+8. **AI advisor chat**: `POST /api/chat/` (`ChatView`) backs a floating `AdvisorChat` widget visible on every Dashboard tab; answers are grounded in the student's transcript entries and transfer targets, via Claude Haiku
+9. **Cal-GETC migration**: replaced IGETC + CSU GE Breadth with a single Cal-GETC pattern per De Anza 2025-2026 policy. New Area 6 Ethnic Studies added. Area 1C now required for everyone (no UC/CSU split). Area 3 picks 2 (was 3); Area 4 picks 2 (was 3). Area 6 LOTE removed (now a separate UC graduation requirement). Wizard GE-path picker step removed.
+10. **SDSU catalog scraper**: `catalog.sdsu.edu/preview_program.php?catoid=11&poid={poid}` per program, 537 programs indexed, lazy fetch on first request
+11. **CSU Long Beach multi-college scraper**: index + 7 college pages, lazy combined fetch
+12. **SJSU impaction scraper**: single mega-page with ♦ marker handling
+13. **Cal State LA scraper**: single page with year-prefixed URL (currently 2026-2027)
+14. **Cal Poly Pomona impacted-majors scraper**: single tabular page
+15. **Honors-variant prereq fallback**: `CIS 26BH` inherits prereqs from `CIS 26B`
+16. **Click-to-open saved schedules**: SchedulesTab cards now open the schedule in the builder; full class metadata is persisted in `class_bank` so reloads aren't blank
+17. **Picker dedup across schools**: Cal-GETC area 5B needed by UCSB + UCB shows one card with both targets
+18. **Multi-pick Cal-GETC Areas 3 and 4**: single picker card with checkboxes, subarea grouping for Area 3, discipline-diversity rule for Area 4, live constraint validation
+19. **Cal-GETC chip labels**: bank chips for GE-only courses show "Cal-GETC" instead of school list; courses serving both major and GE show "School · Cal-GETC"
+20. **Prerequisites system**: hardcoded prereq map, chain walker, frontend bank expansion with grouped UI, optimizer awareness in `compute_best_schedule`
+21. **Cal Poly admissions scraper**: replaces the old "default everything to recommended" behavior for Cal Poly
+22. **AICCU institution support**: 14 AICCU independents in ASSIST now get Cal-GETC injection (later refined by AICCU support tiering, item 4)
+23. **Catalog overflow short-circuit**: `comprehensive: True` flag prevents the legacy fallback from flooding the bank with unrelated articulated courses
 
 ---
 
 ## Out of scope / known limitations
 
-- Quarter ordering enforcement (you can drag SPAN 1 to Spring after SPAN 2 in Fall; we visually group but don't block bad ordering)
+- Quarter ordering is a warning, not a block: dragging SPAN 2 into the same or an earlier quarter than SPAN 1 flashes a toast and puts a persistent amber warning badge on the chip, but the drop is still allowed and can still be saved
 - Co-requisites
 - Catalog-scraped prereqs for less common courses (only the hardcoded map is supported)
 - Cal-GETC area data is a hardcoded snapshot of De Anza's 2025-2026 PDF; need manual refresh if the GE-approved course lists change
-- Cal Maritime, all UCs, and Group C CSUs (Fullerton, Northridge, Sacramento, etc.) do not have custom scrapers — they rely on the legacy ASSIST advisory parser
+- Cal Maritime, all UCs, and Group C CSUs (Fullerton, Northridge, Sacramento, etc.) do not have custom scrapers; they rely on the legacy ASSIST advisory parser
 - Private and out-of-state schools not in ASSIST cannot be added as targets
 
 ---

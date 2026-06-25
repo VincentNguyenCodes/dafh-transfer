@@ -34,7 +34,7 @@ npm run lint     # ESLint
 ```
 
 ### Environment
-Backend requires `backend/.env` (see `README.md` for variables). The Vite dev server proxies `/api` to Django — check `frontend/vite.config.ts` if the proxy needs adjustment.
+Backend requires `backend/.env` (see `README.md` for variables). The Vite dev server proxies `/api` to Django; check `frontend/vite.config.ts` if the proxy needs adjustment.
 
 ## Architecture
 
@@ -48,12 +48,12 @@ Backend requires `backend/.env` (see `README.md` for variables). The Vite dev se
    - Returns satisfaction status for each requirement
 
 ### ASSIST.org Integration (`assist/`)
-- `client.py` — raw HTTP client that maintains a session with ASSIST.org (needs XSRF cookie from homepage visit)
-- `views.py` — proxies ASSIST API calls to the frontend (institution search, agreements list)
-- `models.py::AssistCache` — caches all ASSIST API responses in PostgreSQL to avoid hammering the external API
+- `client.py`: raw HTTP client that maintains a session with ASSIST.org (needs XSRF cookie from homepage visit)
+- `views.py`: proxies ASSIST API calls to the frontend (institution search, agreements list)
+- `models.py::AssistCache`: caches all ASSIST API responses in PostgreSQL to avoid hammering the external API
   - Articulation data: 7-day TTL
   - Claude advisory parses: 365-day TTL (keyed by `advisory:{agreement_key}`)
-- `constants.py` — hardcoded IDs: `DEANZA_ID=113`, `FOOTHILL_ID=51`, `LATEST_YEAR_ID=76`
+- `constants.py`: hardcoded IDs: `DEANZA_ID=113`, `FOOTHILL_ID=51`, `LATEST_YEAR_ID=76`
 
 ### Advisory Parsing (`assist/advisory_parser.py`)
 ASSIST articulation agreements contain a `GeneralText` HTML block listing required/recommended courses. This is parsed two ways:
@@ -72,19 +72,20 @@ Handles multiple copy-paste formats from De Anza/Foothill's online transcript vi
 | `users` | JWT auth (register, login, refresh via SimpleJWT) |
 | `transcripts` | Transcript upload/parse, `TranscriptEntry` model |
 | `assist` | ASSIST.org proxy + `AssistCache` model |
-| `planner` | `TransferTarget` + `StudentProgress` models; `results.py` core logic |
+| `planner` | `TransferTarget`, `StudentProgress`, `Schedule`, `OptionPreference` models; `results.py` core logic; `ge_requirements.py` (Cal-GETC areas + AICCU support tiers); `prerequisites.py`; per-school admissions scrapers (Cal Poly SLO/Pomona, Cal State LA, SJSU, CSU Long Beach, SDSU); `ChatView` advisor chat endpoint |
 
 ### Frontend Pages
 | Route | Page | Purpose |
 |-------|------|---------|
 | `/` | `Landing` | Login/register |
-| `/dashboard` | `Dashboard` | Step-by-step nav hub |
-| `/transcript` | `Transcript` | Paste transcript text, view parsed courses |
-| `/schools` | `Schools` | Search and add transfer targets |
-| `/results` | `Results` | View requirements per target with satisfaction status |
+| `/dashboard` | `Dashboard` | Steps 1-2 redirect to `/transcript` and `/schools`; once both are done, renders a 5-tab shell: Overview, Requirements, Schedules, Targets, Classes |
+| `/transcript` | `Transcript` | Paste transcript text, view parsed courses (step 1) |
+| `/schools` | `Schools` | Search and add transfer targets (step 2) |
+
+The Dashboard tabs (`OverviewTab`, `RequirementsTab`, `SchedulesTab`, `TransferTargetsTab`, `ClassesTab`) live in `frontend/src/pages/` alongside the routed pages. A floating `AdvisorChat` widget (`frontend/src/components/AdvisorChat.tsx`) is rendered on every Dashboard tab and talks to `POST /api/chat/`. `/results` (`Results.tsx`) still exists as a route but is unreferenced dead code, superseded by `RequirementsTab`.
 
 ### Auth
-JWT tokens stored in `localStorage` (`access`, `refresh`). `frontend/src/api/client.ts` auto-refreshes on 401 and redirects to `/` if refresh fails. All backend endpoints require auth except `api/auth/register/` and `api/auth/token/`.
+JWT tokens stored in `localStorage` (`access`, `refresh`). `frontend/src/api/client.ts` auto-refreshes on 401 and redirects to `/` if refresh fails. All backend endpoints require auth except `api/auth/register/` and `api/auth/login/`.
 
 ### Course Code Normalization
 ASSIST uses codes like `CIS22A` while transcripts have `CIS D022A`. `normalize_course_code()` bridges this. Both the raw and normalized forms are added to the completed/in-progress sets so matching works regardless of format.

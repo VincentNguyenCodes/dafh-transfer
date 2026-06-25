@@ -115,7 +115,7 @@ export default function Transcript() {
         <>
           {savedEntries.filter((e) => e.school === school).length > 0 && (
             <div className="mb-5">
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Saved</p>
+              <p className="text-xs font-semibold text-gray-600 mb-2">Saved</p>
               <div className="space-y-1">
                 {savedEntries.filter((e) => e.school === school).map((e) => (
                   <div key={e.id} className="flex items-center gap-2 text-sm bg-gray-50 rounded-xl px-3 py-2.5">
@@ -123,7 +123,7 @@ export default function Transcript() {
                     <span className="flex-1 text-gray-500 truncate text-xs">{e.course_name}</span>
                     <span className="text-xs text-gray-400 shrink-0">{e.grade}</span>
                     {e.status === 'in_progress' && (
-                      <span className="text-[10px] bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full shrink-0 font-medium">In Progress</span>
+                      <span className="text-xs bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full shrink-0 font-medium">In Progress</span>
                     )}
                     <button onClick={() => deleteEntry(e.id!)} className="text-gray-300 hover:text-red-400 text-xs shrink-0 transition-colors duration-150">Remove</button>
                   </div>
@@ -133,7 +133,7 @@ export default function Transcript() {
           )}
 
           <div className="mb-4">
-            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-2">
+            <label className="text-xs font-semibold text-gray-600 block mb-2">
               Paste transcript
             </label>
             <textarea
@@ -153,7 +153,7 @@ export default function Transcript() {
 
           {parsed[school].length > 0 && (
             <div className="mb-4">
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">
+              <p className="text-xs font-semibold text-gray-600 mb-2">
                 {parsed[school].length} courses detected
               </p>
               <div className="space-y-1">
@@ -163,7 +163,7 @@ export default function Transcript() {
                     <span className="flex-1 text-gray-600 truncate text-xs">{e.course_name}</span>
                     <span className="text-xs text-gray-400 shrink-0">{e.grade}</span>
                     {e.status === 'in_progress' && (
-                      <span className="text-[10px] bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full shrink-0 font-medium">In Progress</span>
+                      <span className="text-xs bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full shrink-0 font-medium">In Progress</span>
                     )}
                     <button onClick={() => removeParsed(school, idx)} className="text-gray-300 hover:text-red-400 text-xs shrink-0 transition-colors duration-150">Remove</button>
                   </div>

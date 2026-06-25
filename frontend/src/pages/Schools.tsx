@@ -27,6 +27,7 @@ export default function Schools() {
   const [error, setError] = useState('')
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editMajorKey, setEditMajorKey] = useState('')
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
 
   useEffect(() => {
     Promise.all([
@@ -167,7 +168,7 @@ export default function Schools() {
 
         {savedTargets.length > 0 && (
           <div className="bg-white rounded-2xl border border-gray-100 p-5 mb-4">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Saved targets</p>
+            <p className="text-xs font-semibold text-gray-600 mb-3">Saved targets</p>
             <div className="space-y-2">
               {savedTargets.map((t) => (
                 <div key={t.id} className="bg-gray-50 rounded-xl px-4 py-3">
@@ -197,11 +198,18 @@ export default function Schools() {
                       <button onClick={() => startEdit(t)} className="text-xs text-indigo-500 hover:text-indigo-700 shrink-0 font-medium transition-colors duration-150">
                         Edit
                       </button>
-                      <button onClick={() => deleteTarget(t.id!)} className="text-gray-300 hover:text-red-400 shrink-0 transition-colors duration-150">
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
+                      {confirmDeleteId === t.id ? (
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button onClick={() => { deleteTarget(t.id!); setConfirmDeleteId(null) }} className="text-xs font-semibold text-red-500 hover:text-red-700 transition-colors cursor-pointer">Delete</button>
+                          <button onClick={() => setConfirmDeleteId(null)} className="text-xs text-gray-400 hover:text-gray-600 transition-colors cursor-pointer">Cancel</button>
+                        </div>
+                      ) : (
+                        <button onClick={() => setConfirmDeleteId(t.id!)} aria-label="Remove target" className="text-gray-300 hover:text-red-400 shrink-0 transition-colors duration-150 cursor-pointer">
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -211,7 +219,7 @@ export default function Schools() {
         )}
 
         <div className="bg-white rounded-2xl border border-gray-100 p-6 mb-4">
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Add schools</p>
+          <p className="text-xs font-semibold text-gray-600 mb-4">Add schools</p>
           <div className="space-y-4">
             {rows.map((row, idx) => (
               <div key={idx} className="flex items-center gap-2 flex-1">
@@ -243,7 +251,8 @@ export default function Schools() {
                 {rows.length > 1 && (
                   <button
                     onClick={() => setRows((prev) => prev.filter((_, i) => i !== idx))}
-                    className="p-2 text-gray-300 hover:text-red-400 hover:bg-red-50 rounded-xl transition-all duration-150 shrink-0"
+                    aria-label="Remove row"
+                    className="p-2 text-red-300 hover:text-red-400 hover:bg-red-50 rounded-xl transition-all duration-150 shrink-0"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

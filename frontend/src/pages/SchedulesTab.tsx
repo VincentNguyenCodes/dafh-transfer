@@ -115,7 +115,7 @@ export default function SchedulesTab() {
       </div>
 
       {schedules.length === 0 ? (
-        <div className="glass rounded-2xl p-14 text-center">
+        <div className="card-elevated rounded-2xl p-14 text-center">
           <div className="w-14 h-14 rounded-2xl bg-indigo-50 flex items-center justify-center mx-auto mb-4">
             <svg className="w-7 h-7 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -136,7 +136,7 @@ export default function SchedulesTab() {
             <button
               key={s.id}
               onClick={() => setViewing(s)}
-              className="glass text-left rounded-2xl p-5 flex flex-col hover:shadow-lg transition-all duration-200 cursor-pointer group"
+              className="card-elevated text-left rounded-2xl p-5 flex flex-col hover:shadow-lg transition-all duration-200 cursor-pointer group"
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="flex-1 min-w-0">

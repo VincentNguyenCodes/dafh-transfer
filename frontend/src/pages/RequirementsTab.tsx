@@ -106,12 +106,12 @@ function lookupPrereqs(code: string, prereqMap: Record<string, string[]>): strin
 }
 
 const BADGE_COLORS = [
-  { bg: 'bg-indigo-100', text: 'text-gray-700' },
-  { bg: 'bg-violet-100', text: 'text-gray-700' },
-  { bg: 'bg-emerald-100', text: 'text-gray-700' },
-  { bg: 'bg-amber-100', text: 'text-gray-700' },
-  { bg: 'bg-rose-100', text: 'text-gray-700' },
-  { bg: 'bg-cyan-100', text: 'text-gray-700' },
+  { bg: 'bg-indigo-100', text: 'text-indigo-800' },
+  { bg: 'bg-violet-100', text: 'text-violet-800' },
+  { bg: 'bg-emerald-100', text: 'text-emerald-800' },
+  { bg: 'bg-amber-100', text: 'text-amber-800' },
+  { bg: 'bg-rose-100', text: 'text-rose-800' },
+  { bg: 'bg-cyan-100', text: 'text-cyan-800' },
 ]
 
 function buildAggregated(
@@ -208,14 +208,31 @@ function CourseLine({ c, done }: { c: CourseItem; done?: boolean }) {
       {c.name && c.name !== c.code && (
         <span className={`text-[11px] truncate ${done ? 'text-gray-400' : 'text-gray-500'}`}>{c.name}</span>
       )}
-      {c.units && <span className="text-[10px] text-gray-400 shrink-0 ml-auto">{c.units}u</span>}
-      {c.in_progress && <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded shrink-0">In Progress</span>}
+      {c.units && <span className="text-xs text-gray-400 shrink-0 ml-auto">{c.units}u</span>}
+      {c.in_progress && <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded shrink-0">In Progress</span>}
     </div>
   )
 }
 
 function shortMajor(name: string) {
-  return name.replace(/,?\s*(B\.S\.|B\.A\.|M\.S\.|B\.Sc\.|Bachelor.*|Master.*|Ph\.D.*)/i, '').trim()
+  return name
+    .replace(/,?\s*(B\.S\.|B\.A\.|M\.S\.|B\.Sc\.|Bachelor.*|Master.*|Ph\.D.*)/i, '')
+    .replace(/\s*[-–]\s*.+?(Concentration|Track|Option|Emphasis|Focus).*/i, '')
+    .replace(/\s+(Concentration|Track|Option|Emphasis|Focus)$/i, '')
+    .trim()
+}
+
+function shortSchool(name: string) {
+  return name
+    .replace(/^University of California,?\s*/i, 'UC ')
+    .replace(/^California State University,?\s*/i, 'CSU ')
+    .replace(/^California Polytechnic University,?\s*/i, 'Cal Poly ')
+    .replace(/^California Polytechnic State University,?\s*/i, 'Cal Poly ')
+    .replace(/^San Jose State University.*/i, 'SJSU')
+    .replace(/^San Diego State University.*/i, 'SDSU')
+    .replace(/^San Francisco State University.*/i, 'SFSU')
+    .replace(/^Sacramento State.*/i, 'Sac State')
+    .trim()
 }
 
 function SchoolTags({ badges }: { badges: Badge[] }) {
@@ -224,13 +241,14 @@ function SchoolTags({ badges }: { badges: Badge[] }) {
       {badges.slice(0, 3).map((b, i) => {
         const color = BADGE_COLORS[b.colorIdx]
         const label = b.major_name
-          ? `${b.school_name} · ${shortMajor(b.major_name)}`
-          : b.school_name
+          ? `${shortSchool(b.school_name)} · ${shortMajor(b.major_name)}`
+          : shortSchool(b.school_name)
+        const fullLabel = b.major_name ? `${b.school_name} · ${b.major_name}` : b.school_name
         return (
           <span
             key={i}
-            title={label}
-            className={`text-[10px] px-1.5 py-0.5 rounded-md font-semibold ${color.bg} ${color.text} ${b.satisfied ? 'opacity-40' : ''} whitespace-nowrap`}
+            title={fullLabel}
+            className={`text-xs px-1.5 py-0.5 rounded-md font-semibold whitespace-nowrap ${color.bg} ${color.text} ${b.satisfied ? 'opacity-40' : ''}`}
           >
             {label}
           </span>
@@ -243,16 +261,8 @@ function SchoolTags({ badges }: { badges: Badge[] }) {
 function AggregatedRequirementRow({ req, prereqMap }: { req: AggregatedReq; prereqMap: Record<string, string[]> }) {
   const remaining = req.options.filter((o) => !o.satisfied)
 
-  const borderAccent = req.satisfied
-    ? 'border-l-green-400'
-    : req.no_articulation
-    ? 'border-l-gray-200'
-    : remaining.length > 1
-    ? 'border-l-amber-400'
-    : 'border-l-indigo-400'
-
   return (
-    <div className={`relative hover:z-[5] glass rounded-xl border-l-2 ${borderAccent} p-3 flex flex-col gap-2.5`}>
+    <div className="relative hover:z-[5] card-elevated rounded-xl p-3 flex flex-col gap-2.5">
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-1.5">
           {req.satisfied ? (
@@ -267,10 +277,10 @@ function AggregatedRequirementRow({ req, prereqMap }: { req: AggregatedReq; prer
             <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-0.5 shrink-0" />
           )}
           {remaining.length > 1 && !req.satisfied && (
-            <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wide">Pick one</span>
+            <span className="text-xs font-bold text-amber-600 uppercase tracking-wide" title="Any one of these course options satisfies this requirement">Pick one</span>
           )}
           {req.no_articulation && (
-            <span className="text-[10px] text-gray-400 italic">No CCC articulation</span>
+            <span className="text-xs text-gray-400 italic" title="No De Anza or Foothill course satisfies this requirement — you may need to take it at the university">No CCC articulation</span>
           )}
         </div>
         <SchoolTags badges={req.badges} />
@@ -283,9 +293,9 @@ function AggregatedRequirementRow({ req, prereqMap }: { req: AggregatedReq; prer
           <div className="flex flex-wrap gap-x-1.5 gap-y-1 items-center">
             {courses.map((c, ci) => (
               <span key={ci} className="flex items-center gap-1">
-                {ci > 0 && <span className="text-[10px] text-gray-300 font-bold">+</span>}
+                {ci > 0 && <span className="text-xs text-gray-300 font-bold">+</span>}
                 <CourseChip c={c} style="font-mono text-[11px] font-bold text-gray-400 line-through cursor-default" prereqMap={prereqMap} />
-                {c.units && <span className="text-[10px] text-gray-300">{c.units}u</span>}
+                {c.units && <span className="text-xs text-gray-300">{c.units}u</span>}
               </span>
             ))}
           </div>
@@ -296,17 +306,17 @@ function AggregatedRequirementRow({ req, prereqMap }: { req: AggregatedReq; prer
         <div className="flex flex-wrap gap-x-1.5 gap-y-1 items-center">
           {remaining.map((opt, oi) => (
             <Fragment key={oi}>
-              {oi > 0 && <span className="text-[10px] text-gray-300 font-bold">or</span>}
+              {oi > 0 && <span className="text-xs text-gray-300 font-bold">or</span>}
               <span className="flex items-center gap-1">
                 {[...opt.courses].sort((a, b) => a.code.localeCompare(b.code)).map((c, ci) => (
                   <span key={ci} className="flex items-center gap-0.5">
-                    {ci > 0 && <span className="text-[10px] text-gray-300 font-bold">+</span>}
+                    {ci > 0 && <span className="text-xs text-gray-300 font-bold">+</span>}
                     <CourseChip
                       c={c}
                       style={`font-mono text-[11px] font-bold px-1.5 py-0.5 rounded cursor-default ${c.completed ? 'bg-gray-100 text-gray-400 line-through' : 'bg-indigo-50 text-indigo-800'}`}
                       prereqMap={prereqMap}
                     />
-                    {c.in_progress && <span className="text-[10px] bg-amber-100 text-amber-700 px-1 rounded">→</span>}
+                    {c.in_progress && <span className="text-xs bg-amber-100 text-amber-700 px-1 rounded">→</span>}
                   </span>
                 ))}
               </span>
@@ -319,10 +329,10 @@ function AggregatedRequirementRow({ req, prereqMap }: { req: AggregatedReq; prer
         <div className="flex flex-wrap gap-x-1.5 gap-y-1 items-center">
           {[...remaining[0].courses].sort((a, b) => a.code.localeCompare(b.code)).map((c, ci) => (
             <span key={ci} className="flex items-center gap-1">
-              {ci > 0 && <span className="text-[10px] text-gray-400 font-bold">+</span>}
+              {ci > 0 && <span className="text-xs text-gray-400 font-bold">+</span>}
               <CourseChip c={c} style={`font-mono text-[11px] font-bold px-1.5 py-0.5 rounded cursor-default ${c.completed ? 'bg-gray-100 text-gray-400 line-through' : 'bg-indigo-50 text-indigo-800'}`} prereqMap={prereqMap} />
-              {c.units && <span className="text-[10px] text-gray-400">{c.units}u</span>}
-              {c.in_progress && <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 rounded font-medium">→</span>}
+              {c.units && <span className="text-xs text-indigo-600">{c.units}u</span>}
+              {c.in_progress && <span className="text-xs bg-amber-100 text-amber-700 px-1.5 rounded font-medium">→</span>}
             </span>
           ))}
         </div>
@@ -336,6 +346,7 @@ export default function RequirementsTab({ defaultFilter }: { defaultFilter?: str
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [selectedTarget, setSelectedTarget] = useState<string | null>(defaultFilter ?? null)
+  const [loadedAt, setLoadedAt] = useState<Date | null>(null)
 
   const load = () => {
     setLoading(true)
@@ -343,6 +354,7 @@ export default function RequirementsTab({ defaultFilter }: { defaultFilter?: str
     api.get('/results/')
       .then(({ data }) => {
         setResults(data)
+        setLoadedAt(new Date())
         if (!defaultFilter && data && data.length > 0) {
           setSelectedTarget(data[0].target)
         }
@@ -373,18 +385,26 @@ export default function RequirementsTab({ defaultFilter }: { defaultFilter?: str
 
   if (error) {
     return (
-      <div className="border-l-2 border-red-400 pl-5 py-4">
-        <p className="text-sm font-semibold text-gray-900 mb-0.5">Could not load results</p>
-        <p className="text-xs text-gray-400">{error}</p>
+      <div className="card-elevated rounded-xl p-5 border border-red-200 bg-red-50 max-w-sm">
+        <p className="text-sm font-semibold text-gray-900 mb-1">Could not load requirements</p>
+        <p className="text-xs text-red-700 leading-relaxed mb-3">{error}</p>
+        <p className="text-xs text-gray-500 leading-relaxed mb-4">This usually means ASSIST.org is slow to respond, or you haven't added schools yet. Check the Targets tab first.</p>
+        <button
+          onClick={load}
+          className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition-colors cursor-pointer"
+        >
+          Try again
+        </button>
       </div>
     )
   }
 
   if (!results || results.length === 0) {
     return (
-      <div className="border-l-2 border-gray-200 pl-5 py-4">
-        <p className="text-sm font-semibold text-gray-900 mb-0.5">No transfer targets set</p>
-        <p className="text-xs text-gray-400">Add schools and majors in the Transfer Targets tab.</p>
+      <div className="card-elevated rounded-xl p-8 text-center max-w-sm mx-auto">
+        <p className="text-sm font-semibold text-gray-900 mb-1">No transfer targets yet</p>
+        <p className="text-xs text-gray-500 leading-relaxed mb-4">Add a school and major in the Targets tab to see which courses you still need.</p>
+        <p className="text-xs text-indigo-600 font-semibold">Go to Targets tab to get started</p>
       </div>
     )
   }
@@ -451,8 +471,8 @@ export default function RequirementsTab({ defaultFilter }: { defaultFilter?: str
   const SectionHeader = ({ dot, label, count, countColor }: { dot: string; label: string; count: number; countColor: string }) => (
     <div className="flex items-center gap-2 mb-1 px-1">
       <div className={`w-2 h-2 rounded-full shrink-0 ${dot}`} />
-      <span className="text-[11px] font-bold text-gray-500 uppercase tracking-widest flex-1">{label}</span>
-      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${countColor}`}>{count}</span>
+      <span className="text-xs font-semibold text-gray-600 flex-1">{label}</span>
+      <span className={`text-xs font-bold px-1.5 py-0.5 rounded-md ${countColor}`}>{count}</span>
     </div>
   )
 
@@ -462,16 +482,16 @@ export default function RequirementsTab({ defaultFilter }: { defaultFilter?: str
 
   return (
     <div>
-      <div className="sticky top-[109px] z-10 -mx-8 px-8 py-2.5 mb-4" style={{ background: 'rgba(245,245,247,0.92)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.6)' }}>
-        <div className="flex items-center gap-4 mb-2">
+      <div className="sticky top-[97px] z-10 -mx-8 px-8 py-2 mb-4" style={{ background: 'rgba(245,245,247,0.92)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.6)' }}>
+        <div className="flex items-center gap-3 flex-wrap">
           <div className="flex gap-2 flex-wrap items-center flex-1 min-w-0">
             {results.map((r) => {
               const colorIdx = targetColorMap.get(r.target) ?? 0
               const color = BADGE_COLORS[colorIdx]
               const isActive = selectedTarget === r.target
               return (
-                <button key={r.target} onClick={() => setSelectedTarget(r.target)} className={`px-3 py-1 rounded-full text-xs font-semibold transition-all duration-150 cursor-pointer ${isActive ? `${color.bg} ${color.text}` : 'bg-white/60 border border-white/60 text-gray-500 hover:border-gray-200'}`}>
-                  {r.school_name}
+                <button key={r.target} onClick={() => setSelectedTarget(r.target)} title={r.school_name} className={`px-3 py-1 rounded-full text-xs font-semibold transition-all duration-150 cursor-pointer whitespace-nowrap ${isActive ? `${color.bg} ${color.text}` : 'bg-white/60 border border-white/60 text-gray-500 hover:border-gray-200'}`}>
+                  {shortSchool(r.school_name)}
                 </button>
               )
             })}
@@ -483,28 +503,37 @@ export default function RequirementsTab({ defaultFilter }: { defaultFilter?: str
               <button onClick={() => setSelectedTarget(GOLDEN4_FILTER)} className={`px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${isGolden4View ? 'bg-amber-100 text-amber-700' : 'bg-white/60 border border-white/60 text-gray-500 hover:border-gray-200'}`}>Golden 4</button>
             )}
           </div>
-          <button onClick={load} className="text-xs text-gray-400 hover:text-gray-600 font-medium cursor-pointer px-2 py-1 rounded-lg hover:bg-white/50 transition-all shrink-0">Refresh</button>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 flex-1">
-            <div className="flex-1 bg-gray-200/50 rounded-full h-1.5">
-              <div className="bg-indigo-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${reqPct}%` }} />
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="flex items-center gap-1.5">
+              <div className="w-20 bg-gray-200/50 rounded-full h-1.5">
+                <div className="bg-indigo-500 h-1.5 rounded-full transition-all duration-500" style={{ width: `${reqPct}%` }} />
+              </div>
+              <span className="text-[11px] font-bold text-indigo-600 shrink-0">{satisfied.length}/{satisfied.length + unsatisfied.length}</span>
             </div>
-            <span className="text-[11px] font-bold text-indigo-600 shrink-0 w-14 text-right">{satisfied.length}/{satisfied.length + unsatisfied.length} req</span>
-          </div>
-          <div className="w-px h-4 bg-gray-200 shrink-0" />
-          <div className="flex items-center gap-2 flex-1">
-            <div className="flex-1 bg-gray-200/50 rounded-full h-1.5">
-              <div className="bg-violet-400 h-1.5 rounded-full transition-all duration-500" style={{ width: `${recPct}%` }} />
+            <div className="w-px h-3 bg-gray-200 shrink-0" />
+            <div className="flex items-center gap-1.5">
+              <div className="w-20 bg-gray-200/50 rounded-full h-1.5">
+                <div className="bg-violet-400 h-1.5 rounded-full transition-all duration-500" style={{ width: `${recPct}%` }} />
+              </div>
+              <span className="text-[11px] font-bold text-violet-500 shrink-0">{satisfiedRec.length}/{satisfiedRec.length + unsatisfiedRec.length}</span>
             </div>
-            <span className="text-[11px] font-bold text-violet-500 shrink-0 w-14 text-right">{satisfiedRec.length}/{satisfiedRec.length + unsatisfiedRec.length} rec</span>
+            <div className="flex items-center gap-2 shrink-0">
+              {loadedAt && (
+                <span className="text-[11px] text-gray-400">
+                  {Math.floor((Date.now() - loadedAt.getTime()) / 60000) < 1
+                    ? 'just now'
+                    : `${Math.floor((Date.now() - loadedAt.getTime()) / 60000)}m ago`}
+                </span>
+              )}
+              <button onClick={load} className="text-xs text-gray-400 hover:text-gray-600 font-medium cursor-pointer px-2 py-1 rounded-lg hover:bg-white/50 transition-all">Refresh</button>
+            </div>
           </div>
         </div>
       </div>
 
       <div className="space-y-3">
         {visibleResults.filter((r) => r.unsupported).map((r) => (
-          <div key={`unsupported-${r.target}`} className="glass rounded-xl border-l-2 border-l-rose-400 p-4 animate-fade-up">
+          <div key={`unsupported-${r.target}`} className="card-elevated rounded-xl p-4 animate-fade-up">
             <p className="text-sm font-bold text-gray-900 mb-1">{r.school_name}</p>
             <p className="text-xs font-semibold text-rose-600 mb-1">Major-specific requirements unavailable</p>
             <p className="text-xs text-gray-500 leading-relaxed">{r.unsupported_reason || 'No ASSIST major articulation is published for this independent university.'}</p>
@@ -512,7 +541,7 @@ export default function RequirementsTab({ defaultFilter }: { defaultFilter?: str
         ))}
 
         {visibleResults.some((r) => r.low_confidence && !r.unsupported) && (
-          <div className="glass rounded-xl border-l-2 border-l-amber-400 p-3 animate-fade-up">
+          <div className="card-elevated rounded-xl p-3 animate-fade-up">
             <p className="text-xs font-bold text-amber-700 mb-0.5">Partial articulation</p>
             <p className="text-xs text-gray-600 leading-relaxed">
               {visibleResults.find((r) => r.low_confidence && !r.unsupported)?.low_confidence_reason || 'ASSIST data for this school is incomplete. Verify requirements against the school catalog.'}
@@ -536,18 +565,18 @@ export default function RequirementsTab({ defaultFilter }: { defaultFilter?: str
               {unsatisfiedRec.map((req) => <AggregatedRequirementRow key={req.key} req={req} prereqMap={prereqMap} />)}
               {unsatisfiedElectiveGroups.map((group) =>
                 group.series.map((s) => (
-                  <div key={`${group.label}-${s.name}`} className="glass rounded-xl border-l-2 border-l-violet-400 p-3 flex flex-col gap-2.5">
+                  <div key={`${group.label}-${s.name}`} className="card-elevated rounded-xl p-3 flex flex-col gap-2.5">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-1.5">
                         <div className="w-1.5 h-1.5 rounded-full bg-violet-400 shrink-0" />
-                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">{group.label}</span>
+                        <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">{group.label}</span>
                       </div>
-                      <span className="text-[10px] font-bold bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full shrink-0">{s.completed_count}/{s.total}</span>
+                      <span className="text-xs font-bold bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full shrink-0">{s.completed_count}/{s.total}</span>
                     </div>
                     <p className="text-xs font-semibold text-gray-700">{s.name}</p>
                     <div className="flex flex-wrap gap-1">
                       {[...s.courses].sort((a,b) => a.code.localeCompare(b.code)).map((c, ci) => (
-                        <span key={ci} className={`font-mono text-[10px] font-bold px-1.5 py-0.5 rounded ${c.completed ? 'bg-green-100 text-green-700 line-through' : 'bg-gray-100 text-gray-600'}`}>{c.code}</span>
+                        <span key={ci} className={`font-mono text-xs font-bold px-1.5 py-0.5 rounded ${c.completed ? 'bg-green-100 text-green-700 line-through' : 'bg-gray-100 text-gray-600'}`}>{c.code}</span>
                       ))}
                     </div>
                   </div>
@@ -573,17 +602,17 @@ export default function RequirementsTab({ defaultFilter }: { defaultFilter?: str
               {satisfiedRec.map((req) => <AggregatedRequirementRow key={req.key} req={req} prereqMap={prereqMap} />)}
               {satisfiedElectiveGroups.map((group) =>
                 group.series.filter((s) => s.satisfied).map((s) => (
-                  <div key={`${group.label}-${s.name}`} className="glass rounded-xl border-l-2 border-l-green-400 p-3 flex flex-col gap-2.5">
+                  <div key={`${group.label}-${s.name}`} className="card-elevated rounded-xl p-3 flex flex-col gap-2.5">
                     <div className="flex items-center gap-1.5">
                       <svg className="w-3.5 h-3.5 text-green-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                       </svg>
-                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">{group.label}</span>
+                      <span className="text-xs font-bold text-gray-400 uppercase tracking-wide">{group.label}</span>
                     </div>
-                    <p className="text-xs font-semibold text-gray-600">{s.name}</p>
+                    <p className="text-xs font-semibold text-green-800">{s.name}</p>
                     <div className="flex flex-wrap gap-1">
                       {[...s.courses].sort((a,b) => a.code.localeCompare(b.code)).map((c, ci) => (
-                        <span key={ci} className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-green-100 text-green-600 line-through">{c.code}</span>
+                        <span key={ci} className="font-mono text-xs font-bold px-1.5 py-0.5 rounded bg-green-100 text-green-600 line-through">{c.code}</span>
                       ))}
                     </div>
                   </div>
@@ -603,7 +632,7 @@ export default function RequirementsTab({ defaultFilter }: { defaultFilter?: str
         )}
 
         {unsatisfied.length === 0 && satisfied.length === 0 && unsatisfiedRec.length === 0 && satisfiedRec.length === 0 && (
-          <div className="glass rounded-2xl p-10 text-center">
+          <div className="card-elevated rounded-2xl p-10 text-center">
             <div className="w-11 h-11 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-3">
               <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />

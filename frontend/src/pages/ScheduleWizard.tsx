@@ -663,7 +663,7 @@ function PickerCard({
         <div className="flex items-center gap-2 mb-0.5">
           <p className="text-sm font-semibold text-gray-900">{title}</p>
           {badge && (
-            <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <span className="text-xs font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
               {badge}
             </span>
           )}
@@ -701,7 +701,7 @@ function PickerCard({
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     {opt.seriesName && <p className="text-xs font-semibold text-gray-700">{opt.seriesName}</p>}
-                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
+                    <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full ${
                       isOptimal ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
                     }`}>
                       {remaining === 0 ? 'Already done' : `${remaining} class${remaining === 1 ? '' : 'es'} to take`}
@@ -728,7 +728,7 @@ function PickerCard({
                     ))}
                   </div>
                   {missingPrereqs.length > 0 && (
-                    <p className="text-[10px] text-blue-600 mt-1">
+                    <p className="text-xs text-blue-600 mt-1">
                       Includes {missingPrereqs.length} prereq{missingPrereqs.length === 1 ? '' : 's'}
                     </p>
                   )}
@@ -815,7 +815,7 @@ function MultiPickCard({
         <div className="flex items-center gap-2 mb-0.5">
           <p className="text-sm font-semibold text-gray-900">{title}</p>
           {badge && (
-            <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <span className="text-xs font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
               {badge}
             </span>
           )}
@@ -852,7 +852,7 @@ function MultiPickCard({
                     <span className={`font-mono text-xs font-semibold ${c.completed ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
                       {c.code}
                     </span>
-                    {c.completed && <span className="text-[10px] text-emerald-600">done</span>}
+                    {c.completed && <span className="text-xs text-emerald-600">done</span>}
                   </label>
                 )
               })}

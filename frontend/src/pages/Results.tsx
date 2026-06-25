@@ -58,7 +58,7 @@ function RequirementRow({ req }: { req: Requirement }) {
           {!req.no_articulation && !req.satisfied && hasAny && (
             <div className="mt-2 space-y-2">
               {remaining.length > 1 && (
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Pick one option:</p>
+                <p className="text-xs font-semibold text-gray-600">Pick one option:</p>
               )}
               {remaining.map((opt, oi) => (
                 <div key={oi} className={`rounded-xl px-3 py-2 ${remaining.length > 1 ? 'bg-gray-50 border border-gray-100' : ''}`}>
@@ -164,7 +164,7 @@ function TargetSection({ result }: { result: TargetResult }) {
         </div>
       ) : (
         <div className="space-y-2">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Still needed ({remaining.length})</p>
+          <p className="text-xs font-semibold text-gray-600 mb-3">Still needed ({remaining.length})</p>
           {remaining.map((req, i) => (
             <RequirementRow key={i} req={req} />
           ))}

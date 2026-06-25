@@ -48,6 +48,35 @@ export default function OverviewTab() {
     )
   }
 
+  if (!loading && targets.length === 0 && entries.length === 0) {
+    return (
+      <div className="py-16 text-center max-w-sm mx-auto">
+        <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center mx-auto mb-4">
+          <svg className="w-6 h-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
+          </svg>
+        </div>
+        <p className="text-sm font-semibold text-gray-900 mb-1">Start your transfer plan</p>
+        <p className="text-xs text-gray-500 leading-relaxed mb-6">Add your transcript and pick target schools. DAFH will show exactly which requirements you still need.</p>
+        <div className="space-y-2 text-left">
+          {[
+            { step: '1', label: 'Paste your transcript', sub: 'Go to the Classes tab and paste your De Anza or Foothill transcript' },
+            { step: '2', label: 'Add target schools', sub: 'Go to the Targets tab, pick a school and major' },
+            { step: '3', label: 'View your requirements', sub: 'Come back here — requirements will load automatically' },
+          ].map((s) => (
+            <div key={s.step} className="flex gap-3 p-3 card-elevated rounded-xl">
+              <span className="text-xs font-bold text-indigo-600 w-4 shrink-0 mt-0.5">{s.step}</span>
+              <div>
+                <p className="text-xs font-semibold text-gray-900">{s.label}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{s.sub}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
   const deanza = entries.filter((e) => e.school === 'deanza')
   const foothill = entries.filter((e) => e.school === 'foothill')
   const inProgress = entries.filter((e) => e.status === 'in_progress')
@@ -61,8 +90,8 @@ export default function OverviewTab() {
   const recPct = totalRec > 0 ? (doneRec / totalRec) * 100 : 0
 
   const StatCard = ({ label, value, sub, accent }: { label: string; value: string | number; sub?: string; accent: string }) => (
-    <div className="glass rounded-xl px-4 py-3.5 flex flex-col gap-1">
-      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{label}</p>
+    <div className="card-elevated rounded-xl px-4 py-3.5 flex flex-col gap-1">
+      <p className="text-xs font-medium text-gray-500">{label}</p>
       <p className={`text-2xl font-bold ${accent}`}>{value}</p>
       {sub && <p className="text-[11px] text-gray-400">{sub}</p>}
     </div>
@@ -71,7 +100,7 @@ export default function OverviewTab() {
   return (
     <div className="space-y-5">
       <div>
-        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Progress</p>
+        <p className="text-xs font-semibold text-gray-600 mb-2 px-1">Progress</p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
           <StatCard label="Required Done" value={`${doneReq}/${totalReq}`} sub={`${Math.round(reqPct)}% complete`} accent="text-indigo-600" />
           <StatCard label="Recommended Done" value={`${doneRec}/${totalRec}`} sub={`${Math.round(recPct)}% complete`} accent="text-violet-500" />
@@ -82,8 +111,8 @@ export default function OverviewTab() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         <div>
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Progress by Target</p>
-          <div className="glass rounded-xl overflow-hidden divide-y divide-white/40">
+          <p className="text-xs font-semibold text-gray-600 mb-2 px-1">Progress by Target</p>
+          <div className="card-elevated rounded-xl overflow-hidden divide-y divide-gray-100">
             {results && results.length > 0 ? results.map((r) => {
               const req = r.requirements.filter((x) => !x.no_articulation)
               const done = req.filter((x) => x.satisfied).length
@@ -111,8 +140,8 @@ export default function OverviewTab() {
         </div>
 
         <div>
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Classes Breakdown</p>
-          <div className="glass rounded-xl overflow-hidden divide-y divide-white/40">
+          <p className="text-xs font-semibold text-gray-600 mb-2 px-1">Classes Breakdown</p>
+          <div className="card-elevated rounded-xl overflow-hidden divide-y divide-gray-100">
             {[
               { label: 'De Anza College', completed: deanza.filter((e) => e.status === 'completed').length, inProgress: deanza.filter((e) => e.status === 'in_progress').length },
               { label: 'Foothill College', completed: foothill.filter((e) => e.status === 'completed').length, inProgress: foothill.filter((e) => e.status === 'in_progress').length },
@@ -147,8 +176,8 @@ export default function OverviewTab() {
       </div>
 
       <div>
-        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Overall</p>
-        <div className="glass rounded-xl px-4 py-4 space-y-3">
+        <p className="text-xs font-semibold text-gray-600 mb-2 px-1">Overall</p>
+        <div className="card-elevated rounded-xl px-4 py-4 space-y-3">
           <div className="flex items-center gap-3">
             <span className="text-[11px] font-bold text-gray-500 w-28 shrink-0">Required</span>
             <div className="flex-1 bg-gray-200/50 rounded-full h-2">

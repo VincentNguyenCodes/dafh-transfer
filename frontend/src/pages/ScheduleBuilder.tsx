@@ -569,7 +569,7 @@ function ClassChip({ c, dragging, missingPrereqs }: { c: ClassItem; dragging?: b
         {hasWarning && <span className="text-amber-500 text-xs" aria-label="Prerequisite warning">⚠</span>}
       </div>
       {uniqueSchools.length > 0 && (
-        <span className="text-[10px] text-gray-500 font-medium">{uniqueSchools.join(' · ')}</span>
+        <span className="text-xs text-gray-500 font-medium">{uniqueSchools.join(' · ')}</span>
       )}
     </div>
   )

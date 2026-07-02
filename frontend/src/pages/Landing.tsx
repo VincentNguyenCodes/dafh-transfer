@@ -1,3 +1,4 @@
+import { GoogleLogin } from '@react-oauth/google'
 import axios from 'axios'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -144,6 +145,31 @@ export default function Landing() {
               {loading ? 'Please wait...' : mode === 'login' ? 'Log in' : 'Create account'}
             </button>
           </form>
+
+          <div className="flex items-center gap-3 my-5">
+            <div className="flex-1 h-px bg-gray-200" />
+            <span className="text-xs text-gray-400">or</span>
+            <div className="flex-1 h-px bg-gray-200" />
+          </div>
+
+          <div className="flex justify-center">
+            <GoogleLogin
+              onSuccess={async (response) => {
+                try {
+                  const { data } = await axios.post('/api/auth/google/', { credential: response.credential })
+                  localStorage.setItem('access', data.access)
+                  localStorage.setItem('refresh', data.refresh)
+                  navigate('/dashboard')
+                } catch {
+                  setError('Google sign-in failed. Please try again.')
+                }
+              }}
+              onError={() => setError('Google sign-in failed. Please try again.')}
+              theme="outline"
+              shape="rectangular"
+              width="300"
+            />
+          </div>
         </div>
       </div>
       </div>
